@@ -2,7 +2,7 @@
 // Exposes the same small interface the app uses inside the Claude artifact (window.claude.use(...)),
 // plus window.SBPB_WEB for login, operator accounts and the encrypted public snapshot.
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, deleteDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // Firebase web config: public identifiers, safe to ship in the page (access is enforced by firestore.rules)
@@ -15,6 +15,7 @@ const firebaseConfig = {
   appId: '1:950304660445:web:96bb61c81d64cffcec3434'
 };
 const SUPER = 'sbpb.official@gmail.com';   // club account: always an operator (must match firestore.rules)
+const STAFF = 'staff@sbpb-official.github.io';   // shared operator login: the site password is this account's password (must match firestore.rules)
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -37,7 +38,7 @@ function adminState() {
   return adminP || (adminP = authReady.then(async u => {
     if (!u || !u.email) return { u, ok: false };
     const email = u.email.toLowerCase();
-    let ok = email === SUPER;
+    let ok = email === SUPER || email === STAFF;
     if (!ok) { try { ok = (await adminList()).map(x => String(x).toLowerCase()).includes(email); } catch (e) { ok = false; } }
     if (ok) setDoc(doc(fs, 'profiles', u.uid), { name: u.displayName || email.split('@')[0], email, at: Date.now() }).catch(() => {});
     return { u, ok };
@@ -98,6 +99,16 @@ window.SBPB_WEB = {
     }
   },
   logout: () => signOut(auth),
+  async loginPw(pw) {
+    try { await signInWithEmailAndPassword(auth, STAFF, pw); location.reload(); return ''; }
+    catch (e) {
+      const c = e && e.code || '';
+      if (c === 'auth/too-many-requests') return '시도 횟수 초과. 잠시 후 재시도 필요';
+      if (c === 'auth/network-request-failed') return '인터넷 연결 확인 필요';
+      if (c === 'auth/operation-not-allowed' || c === 'auth/configuration-not-found') return '로그인 설정 미완료. 관리자 확인 필요';
+      return '비밀번호 불일치. 다시 입력 필요';
+    }
+  },
   getAdmins: adminList,
   saveAdmins: emails => setDoc(doc(fs, 'config', 'admins'), { emails, at: Date.now() }),
   savePub: pub => setDoc(doc(fs, 'public', 'snapshot'), pub)

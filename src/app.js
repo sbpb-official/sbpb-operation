@@ -381,7 +381,7 @@ function viewHome(){
   }else mo=`<div class="empty"><b>등록된 회원 없음</b>회원 등록 시 성별·레벨·구력·거주지 분포 표시<div class="row"><a class="btn sm" href="#members">회원 관리</a></div></div>`;
   const nr=nextReg(),nrs=regStat(nr),nrx=nrs&&nrs.status==='취소',dd=diffDays(nr);
   return `<div class="page-head dash-head"><div class="dh-main"><div class="dh-today"><span>${t.getFullYear()}년 ${t.getMonth()+1}월 ${t.getDate()}일 ${WD[t.getDay()]}요일</span><b class="num" id="clock">${clockText()}</b></div>
-    <div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div></div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}${WEB&&mode==='db'?`<button class="btn ghost" data-act="admin-open">운영진 계정</button>`:''}${mode==='db'?`<button class="btn" data-act="backup-open">데이터 백업</button>`:''}${mode==='db'&&art?`<button class="btn" data-act="pub-open">공개본 갱신${pendingCount()?` (${pendingCount()})`:''}</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextReg()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>
+    <div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div></div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}${WEB&&mode==='db'?`<button class="btn ghost" data-act="web-logout">로그아웃</button>`:''}${mode==='db'?`<button class="btn" data-act="backup-open">데이터 백업</button>`:''}${mode==='db'&&art?`<button class="btn" data-act="pub-open">공개본 갱신${pendingCount()?` (${pendingCount()})`:''}</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextReg()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>
   ${kp}<div class="dash">${cal}<div class="side">
   <section class="panel"><div class="panel-h"><h2>다가오는 행사</h2><a href="#events">전체 보기</a></div><div class="list">${upHtml}</div></section>
   ${(()=>{const ts=S.events.filter(e=>e.type==='개인대회'&&e.date);if(!ts.length)return '';const up2=ts.filter(e=>diffDays(e.date)>=0).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);const past=ts.filter(e=>diffDays(e.date)<0&&e.result&&e.result!=='대기').sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
@@ -1498,18 +1498,20 @@ function touchAuth(){const n=Date.now();memSeen=n;lastTouch=n;try{localStorage.s
 const authed=()=>{if(WEB)return true;const t=lastSeen();return t>0&&Date.now()-t<IDLE_MS};
 function lock(msg){memSeen=0;snapKey=null;try{localStorage.removeItem('sbpb-auth-seen');localStorage.removeItem('sbpb-k')}catch(e){}$('#gate-err').textContent=msg||'';document.body.classList.add('locked');closeModal();$('#gate').hidden=false;$('#gate-pw').value='';setTimeout(()=>$('#gate-pw').focus(),50)}
 function unlock(){touchAuth();document.body.classList.remove('locked');$('#gate').hidden=true;render();if(!started){started=true;boot()}else if(mode==='ro')enterRO()}
-$('#gate-form').addEventListener('submit',async e=>{e.preventDefault();const v=$('#gate-pw').value;if(sha256(v)===PW_HASH){$('#gate-err').textContent='';
+$('#gate-form').addEventListener('submit',async e=>{e.preventDefault();const v=$('#gate-pw').value;
+  if(WEB){const sb=$('#gate-form button[type=submit]');sb.disabled=true;sb.textContent='확인 중…';const err=await window.SBPB_WEB.loginPw(v);sb.disabled=false;sb.textContent='입장하기';if(err){$('#gate-err').textContent=err;$('#gate-pw').select()}return}if(sha256(v)===PW_HASH){$('#gate-err').textContent='';
     if(PUB.snap){const sb=$('#gate-form button[type=submit]');sb.disabled=true;sb.textContent='여는 중…';try{snapKey=await deriveKey(v,PUB.snap.salt);lsSet('sbpb-k',{salt:PUB.snap.salt,k:await exportKey(snapKey)})}catch(err){}sb.disabled=false;sb.textContent='입장하기'}
     unlock()}else{$('#gate-err').textContent='비밀번호 불일치. 다시 입력 필요';$('#gate-pw').select()}});
 $('#gate-eye').addEventListener('click',()=>{const i=$('#gate-pw');const show=i.type==='password';i.type=show?'text':'password';$('#gate-eye').textContent=show?'숨기기':'보기'});
 ['click','keydown','touchstart','scroll'].forEach(ev=>document.addEventListener(ev,()=>{if(document.body.classList.contains('locked'))return;if(Date.now()-lastTouch>60000){if(!authed()){lock();return}touchAuth()}},{passive:true,capture:true}));
 setInterval(()=>{if(!document.body.classList.contains('locked')&&!authed())lock()},60000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!document.body.classList.contains('locked')&&!authed())lock()});
-/* web app: Google sign-in gate — only registered operators get in (no password, no public copy) */
-function showWebGate(u){document.body.classList.add('locked');const g=$('#gate');g.hidden=false;
-  g.innerHTML=`<div class="gate-card"><img src="logo-g-xl.png" alt="SBPB Tennis Club" width="260" height="173"><div><h2>사방팔방 운영실</h2><p>운영진 전용 · 등록된 구글 계정으로 로그인</p></div>${u?`<p class="err" role="alert">${h(u.email||'')} 계정은 운영진으로 등록되어 있지 않음. 운영진에게 등록 요청 필요</p>`:''}<button type="button" class="btn pri" style="padding:12px" data-act="web-login">${u?'다른 구글 계정으로 로그인':'Google 계정으로 로그인'}</button>${u?'<button type="button" class="btn" data-act="web-logout">로그아웃</button>':''}</div>`}
+/* web app: password gate → signs in to the shared operator account on Firebase (checked by the server) */
+function showWebGate(msg){document.body.classList.add('locked');$('#gate').hidden=false;
+  const p=$('#gate-form > p');if(p)p.textContent='한 번 입력하면 이 기기에서 계속 유지';
+  $('#gate-err').textContent=msg||'';$('#gate-pw').value='';setTimeout(()=>$('#gate-pw').focus(),50)}
 async function webGate(){let st={u:null,ok:false};try{st=await window.SBPB_WEB.state()}catch(e){}
-  if(!st.ok){showWebGate(st.u);return}
+  if(!st.ok){showWebGate(st.u?'이 계정은 운영진으로 등록되어 있지 않음':'');return}
   document.body.classList.remove('locked');$('#gate').hidden=true;render();if(!started){started=true;boot()}}
 if(WEB)webGate();
 else if(authed()&&(!PUB.snap||((lsGet('sbpb-k',null)||{}).salt===PUB.snap.salt)))unlock();else lock();
