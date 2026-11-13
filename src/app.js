@@ -1425,7 +1425,7 @@ ACT['data-import']=()=>{const inp=document.createElement('input');inp.type='file
     if(!confirm(`${n}건을 가져옵니다. 같은 항목은 파일 내용으로 덮어씀. 진행할까요?`))return;
     closeModal();let done=0;toast(`가져오는 중… 0/${n}`);
     for(const c of cols)for(const d of data[c]){if(!d||!d.id)continue;const {id,...rest}=d;try{await put(c,String(id),rest)}catch(e){}done++;if(done%20===0)toast(`가져오는 중… ${done}/${n}`)}
-    toast(`가져오기 완료 ${done}건. 공개본 갱신 필요`);setTimeout(()=>ACT['pub-open'](),1200)};
+    if(art){toast(`가져오기 완료 ${done}건. 공개본 갱신 필요`);setTimeout(()=>ACT['pub-open'](),1200)}else toast(`가져오기 완료 ${done}건`)};
   inp.click()};
 
 /* ---------- public snapshot: automatic refresh ----------
@@ -1495,7 +1495,7 @@ const IDLE_MS=2*60*60*1000;
 let memSeen=0,started=false,lastTouch=0;
 function lastSeen(){try{const v=localStorage.getItem('sbpb-auth-seen');return v?Number(v):memSeen}catch(e){return memSeen}}
 function touchAuth(){const n=Date.now();memSeen=n;lastTouch=n;try{localStorage.setItem('sbpb-auth-seen',String(n))}catch(e){}}
-const authed=()=>{const t=lastSeen();return t>0&&Date.now()-t<IDLE_MS};
+const authed=()=>{if(WEB)return true;const t=lastSeen();return t>0&&Date.now()-t<IDLE_MS};
 function lock(msg){memSeen=0;snapKey=null;try{localStorage.removeItem('sbpb-auth-seen');localStorage.removeItem('sbpb-k')}catch(e){}$('#gate-err').textContent=msg||'';document.body.classList.add('locked');closeModal();$('#gate').hidden=false;$('#gate-pw').value='';setTimeout(()=>$('#gate-pw').focus(),50)}
 function unlock(){touchAuth();document.body.classList.remove('locked');$('#gate').hidden=true;render();if(!started){started=true;boot()}else if(mode==='ro')enterRO()}
 $('#gate-form').addEventListener('submit',async e=>{e.preventDefault();const v=$('#gate-pw').value;if(sha256(v)===PW_HASH){$('#gate-err').textContent='';
@@ -1505,4 +1505,11 @@ $('#gate-eye').addEventListener('click',()=>{const i=$('#gate-pw');const show=i.
 ['click','keydown','touchstart','scroll'].forEach(ev=>document.addEventListener(ev,()=>{if(document.body.classList.contains('locked'))return;if(Date.now()-lastTouch>60000){if(!authed()){lock();return}touchAuth()}},{passive:true,capture:true}));
 setInterval(()=>{if(!document.body.classList.contains('locked')&&!authed())lock()},60000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!document.body.classList.contains('locked')&&!authed())lock()});
-if(authed()&&(!PUB.snap||((lsGet('sbpb-k',null)||{}).salt===PUB.snap.salt)))unlock();else lock();
+/* web app: Google sign-in gate — only registered operators get in (no password, no public copy) */
+function showWebGate(u){document.body.classList.add('locked');const g=$('#gate');g.hidden=false;
+  g.innerHTML=`<div class="gate-card"><img src="logo-g-xl.png" alt="SBPB Tennis Club" width="260" height="173"><div><h2>사방팔방 운영실</h2><p>운영진 전용 · 등록된 구글 계정으로 로그인</p></div>${u?`<p class="err" role="alert">${h(u.email||'')} 계정은 운영진으로 등록되어 있지 않음. 운영진에게 등록 요청 필요</p>`:''}<button type="button" class="btn pri" style="padding:12px" data-act="web-login">${u?'다른 구글 계정으로 로그인':'Google 계정으로 로그인'}</button>${u?'<button type="button" class="btn" data-act="web-logout">로그아웃</button>':''}</div>`}
+async function webGate(){let st={u:null,ok:false};try{st=await window.SBPB_WEB.state()}catch(e){}
+  if(!st.ok){showWebGate(st.u);return}
+  document.body.classList.remove('locked');$('#gate').hidden=true;render();if(!started){started=true;boot()}}
+if(WEB)webGate();
+else if(authed()&&(!PUB.snap||((lsGet('sbpb-k',null)||{}).salt===PUB.snap.salt)))unlock();else lock();

@@ -864,7 +864,7 @@ window.claude = {
       }
     } : null;
     if (cap === 'downloads') return { save: saveFile };
-    if (cap === 'artifact') return st.ok ? { web: true } : null;
+    if (cap === 'artifact') return null;   // web app: no public copy, operators only
     return null;
   }
 };
@@ -873,6 +873,7 @@ const inApp = /KAKAOTALK|Instagram|FBAN|FBAV|NAVER|Line\//i.test(navigator.userA
 window.SBPB_WEB = {
   SUPER,
   user: () => currentUser,
+  state: adminState,
   async login() {
     if (/KAKAOTALK/i.test(navigator.userAgent)) { location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href); return; }
     if (inApp) { alert('앱 안의 브라우저에서는 구글 로그인이 막혀 있습니다. 메뉴에서 "다른 브라우저로 열기"(Safari·Chrome) 후 로그인해 주세요.'); return; }
@@ -892,14 +893,9 @@ window.SBPB_WEB = {
 
 // load the encrypted public snapshot, then start the app
 (async () => {
-  let pub = {};
-  try {
-    const s = await withTimeout(getDoc(doc(fs, 'public', 'snapshot')), 8000, null);
-    if (s && s.exists()) pub = s.data();
-  } catch (e) {}
-  window.SBPB_PUB = pub;
+  window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=557de513b8';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=3c35cd4322';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
