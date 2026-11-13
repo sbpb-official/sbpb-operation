@@ -1,0 +1,5 @@
+# local only: encrypted snapshots, data dumps, test files
+*.pub.json
+dbdump/
+dist/
+__pycache__/
