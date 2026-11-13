@@ -27,6 +27,8 @@ getRedirectResult(auth).catch(() => {});
 let currentUser = null;
 const authReady = new Promise(res => { const un = onAuthStateChanged(auth, u => { currentUser = u; un(); res(u); }); });
 
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const markLogin = () => { try { localStorage.setItem('sbpb-login-day', today()); } catch (e) {} };
 const withTimeout = (p, ms, fallback) => Promise.race([p, new Promise(r => setTimeout(() => r(fallback), ms))]);
 
 async function adminList() {
@@ -91,7 +93,7 @@ window.SBPB_WEB = {
     if (/KAKAOTALK/i.test(navigator.userAgent)) { location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href); return; }
     if (inApp) { alert('앱 안의 브라우저에서는 구글 로그인이 막혀 있습니다. 메뉴에서 "다른 브라우저로 열기"(Safari·Chrome) 후 로그인해 주세요.'); return; }
     const provider = new GoogleAuthProvider(); provider.setCustomParameters({ prompt: 'select_account' });
-    try { await signInWithPopup(auth, provider); location.reload(); }
+    try { await signInWithPopup(auth, provider); markLogin(); location.reload(); }
     catch (e) {
       if (e && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')) return signInWithRedirect(auth, provider);
       if (e && (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request')) return;
@@ -100,7 +102,7 @@ window.SBPB_WEB = {
   },
   logout: () => signOut(auth),
   async loginPw(pw) {
-    try { await signInWithEmailAndPassword(auth, STAFF, pw); location.reload(); return ''; }
+    try { await signInWithEmailAndPassword(auth, STAFF, pw); markLogin(); location.reload(); return ''; }
     catch (e) {
       const c = e && e.code || '';
       if (c === 'auth/too-many-requests') return '시도 횟수 초과. 잠시 후 재시도 필요';

@@ -1510,8 +1510,12 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 function showWebGate(msg){document.body.classList.add('locked');$('#gate').hidden=false;
   const p=$('#gate-form > p');if(p)p.textContent='한 번 입력하면 이 기기에서 계속 유지';
   $('#gate-err').textContent=msg||'';$('#gate-pw').value='';setTimeout(()=>$('#gate-pw').focus(),50)}
+// sign-in lasts for the day it was made: a new date asks for the password again
+const loginDay=()=>{try{return localStorage.getItem('sbpb-login-day')||''}catch(e){return ''}};
 async function webGate(){let st={u:null,ok:false};try{st=await window.SBPB_WEB.state()}catch(e){}
+  if(st.ok&&loginDay()!==ymd(new Date())){try{await window.SBPB_WEB.logout()}catch(e){}showWebGate('하루 1회 비밀번호 재입력 필요');return}
   if(!st.ok){showWebGate(st.u?'이 계정은 운영진으로 등록되어 있지 않음':'');return}
   document.body.classList.remove('locked');$('#gate').hidden=true;render();if(!started){started=true;boot()}}
-if(WEB)webGate();
+if(WEB){webGate();setInterval(()=>{if(!document.body.classList.contains('locked')&&loginDay()!==ymd(new Date()))window.SBPB_WEB.logout().then(()=>location.reload())},60000);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!document.body.classList.contains('locked')&&loginDay()!==ymd(new Date()))window.SBPB_WEB.logout().then(()=>location.reload())})}
 else if(authed()&&(!PUB.snap||((lsGet('sbpb-k',null)||{}).salt===PUB.snap.salt)))unlock();else lock();
