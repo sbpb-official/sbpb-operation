@@ -962,7 +962,8 @@ ACT['reg-draw']=t=>{closeDayPop();Object.assign(cfg,{title:REG.title,place:REG.p
 ACT['pick-all']=()=>{cfg.picked=[...new Set([...cfg.picked,...activeMembers().map(m=>m.id)])];saveCfg();render()};
 ACT['pick-none']=()=>{cfg.picked=[];saveCfg();render()};
 function recruitText(n){const d=parseYmd(cfg.date);return `[SBPB 게스트 모집]\n${d?`${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]})`:''} ${REG.start}~${REG.end} ${cfg.place||REG.place}\n게스트 ${n}명 모집합니다! 🎾\n복식 게임 위주로 진행합니다. 참여 희망 시 댓글 부탁드립니다.`}
-function recruitBox(n){return `<details class="recruit" id="recruit"${lsGet('sbpb-recruit-open',false)?' open':''}><summary>게스트 모집 문구 미리보기</summary><pre class="rtext">${h(recruitText(n))}</pre><button class="btn sm" data-act="recruit-copy" data-n="${n}">문구 복사</button></details>`}
+function recruitBox(n){return `<details class="recruit" id="recruit"${lsGet('sbpb-recruit-open',false)?' open':''}><summary><span>게스트 모집 문구 미리보기</span><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary><pre class="rtext">${h(recruitText(n))}</pre><button class="btn sm" data-act="recruit-copy" data-n="${n}">문구 복사</button></details>`}
+document.addEventListener('click',e=>{const d=e.target.closest&&e.target.closest('details');if(d&&!d.open&&!e.target.closest('summary')){e.preventDefault();d.open=true}});
 document.addEventListener('toggle',e=>{if(e.target.id==='recruit')lsSet('sbpb-recruit-open',e.target.open)},true);
 ACT['recruit-copy']=async t=>{
   const n=+t.dataset.n||1;const txt=recruitText(n);
@@ -1328,7 +1329,7 @@ function viewMoney(){
     <div class="due-top"><div class="row"><button class="btn sm" data-act="mon-step" data-v="-1" aria-label="이전 달">‹</button><b class="due-mon">${Y}년 ${M}월</b><button class="btn sm" data-act="mon-step" data-v="1" aria-label="다음 달">›</button></div>
       <div class="chips"><span class="chip ok">납부 ${cnt.paid}</span><span class="chip warn">미납 ${cnt.none}</span>${cnt.free?`<span class="chip">면제 ${cnt.free}</span>`:''}<span class="chip court">${M}월 걷은 금액 ${won(cnt.paid*fee)}</span></div></div>
     <div class="due-list">${rows}</div>
-    ${cnt.none&&!RO?`<details class="recruit" id="due-pv"${lsGet('sbpb-due-pv',false)?' open':''}><summary>미납 안내 문구 미리보기</summary><pre class="rtext">${h(dueText())}</pre><button class="btn sm" data-act="due-copy">문구 복사</button></details>`:''}
+    ${cnt.none&&!RO?`<details class="recruit" id="due-pv"${lsGet('sbpb-due-pv',false)?' open':''}><summary><span>미납 안내 문구 미리보기</span><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary><pre class="rtext">${h(dueText())}</pre><button class="btn sm" data-act="due-copy">문구 복사</button></details>`:''}
     <details class="due-yr" id="due-yr"${lsGet('sbpb-due-yr',false)?' open':''}><summary><h3>${Y}년 납부 현황</h3><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
     <div class="small muted" style="margin:0 0 8px">● 납부 · ○ 미납 · 면 면제 · 월 선택 시 해당 월 납부 체크로 이동</div>
     <div class="xwrap"><table class="dtbl"><thead><tr><th>이름</th>${Array.from({length:12},(_,i)=>`<td class="${i+1===M?'cur':''}">${i+1}</td>`).join('')}<td>횟수</td><td>금액</td></tr></thead><tbody>${yRows}</tbody>
