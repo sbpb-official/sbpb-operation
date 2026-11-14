@@ -880,7 +880,7 @@ function pickCandidates(){
   });
   // 이번 대진표 참석자만 후보로 표시 (미참석 회원·게스트는 제외)
   const q=pickF.q.trim();
-  return people.filter(x=>(!q||x.name.includes(q)||(x.nick||'').includes(q))&&(!pickF.g||(pickF.g==='G'?x.guest:x.gender===pickF.g))).sort((a,b)=>a.ord-b.ord||a.name.localeCompare(b.name));
+  return people.filter(x=>(!q||x.name.includes(q)||(x.nick||'').includes(q))&&(!pickF.g||(pickF.g==='G'?x.guest:x.gender===pickF.g))).sort((a,b)=>a.ord-b.ord||a.name.localeCompare(b.name,'ko'));
 }
 function pickListHtml(){const list=pickCandidates();return list.length?list.map(x=>`<button class="pk-item" data-act="pick-person" data-k="${h(x.k)}"><span class="grow"><b>${h(dn(x.name))}</b> <span class="g-${x.gender} small">${x.gender==='M'?'남':'여'}</span>${x.guest?' <span class="chip">게스트</span>':''}</span>${stars(x.level)}<span class="pk-st ${x.cls}">${h(x.st)}</span></button>`).join(''):'<div class="muted small" style="padding:16px;text-align:center">조건에 맞는 인원 없음</div>'}
 function openPicker(r,slot){
@@ -972,7 +972,7 @@ function viewDraw(){
   const pm=pc.filter(p=>p.gender==='M').length,pf=pc.length-pm,pg=pc.filter(p=>p.guest).length;
   const C=cfg.courtList.length,R=roundsOf(cfg),need=C*4;
   const row=p=>`<label><input type="checkbox" data-pick="${h(p.key)}"${picked.has(p.key)?' checked':''}><span class="grow">${h(p.name)}${p.nick?` <span class="muted small">(${h(nk(p.nick))})</span>`:''}${p.guest&&p.inviter?` <span class="muted small">· ${h(memberById(p.inviter)?.name||'')} 초대</span>`:''}</span><span class="g-${p.gender} small">${p.gender==='M'?'남':'여'}</span>${p.lvUnknown?stars(null):stars(p.level)}${p.guest?`<button type="button" class="btn ghost sm" data-act="guest-edit" data-id="${h(p.key)}" aria-label="게스트 수정">수정</button>`:''}</label>`;
-  const mem=plf==='G'?[]:all.filter(p=>!p.guest&&match(p)),gst=plf==='M'?[]:all.filter(p=>p.guest&&match(p)).sort((a,b)=>(b.lastDate||'').localeCompare(a.lastDate||''));
+  const mem=plf==='G'?[]:byName(all.filter(p=>!p.guest&&match(p))),gst=plf==='M'?[]:byName(all.filter(p=>p.guest&&match(p)));
   const plist=all.length?`<div class="plist" data-ks="plist">${mem.length?`<div class="grp">회원 ${mem.length}</div>${mem.map(row).join('')}`:''}${gst.length?`<div class="grp">게스트 ${gst.length}</div>${gst.map(row).join('')}`:''}</div>`:`<div class="empty" style="margin-top:8px">회원 등록 또는 게스트 추가 필요</div>`;
   let needBox;
   if(pc.length<need){const short=need-pc.length;needBox=`<div class="need warn"><b>${short}명 부족.</b> 코트 ${C}면 전체 사용 시 최소 ${need}명 필요. 현재 인원 기준 타임당 ${Math.floor(pc.length/4)}면 사용<div class="row" style="margin-top:6px"><button class="btn sm" data-act="guest-new">신규 게스트 추가</button></div>${recruitBox(short)}</div>`}
