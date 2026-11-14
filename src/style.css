@@ -706,7 +706,8 @@ body.ro [data-act="renew-open"]{display:none!important}
 .modal.pick .m-head{position:static}
 
 /* modal */
-.ov{position:fixed;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100dvh);background:rgba(10,16,24,.5);z-index:20;display:flex;align-items:center;justify-content:center;overflow:hidden;overflow:clip;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.ov{position:fixed;left:0;right:0;top:0;bottom:0;height:auto;   /* full screen, not the area above the keyboard: the keyboard covers the modal instead of shrinking it */
+  background:rgba(10,16,24,.5);z-index:20;display:flex;align-items:center;justify-content:center;overflow:hidden;overflow:clip;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
 .modal{background:var(--surface);border-radius:14px;width:100%;max-width:560px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:100%;overflow-y:auto;overflow-x:hidden;min-width:0;overscroll-behavior:contain;display:flex;flex-direction:column}
 .m-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex:none}
 .modal .m-head h2{margin:0;min-width:0}

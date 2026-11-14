@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=overlays-content">
 <meta name="theme-color" content="#094027">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -727,7 +727,8 @@ body.ro [data-act="renew-open"]{display:none!important}
 .modal.pick .m-head{position:static}
 
 /* modal */
-.ov{position:fixed;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100dvh);background:rgba(10,16,24,.5);z-index:20;display:flex;align-items:center;justify-content:center;overflow:hidden;overflow:clip;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.ov{position:fixed;left:0;right:0;top:0;bottom:0;height:auto;   /* full screen, not the area above the keyboard: the keyboard covers the modal instead of shrinking it */
+  background:rgba(10,16,24,.5);z-index:20;display:flex;align-items:center;justify-content:center;overflow:hidden;overflow:clip;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
 .modal{background:var(--surface);border-radius:14px;width:100%;max-width:560px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:100%;overflow-y:auto;overflow-x:hidden;min-width:0;overscroll-behavior:contain;display:flex;flex-direction:column}
 .m-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex:none}
 .modal .m-head h2{margin:0;min-width:0}
@@ -925,7 +926,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=df06bb1f52';
+const CUR_APP = 'app.js?v=c8e94cddb9';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -953,7 +954,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=df06bb1f52';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=c8e94cddb9';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();

@@ -5,7 +5,7 @@ const SKEL='<!doctype html><html><head><meta charset=utf8><meta name=viewport co
 document.body.insertAdjacentHTML('afterbegin',SHELL);
 (function(){if(!/iPhone|iPad|iPod/.test(navigator.userAgent)&&!(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))return;
   let m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.name='viewport';document.head.appendChild(m)}
-  m.setAttribute('content','width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover')})();
+  m.setAttribute('content','width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,interactive-widget=overlays-content')})();
 (function(){try{const t=localStorage.getItem('sbpb-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}})();
 (function(){const r=document.documentElement;function sync(){const v=window.visualViewport;if(!v)return;r.style.setProperty('--vvh',v.height+'px');r.style.setProperty('--vvt',v.offsetTop+'px')}
   if(window.visualViewport){visualViewport.addEventListener('resize',sync);visualViewport.addEventListener('scroll',sync)}sync()})();
