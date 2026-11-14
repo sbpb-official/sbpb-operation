@@ -666,6 +666,8 @@ function generate(){
       s+=Math.abs(P[a[0]].level+P[a[1]].level-P[b[0]].level-P[b[1]].level)*4;
       if(cfg.mode==='tier'){const ls=g4.map(k=>P[k].level);s+=(Math.max(...ls)-Math.min(...ls))*3}
       if(type==='잡복')s+=8;
+      // 게스트끼리 한 팀(파트너)은 되도록 피함 (불가피하면 허용)
+      for(const t of [a,b])if(P[t[0]].guest&&P[t[1]].guest)s+=15;
       return s;
     };
     const bestPair=(g4,kind)=>{
@@ -817,6 +819,7 @@ function logicHtml(){
     ['코트 배정',courtTxt],
     ['레벨 균형','양 팀 레벨 합 차이가 가장 작은 조합 선택, 레벨 모름 게스트는 중간 레벨 적용'],
     ['파트너·상대 다양화','같은 파트너 재편성 회피, 같은 상대와의 반복 대결 최소화'],
+    ['게스트 분산','게스트끼리 같은 팀 편성 지양, 회원과 짝을 지어 편성 (인원 구성상 불가피할 때만 허용)'],
     ['운영 시간',`첫 게임 ${h(cfg.start)} 시작, ${mins}분 단위·휴식 없음, ${fromMin(st+R*mins)}까지 총 ${R}타임`],
     ['편성 방식',`${MODES[cfg.mode]} · ${MODE_DESC[cfg.mode]}`]
   ];
