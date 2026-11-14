@@ -265,10 +265,11 @@ async function runMigrations(){
   const F3='mig-court-ts';
   const F4='mig-court-addr';
   const F5='mig-court-boramae-mmove';
-  const F6='mig-court-boramae-addr';                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
+  const F6='mig-court-boramae-addr';
+  const F7='mig-court-ts-link';                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
   const TS_MEMO='예약 링크는 네이버 지도 · 9호선 둔촌오륜역 1번 출구 도보 약 860m\n대관료 (개장 당시): 평일 야간·주말 주간 35,000원 · 주말 야간 40,000원\n※ 현재 요금·예약 오픈 방식은 네이버 지도 업체 정보로 확인 필요';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
   const has=id=>S.dues.find(d=>d.id===id);
-  if(has(F)&&has(F2)&&has(F3)&&has(F4)&&has(F5)&&has(F6))return;
+  if(has(F)&&has(F2)&&has(F3)&&has(F4)&&has(F5)&&has(F6)&&has(F7))return;
   migBusy=true;
   try{if(!has(F)){const targets=S.members.filter(m=>isCur(m)&&!m.sample);
     for(const m of targets)if(m.joined!=='2026-01-01')await put('members',m.id,{...m,joined:'2026-01-01'});
@@ -304,7 +305,13 @@ async function runMigrations(){
     toast('코트 정보 반영 완료 · '+done.join(', '))}
   if(!has(F6)){const bm=S.courts.filter(c=>/보라매/.test(c.name||'')&&!c.address);
     for(const c of bm)await put('courts',c.id,{...c,address:'서울 동작구 여의대방로20길 33'});
-    await put('dues',F6,{done:true,count:bm.length,at:Date.now()})}}
+    await put('dues',F6,{done:true,count:bm.length,at:Date.now()})}
+  if(!has(F7)){let n=0;const TS='https://naver.me/xKy8BCdY';
+    const clean=s=>String(s||'').split('\n').map(l=>l.replace(/\(?\s*고비용\s*\)?/g,'').replace(/\(?\s*엠무브는\s*엠무브\s*사이트\s*\)?/g,'').trim()).filter(Boolean).join('\n');
+    for(const c of S.courts){const isTS=/^\s*TS\b|TS\s*SPORT|TS\s*스포츠|TS\s*테니스/i.test(c.name||'');
+      const next={...c,fee:clean(c.fee),memo:clean(c.memo)};if(isTS){if(!next.url)next.url=TS;if(!next.map)next.map=TS;if(!next.address)next.address='경기 하남시 서하남로 9-16'}
+      if(JSON.stringify(next)!==JSON.stringify(c)){await put('courts',c.id,next);n++}}
+    await put('dues',F7,{done:true,count:n,at:Date.now()})}}
   catch(e){}
   migBusy=false;
 }
@@ -1227,7 +1234,7 @@ const KINDS=[['public','공공 코트'],['private','사설 코트']];
 const kindOf=c=>c.kind||(c.platform==='smash'||c.platform==='naver'?'private':'public');
 const platOf=c=>PLATFORMS.find(p=>p.k===c.platform)||PLATFORMS[PLATFORMS.length-1];
 const mapUrl=q=>'https://map.naver.com/p/search/'+encodeURIComponent(q);
-const addrLink=(addr,name,map)=>`<a class="addr" href="${h(map||mapUrl(addr||name||''))}" target="_blank" rel="noopener">${addr?h(addr):'도로명주소 미입력 · 이름으로 검색'} <span aria-hidden="true">↗</span></a>`;
+const addrLink=(addr,name,map)=>`<a class="addr" href="${h(map||mapUrl(addr||name||''))}" target="_blank" rel="noopener">${addr?h(addr):'지도에서 위치 보기'} <span aria-hidden="true">↗</span></a>`;
 const MMOVE='https://mmove.co.kr/bbs/page.php?hid=m02_01';
 const courtUrl=c=>c.url||(/엠무브|mmove/i.test(c.name||'')?MMOVE:platOf(c).url);
 let courtArea='';
@@ -1247,7 +1254,7 @@ function viewCourts(){
       const dd=diffDays(ymd(d));return `<div class="open-box${dd<=1?' soon':''}"><div class="l">${l}</div><div class="big"><span class="dday">${ddayLabel(ymd(d))}</span><b>${fd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}</b></div><div class="d">${h(ruleText(rule))}</div></div>`};
     return `<article class="ccard"><div class="hd"><div><h3>${h(c.name)}</h3><div class="small muted">${h([c.district,c.courts,c.surface,[c.indoor&&'실내',c.outdoor&&'실외'].filter(Boolean).join('·')].filter(Boolean).join(' · '))}</div>${addrLink(c.address,c.name,c.map)}</div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
     ${c.genRule&&c.genRule.type?`<div class="opens">${c.resident?ob('주민 우선 오픈',r,c.resRule):''}${ob('일반 오픈',g,c.genRule)}</div>`:''}
-    <dl class="kv">${c.fee?`<dt>요금</dt><dd>${h(c.fee)}</dd>`:''}${c.memo?`<dt>메모</dt><dd style="white-space:pre-wrap">${h(c.memo)}</dd>`:''}</dl>
+    <dl class="kv"><dt>요금</dt><dd>${c.fee?h(c.fee):'-'}</dd>${c.memo?`<dt>메모</dt><dd style="white-space:pre-wrap">${h(c.memo)}</dd>`:''}</dl>
     ${c.resident?`<div class="prio"><div class="l">우선 예약 가능 회원 · ${h(c.area||c.district)}${c.workers?' 거주·직장':' 거주'} 기준 ${pm.length}명</div><div class="chips">${pm.length?pm.map(({m,why})=>`<span class="chip ${why==='거주'?'court':''}">${h(m.name)}${why==='직장'?' (직장)':''}</span>`).join(''):'<span class="small muted">해당 지역 회원 없음</span>'}</div></div>`:''}
     ${courtUrl(c)?`<a class="btn pri" href="${h(courtUrl(c))}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">예약 페이지 열기 ↗</a>`:''}
     </article>`};
