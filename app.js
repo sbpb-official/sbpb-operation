@@ -9,7 +9,11 @@ document.body.insertAdjacentHTML('afterbegin',SHELL);
 (function(){try{const t=localStorage.getItem('sbpb-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}})();
 (function(){const r=document.documentElement;function sync(){const v=window.visualViewport;if(!v)return;r.style.setProperty('--vvh',v.height+'px');r.style.setProperty('--vvt',v.offsetTop+'px')}
   if(window.visualViewport){visualViewport.addEventListener('resize',sync);visualViewport.addEventListener('scroll',sync)}sync()})();
-const WEB=!!window.SBPB_WEB;   // standalone web app (Firebase) — window.SBPB_WEB is set by index.html
+const WEB=!!window.SBPB_WEB;
+// show what broke instead of a blank page (send a screenshot of this box)
+function showFatal(msg){try{const v=document.getElementById('view');const box=`<div class="banner" style="border-color:var(--bad);white-space:pre-wrap;word-break:break-all"><b>화면 오류</b> · 이 화면을 캡처해서 보내 주세요<br>${String(msg).replace(/[<>&]/g,'')}<br><button class="btn sm" onclick="location.reload()">새로고침</button></div>`;if(v&&!v.querySelector('.fatal')){v.insertAdjacentHTML('afterbegin','<div class="fatal">'+box+'</div>')}}catch(e){}}
+window.addEventListener('error',e=>showFatal((e.message||'오류')+(e.filename?' @'+e.filename.split('/').pop()+':'+e.lineno:'')));
+window.addEventListener('unhandledrejection',e=>showFatal('비동기 오류: '+((e.reason&&(e.reason.message||e.reason.code))||e.reason)));   // standalone web app (Firebase) — window.SBPB_WEB is set by index.html
 let PUB={};try{PUB=window.SBPB_PUB||JSON.parse(document.getElementById('sbpb-pub').textContent||'{}')}catch(e){PUB={}}
 // publish the encrypted public snapshot: web → Firestore doc, artifact → republish the page
 async function savePub(pub){if(WEB){await window.SBPB_WEB.savePub(pub);PUB=pub;setConn();render();return}return art.publish(buildPage(pub))}
@@ -269,7 +273,7 @@ function render(){
   else if(mode==='local')banner=`<div class="banner">공유 저장소 미연결 상태. 이 브라우저에만 저장됨</div>`;
   else if(slow)banner=`<div class="banner">저장소 응답 지연. 표시 내용이 최신이 아닐 수 있음</div>`;
   const ks={};v.querySelectorAll('[data-ks]').forEach(el=>ks[el.dataset.ks]=el.scrollTop);const wy=window.scrollY;
-  v.innerHTML=banner+VIEWS[route]();
+  try{v.innerHTML=banner+VIEWS[route]()}catch(err){v.innerHTML=banner;showFatal('화면 그리기 실패('+route+'): '+(err&&err.message)+'\n'+((err&&err.stack)||'').split('\n').slice(0,3).join('\n'));return}
   v.querySelectorAll('[data-ks]').forEach(el=>{if(ks[el.dataset.ks])el.scrollTop=ks[el.dataset.ks]});if(Math.abs(window.scrollY-wy)>1)window.scrollTo(0,wy);
   if(keep){const el=document.getElementById(keep.id);if(el){if(keep.val!==undefined)el.value=keep.val;el.focus({preventScroll:true});try{if(keep.s!=null)el.setSelectionRange(keep.s,keep.e)}catch(e){}}}
   if(typeof cz!=='undefined'&&cz!==1)v.style.zoom=String(cz);
@@ -1520,7 +1524,7 @@ function showWebGate(msg){document.body.classList.add('locked');$('#gate').hidde
   $('#gate-err').textContent=msg||'';$('#gate-pw').value='';setTimeout(()=>$('#gate-pw').focus(),50)}
 // sign-in lasts for the day it was made: a new date asks for the password again
 const loginDay=()=>{try{return localStorage.getItem('sbpb-login-day')||''}catch(e){return ''}};
-async function webGate(){let st={u:null,ok:false};try{st=await window.SBPB_WEB.state()}catch(e){}
+async function webGate(){let st={u:null,ok:false};try{st=await Promise.race([window.SBPB_WEB.state(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),9000))])}catch(e){showWebGate(e&&e.message==='timeout'?'로그인 확인 지연. 비밀번호 다시 입력 필요':'');return}
   if(st.ok&&loginDay()!==ymd(new Date())){try{await window.SBPB_WEB.logout()}catch(e){}showWebGate('하루 1회 비밀번호 재입력 필요');return}
   if(!st.ok){showWebGate(st.u?'이 계정은 운영진으로 등록되어 있지 않음':'');return}
   document.body.classList.remove('locked');$('#gate').hidden=true;render();if(!started){started=true;boot()}}
