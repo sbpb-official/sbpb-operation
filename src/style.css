@@ -3,7 +3,7 @@
   --bg:#F2F2F0; --surface:#FAFAF9; --surface-2:#EAEAE7; --ink:#252826; --muted:#6B6F6C; --line:#DDDDD9;
   --court:#1D5A3B; --court-soft:#E6E8E5; --on-court:#F7F7F4; --ball:#C9D94F; --ball-ink:#1E2A06;
   --ok:#2B8A3E; --warn:#B86E00; --bad:#C92A2A;
-  --t-reg:#1D5A3B; --t-tour:#F76707; --t-ex:#1C7ED6; --t-mt:#7048E8; --t-etc:#868E96; --t-ind:#0CA678; --t-bd:#E64980; --star:#F59F00; --male:#6F93C0; --female:#D7939B; --bar:#8CB79A;
+  --t-reg:#1D5A3B; --t-tour:#F76707; --t-ex:#1C7ED6; --t-mt:#7048E8; --t-etc:#868E96; --t-ind:#0CA678; --t-bd:#E64980; --star:#F59F00; --male:#6F93C0; --female:#D7939B; --bar:#8CB79A; --sf-grass:#2F9E44; --sf-hard:#1971C2; --sf-clay:#D9480F;
   --logic-bg:#F1F7EE; --logic-line:#D5E6CD;
   --n-yellow:#FFE68C; --n-pink:#FFC6D3; --n-sky:#C3E3FF; --n-green:#D4EFB0; --note-ink:#2B2A26;
   --brand:#094027; --brand-2:#0F4E31; --brand-ink:#F6F1DF; --brand-muted:#A9C2B0;
@@ -17,7 +17,7 @@
   --bg:#1B1D1C; --surface:#232625; --surface-2:#2C2F2E; --ink:#E4E6E3; --muted:#9A9E9B; --line:#373B39;
   --court:#86C49D; --court-soft:#303332; --on-court:#161817; --ball:#D3E35E; --ball-ink:#1E2A06;
   --ok:#69C47C; --warn:#E6A53C; --bad:#F06C6C;
-  --t-reg:#86C49D; --t-tour:#FF922B; --t-ex:#4DABF7; --t-mt:#9775FA; --t-etc:#ADB5BD; --t-ind:#38D9A9; --t-bd:#F783AC; --star:#FFC53D; --male:#94B4DC; --female:#E8AAB1; --bar:#7FAE8E;
+  --t-reg:#86C49D; --t-tour:#FF922B; --t-ex:#4DABF7; --t-mt:#9775FA; --t-etc:#ADB5BD; --t-ind:#38D9A9; --t-bd:#F783AC; --star:#FFC53D; --male:#94B4DC; --female:#E8AAB1; --bar:#7FAE8E; --sf-grass:#69DB7C; --sf-hard:#74C0FC; --sf-clay:#FF8A4C;
   --logic-bg:#1D2A22; --logic-line:#2D4636;
   color-scheme:dark;
 }}
@@ -25,7 +25,7 @@
   --bg:#1B1D1C; --surface:#232625; --surface-2:#2C2F2E; --ink:#E4E6E3; --muted:#9A9E9B; --line:#373B39;
   --court:#86C49D; --court-soft:#303332; --on-court:#161817; --ball:#D3E35E; --ball-ink:#1E2A06;
   --ok:#69C47C; --warn:#E6A53C; --bad:#F06C6C;
-  --t-reg:#86C49D; --t-tour:#FF922B; --t-ex:#4DABF7; --t-mt:#9775FA; --t-etc:#ADB5BD; --t-ind:#38D9A9; --t-bd:#F783AC; --star:#FFC53D; --male:#94B4DC; --female:#E8AAB1; --bar:#7FAE8E;
+  --t-reg:#86C49D; --t-tour:#FF922B; --t-ex:#4DABF7; --t-mt:#9775FA; --t-etc:#ADB5BD; --t-ind:#38D9A9; --t-bd:#F783AC; --star:#FFC53D; --male:#94B4DC; --female:#E8AAB1; --bar:#7FAE8E; --sf-grass:#69DB7C; --sf-hard:#74C0FC; --sf-clay:#FF8A4C;
   --logic-bg:#1D2A22; --logic-line:#2D4636;
   color-scheme:dark;
 }
@@ -323,6 +323,14 @@ table.tbl.mt{table-layout:fixed;min-width:980px}
 .ccard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .ccard .hd{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .ccard .hd h3{font-size:17px}
+/* court badges: 바닥은 재질 색 (잔디 초록 · 하드 파랑 · 클레이 주황), 나머지는 키컬러 계열 */
+.cbadges{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:6px}
+.cb{--bc:var(--court);display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;color:var(--bc);background:color-mix(in srgb,var(--bc) 13%,var(--surface));border:1px solid color-mix(in srgb,var(--bc) 35%,transparent)}
+.cb-area{background:var(--court);color:var(--on-court);border-color:var(--court)}
+.cb-grass{--bc:var(--sf-grass)}.cb-hard{--bc:var(--sf-hard)}.cb-clay{--bc:var(--sf-clay)}
+.cb-io{background:transparent}
+.cb-etc{--bc:var(--muted)}
+.cb-n{font-size:12px;font-weight:600;color:var(--muted);margin-left:2px}
 a.addr{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:13px;color:var(--court);text-decoration:underline;text-underline-offset:2px;word-break:keep-all}
 .kv{display:grid;grid-template-columns:76px 1fr;gap:4px 10px;font-size:13px}
 .kv dt{color:var(--muted)}
