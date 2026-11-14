@@ -744,6 +744,8 @@ body.ro [data-act="renew-open"]{display:none!important}
 .dfield .dbtn,.wfield .pickbtn{display:flex;align-items:center;justify-content:space-between;width:100%}
 .dcell .dbtn{border:0;border-radius:0;white-space:nowrap}
 
+.f[hidden]{display:none!important}
+
 /* modal */
 .ov{position:fixed;left:0;right:0;top:0;bottom:0;height:auto;   /* full screen, not the area above the keyboard: the keyboard covers the modal instead of shrinking it */
   background:rgba(10,16,24,.5);z-index:20;display:flex;align-items:center;justify-content:center;overflow:hidden;overflow:clip;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
@@ -944,7 +946,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=dfc03eda40';
+const CUR_APP = 'app.js?v=ea84397629';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -972,7 +974,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=dfc03eda40';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=ea84397629';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();

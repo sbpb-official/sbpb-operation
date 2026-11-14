@@ -139,11 +139,22 @@ function wheelText(v,kind){if(!v)return '';const [y,m,d]=v.split('-').map(Number
 function wheelField(val,name,kind,title){return `<div class="wfield"><input type="hidden" name="${name}" value="${h(val||'')}"><button type="button" class="in pickbtn${val?'':' ph'}" data-act="wheel-open" data-kind="${kind}" data-title="${h(title)}">${val?wheelText(val,kind):'선택'}<span class="lv-caret" aria-hidden="true">▾</span></button></div>`}
 ACT['wheel-open']=t=>{const wrap=t.closest('.wfield');const inp=wrap.querySelector('input');const kind=t.dataset.kind;const ty=today0().getFullYear();
   const cur=inp.value?inp.value.split('-').map(Number):[ty,today0().getMonth()+1,today0().getDate()];
-  const top=kind==='ym'?ty:ty+1,bottom=kind==='ym'?1970:2015;const years=[];for(let y=top;y>=bottom;y--)years.push({v:y,l:y+'년'});
+  const top=kind==='ym'&&t.dataset.title!=='회비 시작 월'?ty:ty+1,bottom=kind==='ym'?1970:2015;const years=[];for(let y=top;y>=bottom;y--)years.push({v:y,l:y+'년'});
   const months=Array.from({length:12},(_,i)=>({v:i+1,l:(i+1)+'월'}));const days=(y,m)=>Array.from({length:birthDays(y,m)},(_,i)=>({v:i+1,l:(i+1)+'일'}));
   const cols=[{items:years,index:Math.max(0,top-cur[0]),flex:1.3},{items:months,index:(cur[1]||1)-1}];if(kind==='ymd')cols.push({items:days(cur[0],cur[1]||1),index:(cur[2]||1)-1});
   openWheel(t.dataset.title,cols,vals=>{const v=kind==='ym'?`${vals[0]}-${pad(vals[1])}`:`${vals[0]}-${pad(vals[1])}-${pad(vals[2])}`;inp.value=v;t.classList.remove('ph');t.innerHTML=wheelText(v,kind)+'<span class="lv-caret" aria-hidden="true">▾</span>'},
     kind==='ymd'?(ov,i)=>{if(i===2)return;const st=ov._st;const y=st.cols[0].items[st.cols[0].index].v,m=st.cols[1].items[st.cols[1].index].v;const n=birthDays(y,m);if(st.cols[2].items.length!==n)fillCol(ov,2,days(y,m),Math.min(st.cols[2].index,n-1))}:undefined)};
+
+
+/* time: wheel (시 · 10분 단위) */
+function timeField(val,{name='',id='',extra='',title='시각'}={}){return `<div class="wfield tfield"><input type="hidden"${name?` name="${name}"`:''}${id?` id="${id}"`:''} ${extra} value="${h(val||'')}"><button type="button" class="in pickbtn${val?'':' ph'}" data-act="time-open" data-title="${h(title)}">${val?h(val):'선택'}<span class="lv-caret" aria-hidden="true">▾</span></button></div>`}
+ACT['time-open']=t=>{const inp=t.closest('.tfield').querySelector('input');const [hh,mm]=(inp.value||'10:00').split(':').map(Number);
+  const hours=Array.from({length:24},(_,i)=>({v:i,l:pad(i)+'시'}));const ms=[0,10,20,30,40,50];if(!ms.includes(mm||0))ms.push(mm);ms.sort((x,y)=>x-y);const mins=ms.map(m=>({v:m,l:pad(m)+'분'}));
+  openWheel(t.dataset.title,[{items:hours,index:hh||0},{items:mins,index:ms.indexOf(mm||0)}],vals=>{const v=`${pad(vals[0])}:${pad(vals[1])}`;inp.value=v;t.classList.remove('ph');t.innerHTML=h(v)+'<span class="lv-caret" aria-hidden="true">▾</span>';
+    inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}))})};
+/* court rule: 방식에 따라 일/요일 입력 또는 달력 */
+document.addEventListener('change',e=>{const s=e.target;if(!s.matches||!s.matches('select[name$="type"]'))return;const g=s.closest('.grid3');if(!g||!g.querySelector('.rv-date'))return;
+  const man=s.value==='manual';g.querySelector('.rv-text').hidden=man;g.querySelector('.rv-date').hidden=!man});
 
 /* area: wheel with "직접 입력" */
 const AREA_ITEMS=()=>[{v:'',l:'선택 안 함'},...SEOUL.map(a=>({v:a,l:'서울 '+a})),...NEAR.map(a=>({v:a,l:'경기 '+a})),{v:'__custom',l:'직접 입력'}];
@@ -188,7 +199,7 @@ const mkOn=ds=>S.regstat.find(r=>isCourtCx(r)&&r.mkDate===ds&&!r.mkUnused);
 const MK_CLS={'미정':'st-plan','예정':'st-plan','사용':'st-used','미사용':'st-del'};
 function mkInfo(rs){if(!isCourtCx(rs))return '';const st=mkState(rs);
   return `<div class="mk-info">대체일 ${rs.mkDate?`<b>${fmtD(rs.mkDate)} ${h(rs.mkStart||REG.start)}–${h(rs.mkEnd||REG.end)}</b>`:'미정'} <span class="st ${MK_CLS[st]}">${st==='미정'?'지정 전':st==='미사용'?'미사용 · 비용 없음':st}</span></div>`}
-function mkFields(rs){return `<div class="grid3"><label class="f">대체일${calField(rs.mkDate,{name:'mkDate'})}</label><label class="f">시작<input class="in" type="time" name="mkStart" value="${h(rs.mkStart||REG.start)}"></label><label class="f">종료<input class="in" type="time" name="mkEnd" value="${h(rs.mkEnd||REG.end)}"></label></div>`}
+function mkFields(rs){return `<div class="grid3"><label class="f">대체일${calField(rs.mkDate,{name:'mkDate'})}</label><label class="f">시작${timeField(rs.mkStart||REG.start,{name:'mkStart',title:'대체일 시작'})}</label><label class="f">종료${timeField(rs.mkEnd||REG.end,{name:'mkEnd',title:'대체일 종료'})}</label></div>`}
 let db=null,userCap=null,myId=null,dl=null,mode='connecting',slow=false,RO=false,art=null,snapKey=null;
 const loaded=new Set();
 const names={};
@@ -904,7 +915,7 @@ function viewDraw(){
     <div style="display:flex;flex-direction:column;gap:10px">
     <label class="f">제목<input class="in" id="c-title" data-cfg="title" value="${h(cfg.title)}"></label>
     <div class="grid2"><label class="f">날짜${calField(cfg.date,{id:'c-date',extra:'data-cfg="date"'})}</label><label class="f">장소<input class="in" id="c-place" data-cfg="place" list="courtlist" value="${h(cfg.place)}"></label></div>
-    <div class="grid3"><label class="f">첫 게임<input class="in" type="time" id="c-start" data-cfg="start" value="${h(cfg.start)}"></label><label class="f">게임(분)<input class="in" type="number" min="10" max="120" step="5" id="c-mins" data-cfg="mins" value="${h(cfg.mins)}"></label><label class="f">종료<input class="in" type="time" id="c-end" data-cfg="end" value="${h(cfg.end)}"></label></div>
+    <div class="grid3"><label class="f">첫 게임${timeField(cfg.start,{id:'c-start',extra:'data-cfg="start"',title:'첫 게임 시각'})}</label><label class="f">게임(분)<input class="in" type="number" min="10" max="120" step="5" id="c-mins" data-cfg="mins" value="${h(cfg.mins)}"></label><label class="f">종료${timeField(cfg.end,{id:'c-end',extra:'data-cfg="end"',title:'종료 시각'})}</label></div>
     <div class="small muted" id="c-rinfo">${toMin(cfg.end)>toMin(cfg.start)?`총 ${R}타임 · 쉬는 시간 없음`:'종료 시각은 첫 게임 이후로 입력 필요'}</div>
     <div><div class="row" style="justify-content:space-between"><span class="small muted" style="font-weight:600">코트 ${C}면</span><div class="row"><button class="btn sm" data-act="court-n" data-v="-1" aria-label="코트 줄이기"${C<=1?' disabled':''}>−</button><button class="btn sm" data-act="court-n" data-v="1" aria-label="코트 늘리기"${C>=6?' disabled':''}>+</button></div></div>
       <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">${cfg.courtList.map((c,i)=>`<div class="courtrow"><input class="in" id="cn-${i}" data-court="${i}" data-k="name" value="${h(c.name)}" aria-label="코트 ${i+1} 이름"><select class="in" id="cp-${i}" data-court="${i}" data-k="pref" aria-label="코트 ${i+1} 배정">${Object.entries(PREF).map(([k,v])=>`<option value="${k}"${c.pref===k?' selected':''}>${v}</option>`).join('')}</select></div>`).join('')}</div></div>
@@ -1129,12 +1140,13 @@ document.addEventListener('input',e=>{if(e.target.dataset.notedraft)lsSet('sbpb-
    ========================================================= */
 function ruleFields(prefix,r={}){
   return `<div class="grid3"><label class="f">방식<select class="in" name="${prefix}type"><option value="monthly"${r.type!=='weekly'&&r.type!=='manual'?' selected':''}>매월 특정일</option><option value="weekly"${r.type==='weekly'?' selected':''}>매주 특정 요일</option><option value="rolling"${r.type==='rolling'?' selected':''}>이용일 N일 전</option><option value="manual"${r.type==='manual'?' selected':''}>날짜 직접</option></select></label>
-  <label class="f">일 / 요일 / 날짜<input class="in" name="${prefix}val" value="${h(r.type==='weekly'?WD[r.weekday||0]:r.type==='manual'?(r.date||''):r.type==='rolling'?(r.days||''):String(r.day||'').replace(/\bL\b/,'말일'))}" placeholder="10,25 · 말일 · 30 · 월"></label>
-  <label class="f">시각<input class="in" type="time" name="${prefix}time" value="${h(r.time||'10:00')}"></label></div>`;
+  <label class="f rv-text"${r.type==='manual'?' hidden':''}>일 / 요일<input class="in" name="${prefix}val" value="${h(r.type==='weekly'?WD[r.weekday||0]:r.type==='manual'?'':r.type==='rolling'?(r.days||''):String(r.day||'').replace(/\bL\b/,'말일'))}" placeholder="10,25 · 말일 · 30 · 월"></label>
+  <div class="f rv-date"${r.type==='manual'?'':' hidden'}>날짜${calField(r.type==='manual'?r.date:'',{name:prefix+'date'})}</div>
+  <label class="f">시각${timeField(r.time||'10:00',{name:prefix+'time',title:'오픈 시각'})}</label></div>`;
 }
 function ruleFrom(fd,p){const type=fd[p+'type'],v=(fd[p+'val']||'').trim(),time=fd[p+'time']||'00:00';
   if(type==='weekly'){const i=WD.indexOf(v.replace('요일',''));return {type,weekday:i<0?1:i,time}}
-  if(type==='manual')return {type,date:/^\d{4}-\d{2}-\d{2}$/.test(v)?v:'',time};
+  if(type==='manual'){const d=fd[p+'date']||v;return {type,date:/^\d{4}-\d{2}-\d{2}$/.test(d)?d:'',time}}
   if(type==='rolling'){const n=parseInt(v);return {type,days:n>0?n:30,time:fd[p+'time']||''}}
   const parts=v.split(/[,·\s]+/).filter(Boolean);const ds=parts.filter(x=>!/말/.test(x)).map(n=>parseInt(n)).filter(n=>n>=1&&n<=31);const last=parts.some(x=>/말/.test(x));
   const list=[...new Set(ds)].sort((a,b)=>a-b).map(String);if(last)list.push('L');return {type:'monthly',day:(list.length?list:['1']).join(','),time}}
@@ -1347,7 +1359,7 @@ ACT['mon-step']=t=>{let m=monM+(+t.dataset.v);if(m<1){m=12;monY--}if(m>12){m=1;m
 ACT['due-set']=async t=>{const {id,y,m,v}=t.dataset;const did=`${y}-${id}`;const cur=S.dues.find(d=>d.id===did);const mm={...((cur&&cur.m)||{})};if(v)mm[m]=v;else delete mm[m];
   t.closest('.seg').querySelectorAll('button').forEach(b=>{const on=b===t;b.className=on?'on '+(b.dataset.v||'none'):'';b.setAttribute('aria-pressed',String(on))});
   try{await put('dues',did,{year:+y,memberId:id,m:mm})}catch(e){render()}};
-ACT['due-cfg']=()=>{const c=duesCfg();openModal('회비 설정',`<div class="grid2"><label class="f">월 회비 (원)<input class="in" inputmode="numeric" data-comma="1" name="fee" value="${h(Number(c.fee||0).toLocaleString('ko-KR'))}" required></label><label class="f">회비 시작 월<input class="in" type="month" name="start" value="${h(c.start)}"></label></div><p class="small muted" style="margin:0">시작 월 이전은 납부 대상에서 제외. 휴면·개인 사정 등은 회원별 '면제'로 처리</p>`,fd=>put('dues','cfg',{fee:numOf(fd.fee),start:fd.start||''}))};
+ACT['due-cfg']=()=>{const c=duesCfg();openModal('회비 설정',`<div class="grid2"><label class="f">월 회비 (원)<input class="in" inputmode="numeric" data-comma="1" name="fee" value="${h(Number(c.fee||0).toLocaleString('ko-KR'))}" required></label><label class="f">회비 시작 월${wheelField(c.start,'start','ym','회비 시작 월')}</label></div><p class="small muted" style="margin:0">시작 월 이전은 납부 대상에서 제외. 휴면·개인 사정 등은 회원별 '면제'로 처리</p>`,fd=>put('dues','cfg',{fee:numOf(fd.fee),start:fd.start||''}))};
 function dueText(){const Y=monY,M=monM;const fee=Number(duesCfg().fee)||0;const un=duesPeople(Y).filter(m=>isCur(m)&&dueState(m,Y,M)==='none');
   return `[SBPB ${M}월 회비 안내]\n${M}월 회비 ${won(fee)} 미납 확인 부탁드립니다 🙏\n${un.map(m=>m.name).join(', ')}`}
 document.addEventListener('toggle',e=>{if(e.target.id==='due-pv')lsSet('sbpb-due-pv',e.target.open)},true);
