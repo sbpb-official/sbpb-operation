@@ -129,7 +129,7 @@ ACT['area-pick']=t=>{const wrap=t.closest('.areaf');const btn=wrap.querySelector
 /* ---------- store ---------- */
 const COLS=['members','events','notes','courts','brackets','guests','regstat','rentals','dues','ledger'];
 const S={members:[],events:[],notes:[],courts:[],brackets:[],guests:[],regstat:[],rentals:[],dues:[],ledger:[]};
-const CANCEL_REASONS=['우천 취소','코트 측 취소','인원 부족','행사 대체','기타'];
+const CANCEL_REASONS=['우천 취소','코트 측 취소','행사 대체','기타'];
 const regStat=ds=>S.regstat.find(x=>x.id===ds);
 const COURT_CX='코트 측 취소';
 const isCourtCx=rs=>!!rs&&rs.status==='취소'&&rs.reason===COURT_CX;
@@ -251,7 +251,7 @@ function priorityMembers(c){
 /* ---------- render core ---------- */
 let route='home';
 function render(){
-  S.events.forEach(e=>{if(e.result==='예선 탈락')e.result='예선'});
+  S.events.forEach(e=>{if(e.result==='예선 탈락')e.result='예선';if(e.cancelReason==='인원 부족')e.cancelReason='기타'});S.regstat.forEach(r=>{if(r.reason==='인원 부족')r.reason='기타'});
   const v=$('#view');const ae=document.activeElement;let keep=null;
   if(ae&&ae.id&&v.contains(ae)){let s=null,e2=null;try{s=ae.selectionStart;e2=ae.selectionEnd}catch(err){}keep={id:ae.id,s,e:e2,top:ae.scrollTop,val:ae.dataset&&ae.dataset.led?ae.value:undefined}}
   const r=(location.hash||'#home').slice(1);route=VIEWS[r]?r:'home';
@@ -1259,7 +1259,7 @@ function viewMoney(){
   const r=rentalInfo();const rfee=Number(r.fee)||0;const by=billYear(Y);
   const quarter=`<section class="panel" style="margin-top:16px"><div class="panel-h"><div><h2>정기대관 코트 정산</h2><div class="small muted">${h(r.name)} · 분기별 청구${rfee?` · 회당 ${won(rfee)}`:' · 회당 대관료는 코트 탭 대관 정보에서 입력'}</div></div><a href="#courts">코트 탭</a></div>
     <div class="xwrap"><table class="tbl ytbl"><thead><tr><th>분기</th><th>청구 회차</th><th>차감 (대체일 미사용)</th><th>대기 (예정·대체일 미정)</th><th>청구 금액</th><th>예상 금액</th><th>납부</th></tr></thead><tbody>${[0,1,2,3].map(q=>{const ms=by.slice(q*3,q*3+3);const t=k=>ms.reduce((n,o)=>n+o[k],0);return `<tr><td>${q+1}분기 <span class="muted small">${q*3+1}–${q*3+3}월</span></td><td class="num">${t('charge')}</td><td class="num${t('deduct')?'':' muted'}">${t('deduct')||'–'}</td><td class="num${t('pending')?'':' muted'}">${t('pending')||'–'}</td><td class="num">${rfee?won(t('charge')*rfee):'–'}</td><td class="num muted">${rfee?won((t('charge')+t('pending'))*rfee):'–'}</td><td>${(()=>{const pd=S.ledger.find(x=>x.rentQ===`${Y}-${q+1}`);if(pd)return `<span class="chip ok">납부 ${won(pd.amount)}</span>`;const amt=t('charge')*rfee;return RO||!amt?'<span class="muted small">–</span>':`<button class="btn sm" data-act="rent-pay" data-y="${Y}" data-q="${q+1}" data-amt="${amt}">납부 기록</button>`})()}</td></tr>`}).join('')}</tbody></table></div>
-    <p class="small muted" style="margin:8px 0 0;line-height:1.6">청구: 사용 · 우천 취소 · 클럽 사정 취소(인원 부족·행사 대체·기타) · 미진행 · 코트 측 취소 후 대체일 사용. 차감: 코트 측 취소 후 대체일 미사용(비용 없음). 대기: 예정 회차 및 대체일 미정·예정 회차</p></section>`;
+    <p class="small muted" style="margin:8px 0 0;line-height:1.6">청구: 사용 · 우천 취소 · 클럽 사정 취소(행사 대체·기타) · 미진행 · 코트 측 취소 후 대체일 사용. 차감: 코트 측 취소 후 대체일 미사용(비용 없음). 대기: 예정 회차 및 대체일 미정·예정 회차</p></section>`;
   return `<div class="page-head"><div><h1>정산</h1><p>월 회비 납부 · 행사 비용 · 정기대관 분기 정산</p></div><div class="row"><button class="btn sm" data-act="mon-y" data-v="-1" aria-label="이전 해">‹</button><b class="num" style="font-size:16px">${Y}년</b><button class="btn sm" data-act="mon-y" data-v="1" aria-label="다음 해">›</button></div></div>
   ${bankHtml(Y)}${dues}${ledger}${quarter}`;
 }
