@@ -740,6 +740,13 @@ body.ro [data-act="renew-open"]{display:none!important}
 details:not([open])>summary .tg-c,details[open]>summary .tg-o{display:none}
 details[open]>summary .led-tg i{transform:rotate(180deg)}
 
+.iopick{display:flex;gap:8px}
+.iopick label{cursor:pointer}
+.iopick input{position:absolute;opacity:0;pointer-events:none}
+.iopick span{display:inline-block;padding:9px 18px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);font-size:14px;font-weight:600}
+.iopick input:checked+span{background:color-mix(in srgb,var(--court) 14%,var(--surface));border-color:var(--court);color:var(--court);font-weight:700}
+.iopick input:focus-visible+span{outline:2px solid var(--court);outline-offset:2px}
+
 /* modal */
 .ov{position:fixed;left:0;right:0;top:0;bottom:0;height:auto;   /* full screen, not the area above the keyboard: the keyboard covers the modal instead of shrinking it */
   background:rgba(10,16,24,.5);z-index:20;display:flex;align-items:center;justify-content:center;overflow:hidden;overflow:clip;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
