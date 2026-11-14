@@ -121,7 +121,15 @@ function areaField(name,val,ph){
   const opt=(v,l)=>`<button type="button" role="option" data-act="area-pick" data-v="${h(v)}" aria-selected="${String(v===val)}">${h(l)}</button>`;
   return `<div class="areaf lvsel" data-area="${name}" data-ph="${h(ph)}"><button type="button" class="in pickbtn${val?'':' ph'}" data-act="area-open" aria-haspopup="listbox" aria-expanded="false"${known?'':' hidden'}>${h(val||ph)}<span class="lv-caret" aria-hidden="true">▾</span></button><div class="lv-pop" role="listbox" hidden>${opt('','선택 안 함')}<div class="lv-grp">서울</div>${SEOUL.map(a=>opt(a,a)).join('')}<div class="lv-grp">경기</div>${NEAR.map(a=>opt(a,a)).join('')}<div class="lv-grp">목록에 없으면</div><button type="button" role="option" data-act="area-pick" data-v="__custom">직접 입력</button></div><input class="in" type="text" name="${name}" value="${h(val)}" placeholder="예: 김포시"${known?' hidden':''}></div>`;
 }
-ACT['area-open']=t=>{const wrap=t.closest('.areaf');const pop=wrap.querySelector('.lv-pop');const open=pop.hidden;closeLv();pop.hidden=!open;t.setAttribute('aria-expanded',String(open));if(open){const s=pop.querySelector('[aria-selected="true"]');if(s)pop.scrollTop=s.offsetTop-pop.clientHeight/2+s.offsetHeight/2}};
+// dropdown lists (level, area): float over the form at the button, always fully on screen with their own scroll
+function placePop(btn,pop){const r=btn.getBoundingClientRect();const vv=window.visualViewport;const vh=vv?vv.height:innerHeight,vt=vv?vv.offsetTop:0;
+  const w=Math.min(Math.max(r.width,240),innerWidth-16);const left=Math.max(8,Math.min(r.left,innerWidth-w-8));
+  const below=vt+vh-r.bottom-12,above=r.top-vt-12;pop.style.maxHeight='none';const want=Math.min(pop.scrollHeight,360);
+  const up=below<Math.min(want,220)&&above>below;const mh=Math.max(140,Math.min(360,up?above:below));
+  Object.assign(pop.style,{position:'fixed',left:left+'px',right:'auto',width:w+'px',minWidth:'0',maxHeight:mh+'px',zIndex:'45',top:(up?Math.max(vt+8,r.top-Math.min(want,mh)-4):r.bottom+4)+'px'})}
+function placeOpenPop(e){const p=document.querySelector('.lv-pop:not([hidden])');if(!p||(e&&e.target&&e.target.nodeType===1&&p.contains(e.target)))return;const b=p.previousElementSibling;if(b&&b.offsetParent)placePop(b,p);else closeLv()}
+document.addEventListener('scroll',placeOpenPop,true);window.addEventListener('resize',()=>placeOpenPop());if(window.visualViewport)visualViewport.addEventListener('resize',()=>placeOpenPop());
+ACT['area-open']=t=>{const wrap=t.closest('.areaf');const pop=wrap.querySelector('.lv-pop');const open=pop.hidden;closeLv();pop.hidden=!open;t.setAttribute('aria-expanded',String(open));if(open){placePop(t,pop);const s=pop.querySelector('[aria-selected="true"]');if(s)pop.scrollTop=s.offsetTop-pop.clientHeight/2+s.offsetHeight/2}};
 ACT['area-pick']=t=>{const wrap=t.closest('.areaf');const btn=wrap.querySelector('.pickbtn');const inp=wrap.querySelector('input');const v=t.dataset.v;closeLv();
   if(v==='__custom'){btn.hidden=true;inp.hidden=false;inp.value='';inp.focus();return}
   inp.value=v;btn.classList.toggle('ph',!v);btn.innerHTML=h(v||wrap.dataset.ph)+'<span class="lv-caret" aria-hidden="true">▾</span>';
@@ -308,7 +316,7 @@ function isDark(){const t=document.documentElement.dataset.theme;return t?t==='d
 function paintThemeFab(){const b=$('#theme-fab');if(!b)return;const d=isDark();b.classList.toggle('dark',d);b.setAttribute('aria-label',d?'라이트 모드로 전환':'다크 모드로 전환');b.title=d?'라이트 모드':'다크 모드'}
 ACT['theme']=()=>{const next=isDark()?'light':'dark';document.documentElement.dataset.theme=next;try{localStorage.setItem('sbpb-theme',next)}catch(e){}paintThemeFab()};
 setTimeout(paintThemeFab,0);if(window.matchMedia)matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',paintThemeFab);
-ACT['lv-open']=t=>{const pop=t.nextElementSibling;const open=pop.hidden;closeLv();pop.hidden=!open;t.setAttribute('aria-expanded',String(open));if(open){const s=pop.querySelector('[aria-selected="true"]');if(s)pop.scrollTop=s.offsetTop-pop.clientHeight/2+s.offsetHeight/2}};
+ACT['lv-open']=t=>{const pop=t.nextElementSibling;const open=pop.hidden;closeLv();pop.hidden=!open;t.setAttribute('aria-expanded',String(open));if(open){placePop(t,pop);const s=pop.querySelector('[aria-selected="true"]');if(s)pop.scrollTop=s.offsetTop-pop.clientHeight/2+s.offsetHeight/2}};
 ACT['lv-pick']=t=>{const el=t.closest('.lvsel');el.querySelector('input').value=t.dataset.v;closeLv();paintLv(el);el.querySelector('.lv-btn').focus()};
 ACT['sp']=t=>{const el=t.closest('.starpick');el.querySelector('input').value=t.dataset.v;paintPicker(el)};ACT['close-modal']=closeModal;
 

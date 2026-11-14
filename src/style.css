@@ -472,6 +472,7 @@ body.ro [data-act="backup-open"]{display:none!important}
 .grid2>*,.grid3>*,.courtrow>*,.pickrow>.in{min-width:0}
 .pickrow .btn{flex:none}
 .lv-pop{min-width:min(240px,100%)}
+.lv-pop{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:0 16px 40px rgba(0,0,0,.25)}
 .lv-btn,.pickbtn{overflow:hidden}
 .lv-btn .stars{flex:none}
 /* touch devices: inputs at 16px so iOS never zooms the page when a field is focused */
