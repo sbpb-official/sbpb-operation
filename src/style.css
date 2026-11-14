@@ -323,6 +323,7 @@ table.tbl.mt{table-layout:fixed;min-width:980px}
 .ccard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .ccard .hd{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .ccard .hd h3{font-size:17px}
+a.addr{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:13px;color:var(--court);text-decoration:underline;text-underline-offset:2px;word-break:keep-all}
 .kv{display:grid;grid-template-columns:76px 1fr;gap:4px 10px;font-size:13px}
 .kv dt{color:var(--muted)}
 .kv dd{margin:0;min-width:0;word-break:break-word}

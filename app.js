@@ -258,26 +258,34 @@ async function runMigrations(){
   if(migBusy||RO||!db)return;
   const F='mig-joined-2026';                         // 2026-11-14: 현 회원 22명 가입일을 2026-01-01로 일괄 적용 (덮어쓰기)
   const F2='mig-court-achasan';                      // 2026-11-14: 아차산배수지 테니스장 코트 정보 추가 (같은 이름 코트가 있으면 건너뜀)
-  const F3='mig-court-ts';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
+  const F3='mig-court-ts';
+  const F4='mig-court-addr';                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
+  const TS_MEMO='예약 링크는 네이버 지도 · 9호선 둔촌오륜역 1번 출구 도보 약 860m\n대관료 (개장 당시): 평일 야간·주말 주간 35,000원 · 주말 야간 40,000원\n※ 현재 요금·예약 오픈 방식은 네이버 지도 업체 정보로 확인 필요';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
   const has=id=>S.dues.find(d=>d.id===id);
-  if(has(F)&&has(F2)&&has(F3))return;
+  if(has(F)&&has(F2)&&has(F3)&&has(F4))return;
   migBusy=true;
   try{if(!has(F)){const targets=S.members.filter(m=>isCur(m)&&!m.sample);
     for(const m of targets)if(m.joined!=='2026-01-01')await put('members',m.id,{...m,joined:'2026-01-01'});
     await put('dues',F,{done:true,count:targets.length,at:Date.now()});
     toast(`가입일 일괄 적용 완료 (${targets.length}명 · 2026.01.01)`)}
   if(!has(F2)){const dup=S.courts.some(c=>/아차산/.test(c.name||''));
-    if(!dup)await put('courts','c-achasan',{name:'아차산배수지체육공원 테니스장',district:'광진구',courts:'',surface:'',fee:'시간당 주간 8,000원 · 야간 10,400원 (2022년 기준)',
+    if(!dup)await put('courts','c-achasan',{name:'아차산배수지체육공원 테니스장',district:'광진구',address:'서울 광진구 천호대로 731',courts:'',surface:'',fee:'시간당 주간 8,000원 · 야간 10,400원 (2022년 기준)',
       url:'https://booking.gwangjin.or.kr/fmcs/3',platform:'etc',
       genRule:{type:'monthly',day:'25',time:'09:00'},resident:true,resRule:{type:'monthly',day:'20',time:'09:00'},area:'광진구',workers:false,
       memo:'광진구통합예약시스템 · 이용 전월에 신청\n구민 우선 접수 20~21일 (주민등록 주소지 기준, 마이페이지 거주지 인증 필요 · 타구민 신청은 관리자 취소 가능)\n일반 접수 25일 09:00\n운영 06:00~23:00 · 1회 최대 4시간\n당일 예약: 빈 코트만, 운영 사무실 전화 02-3437-7234 (09~18시, 이용 1시간 전까지 결제)\n※ 면 수·바닥·구민 우선 시각·현재 요금은 공단 공지로 확인 필요',createdAt:Date.now()});
     await put('dues',F2,{done:true,skipped:dup,at:Date.now()});
     if(!dup)toast('코트 추가 완료 · 아차산배수지 테니스장')}
   if(!has(F3)){const dup=S.courts.some(c=>/TS\s*SPORT|TS\s*테니스/i.test(c.name||''));
-    if(!dup)await put('courts','c-ts-hanam',{name:'TS SPORT TENNIS CLUB',district:'하남시',courts:'',surface:'',fee:'',url:'https://naver.me/xKy8BCdY',platform:'naver',
-      resident:false,area:'',workers:false,memo:'경기 하남시 서하남로 9-16 · 예약 링크는 네이버 지도',createdAt:Date.now()});
+    if(!dup)await put('courts','c-ts-hanam',{name:'TS SPORT TENNIS CLUB',district:'하남시',address:'경기 하남시 서하남로 9-16',courts:'5면',surface:'하드',fee:'시간당 35,000~40,000원 (2021년 개장 당시 기준)',url:'https://naver.me/xKy8BCdY',platform:'naver',
+      resident:false,area:'',workers:false,memo:TS_MEMO,createdAt:Date.now()});
     await put('dues',F3,{done:true,skipped:dup,at:Date.now()});
-    if(!dup)toast('코트 추가 완료 · TS SPORT TENNIS CLUB')}}
+    if(!dup)toast('코트 추가 완료 · TS SPORT TENNIS CLUB')}
+  if(!has(F4)){let n=0;const fix=async(col,id,patch)=>{const cur=(col==='courts'?S.courts:S.rentals).find(x=>x.id===id);if(cur&&!cur.address){await put(col,id,{...cur,...patch});n++}};
+    await fix('courts','c-achasan',{address:'서울 광진구 천호대로 731'});
+    {const cur=S.courts.find(x=>x.id==='c-ts-hanam');if(cur&&!cur.address)await fix('courts','c-ts-hanam',{address:'경기 하남시 서하남로 9-16',courts:cur.courts||'5면',surface:cur.surface||'하드',fee:cur.fee||'시간당 35,000~40,000원 (2021년 개장 당시 기준)',memo:TS_MEMO})}
+    if(S.rentals.find(x=>x.id==='main'))await fix('rentals','main',{address:'서울 동대문구 서울시립대로 163'});
+    await put('dues',F4,{done:true,count:n,at:Date.now()});
+    if(n)toast(`코트 주소 입력 완료 (${n}곳)`)}}
   catch(e){}
   migBusy=false;
 }
@@ -1171,6 +1179,7 @@ function ruleFrom(fd,p){const type=fd[p+'type'],v=(fd[p+'val']||'').trim(),time=
   const list=[...new Set(ds)].sort((a,b)=>a-b).map(String);if(last)list.push('L');return {type:'monthly',day:(list.length?list:['1']).join(','),time}}
 function courtForm(c={}){
   return `<div class="grid2"><label class="f">코트 이름<input class="in" name="name" required value="${h(c.name)}" placeholder="예: OO공원 테니스장"></label><label class="f">위치 (구·시)<input class="in" name="district" list="areas-c" value="${h(c.district)}" placeholder="예: 송파구"></label></div>
+  <label class="f">주소 (선택 시 네이버 지도 연결)<input class="in" name="address" value="${h(c.address)}" placeholder="예: 서울 광진구 천호대로 731"></label>
   <div class="grid3"><label class="f">면 수<input class="in" name="courts" value="${h(c.courts)}" placeholder="4면"></label><label class="f">바닥<input class="in" name="surface" value="${h(c.surface)}" placeholder="하드 / 인조잔디"></label><label class="f">요금<input class="in" name="fee" value="${h(c.fee)}" placeholder="시간당 약 5천원"></label></div>
   <div class="grid2"><label class="f">예약처<select class="in" name="platform">${PLATFORMS.map(p=>`<option value="${p.k}"${(c.platform||'etc')===p.k?' selected':''}>${p.name}</option>`).join('')}</select></label>
   <label class="f">예약 링크 (비우면 예약처 링크)<input class="in" type="url" name="url" value="${h(c.url)}" placeholder="https://..."></label></div>
@@ -1181,7 +1190,7 @@ function courtForm(c={}){
   <label class="f">예약 대상 기간 / 메모<textarea class="in" name="memo" placeholder="예: 다음 달 이용분 오픈, 1인 월 2회 제한, 추첨제">${h(c.memo)}</textarea></label>
   <datalist id="areas-c">${SEOUL.concat(NEAR).map(a=>`<option value="${a}">`).join('')}</datalist>`;
 }
-const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),courts:fd.courts.trim(),surface:fd.surface.trim(),fee:fd.fee.trim(),url:fd.url.trim(),platform:fd.platform||'etc',genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:fd.memo.trim()});
+const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),courts:fd.courts.trim(),surface:fd.surface.trim(),fee:fd.fee.trim(),url:fd.url.trim(),platform:fd.platform||'etc',genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:fd.memo.trim()});
 ACT['c-new']=()=>openModal('코트 추가',courtForm(),fd=>put('courts',uid(),{...courtFromFd(fd),createdAt:Date.now()}));
 ACT['c-edit']=t=>{const c=S.courts.find(x=>x.id===t.dataset.id);if(!c)return;openModal('코트 수정',courtForm(c),fd=>put('courts',c.id,courtFromFd(fd,c)),`<button type="button" class="btn danger" data-act="c-del" data-id="${c.id}">삭제</button>`)};
 ACT['c-del']=t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 삭제';return}del('courts',t.dataset.id);closeModal()};
@@ -1192,6 +1201,8 @@ const PLATFORMS=[
   {k:'smash',name:'사설 코트 (고비용)',url:'',login:'스매시 앱에서 예약 (엠무브는 엠무브 사이트) · 게스트 매칭도 스매시 앱',links:[{l:'엠무브 예약',u:'https://mmove.co.kr/bbs/page.php?hid=m02_01'}]},
   {k:'etc',name:'기타',url:'',login:''}];
 const platOf=c=>PLATFORMS.find(p=>p.k===c.platform)||PLATFORMS[PLATFORMS.length-1];
+const mapUrl=q=>'https://map.naver.com/p/search/'+encodeURIComponent(q);
+const addrLink=(addr,name)=>`<a class="addr" href="${h(mapUrl(addr||name||''))}" target="_blank" rel="noopener">${addr?h(addr):'지도에서 위치 보기'} <span aria-hidden="true">↗</span></a>`;
 const MMOVE='https://mmove.co.kr/bbs/page.php?hid=m02_01';
 const courtUrl=c=>c.url||(/엠무브|mmove/i.test(c.name||'')?MMOVE:platOf(c).url);
 let courtArea='';
@@ -1204,7 +1215,7 @@ function viewCourts(){
     const g=nextOpen(c.genRule),r=c.resident?nextOpen(c.resRule):null;
     const pm=priorityMembers(c);
     const ob=(l,d,rule)=>rule&&rule.type==='rolling'?`<div class="open-box"><div class="l">${l}</div><div class="dday" style="font-size:16px">이용일 ${rule.days}일 전</div><div class="d">${rule.time?'매일 '+h(rule.time)+' 오픈 · ':''}오늘 기준 ${(()=>{const x=today0();x.setDate(x.getDate()+Number(rule.days||0));return fmtD(ymd(x))})()} 이용분까지</div></div>`:`<div class="open-box"><div class="l">${l}</div>${d?`<div class="dday">${ddayLabel(ymd(d))}</div><div class="d">${d.getMonth()+1}/${d.getDate()} (${WD[d.getDay()]}) ${pad(d.getHours())}:${pad(d.getMinutes())}</div>`:'<div class="d">미정</div>'}<div class="d">${h(ruleText(rule))}</div></div>`;
-    return `<article class="ccard"><div class="hd"><div><h3>${h(c.name)}</h3><div class="small muted">${h(c.district)}${c.courts?' · '+h(c.courts):''}${c.surface?' · '+h(c.surface):''}</div></div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
+    return `<article class="ccard"><div class="hd"><div><h3>${h(c.name)}</h3><div class="small muted">${h(c.district)}${c.courts?' · '+h(c.courts):''}${c.surface?' · '+h(c.surface):''}</div>${addrLink(c.address,c.name)}</div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
     ${c.genRule&&c.genRule.type?`<div class="opens">${c.resident?ob('주민 우선 오픈',r,c.resRule):''}${ob('일반 오픈',g,c.genRule)}</div>`:''}
     <dl class="kv">${c.fee?`<dt>요금</dt><dd>${h(c.fee)}</dd>`:''}${c.memo?`<dt>메모</dt><dd style="white-space:pre-wrap">${h(c.memo)}</dd>`:''}</dl>
     ${c.resident?`<div class="prio"><div class="l">우선 예약 가능 회원 · ${h(c.area||c.district)}${c.workers?' 거주·직장':' 거주'} 기준 ${pm.length}명</div><div class="chips">${pm.length?pm.map(({m,why})=>`<span class="chip ${why==='거주'?'court':''}">${h(m.name)}${why==='직장'?' (직장)':''}</span>`).join(''):'<span class="small muted">해당 지역 회원 없음</span>'}</div></div>`:''}
@@ -1248,7 +1259,7 @@ function rentalSection(){
   const arch=S.regstat.slice().filter(x=>!archFilter||x.reason===archFilter||(archFilter==='미진행'&&x.status==='삭제')).sort((a,b)=>b.id.localeCompare(a.id));
   const reasonsUsed=[...new Set(S.regstat.map(x=>x.status==='삭제'?'미진행':x.reason))];
   return `<section class="panel rent">
-    <div class="sec-h" style="margin-top:0"><div><h2>정기대관 코트 관리</h2><p class="small muted" style="margin:2px 0 0">${h(r.name)} · 매주 토 ${REG.start}–${REG.end} · ${h(r.courts||3)}면${fee?` · 회당 ${won(fee)}`:''}${r.from||r.to?` · 계약 ${r.from?fmtD(r.from):''}~${r.to?fmtD(r.to):''}`:''}</p></div>${RO?'':'<button class="btn" data-act="rent-edit">대관 정보 수정</button>'}</div>
+    <div class="sec-h" style="margin-top:0"><div><h2>정기대관 코트 관리</h2><p class="small muted" style="margin:2px 0 0">${h(r.name)} · 매주 토 ${REG.start}–${REG.end} · ${h(r.courts||3)}면${fee?` · 회당 ${won(fee)}`:''}${r.from||r.to?` · 계약 ${r.from?fmtD(r.from):''}~${r.to?fmtD(r.to):''}`:''}</p>${addrLink(r.address,r.name)}</div>${RO?'':'<button class="btn" data-act="rent-edit">대관 정보 수정</button>'}</div>
     ${r.memo||r.contact?`<p class="small muted" style="margin:0 0 12px;white-space:pre-wrap">${h([r.contact&&('담당·연락처: '+r.contact),r.memo].filter(Boolean).join('\n'))}</p>`:''}
     <div class="rent-grid">
       <div class="rent-box"><div class="panel-h" style="margin-bottom:8px"><h3>${y}년 ${m}월 사용 현황</h3><div class="row"><button class="btn sm" data-act="rent-m" data-v="-1" aria-label="이전 달">‹</button><button class="btn sm" data-act="rent-m" data-v="0">이번 달</button><button class="btn sm" data-act="rent-m" data-v="1" aria-label="다음 달">›</button></div></div>
@@ -1268,10 +1279,11 @@ ACT['rent-m']=t=>{const v=+t.dataset.v;const tt=today0();if(!v){rentMonth=`${tt.
 ACT['rent-y']=t=>{rentYear+=+t.dataset.v;render()};
 ACT['arch-f']=t=>{archFilter=t.dataset.v;render()};
 ACT['rent-edit']=()=>{const r=rentalInfo();openModal('정기대관 정보',`<label class="f">코트 이름<input class="in" name="name" required value="${h(r.name)}"></label>
+  <label class="f">주소 (선택 시 네이버 지도 연결)<input class="in" name="address" value="${h(r.address)}" placeholder="예: 서울 동대문구 서울시립대로 163"></label>
   <div class="grid2"><label class="f">사용 면 수<input class="in" type="number" min="1" name="courts" value="${h(r.courts||3)}"></label><label class="f">회당 대관료 (원)<input class="in" inputmode="numeric" data-comma="1" name="fee" value="${r.fee?h(Number(r.fee).toLocaleString('ko-KR')):''}" placeholder="예: 60,000"></label></div>
   <div class="grid2"><label class="f">계약 시작일${calField(r.from,{name:'from'})}</label><label class="f">계약 종료일${calField(r.to,{name:'to'})}</label></div>
   <label class="f">담당자·연락처<input class="in" name="contact" value="${h(r.contact)}" placeholder="예: 체육시설 관리팀 02-000-0000"></label>
-  <label class="f">정산·운영 메모<textarea class="in" name="memo" placeholder="예: 우천 취소분 익월 이월, 코트 측 취소 시 환불">${h(r.memo)}</textarea></label>`,fd=>put('rentals','main',{name:fd.name.trim(),courts:Number(fd.courts)||3,fee:numOf(fd.fee),from:fd.from,to:fd.to,contact:fd.contact.trim(),memo:fd.memo.trim()}))};
+  <label class="f">정산·운영 메모<textarea class="in" name="memo" placeholder="예: 우천 취소분 익월 이월, 코트 측 취소 시 환불">${h(r.memo)}</textarea></label>`,fd=>put('rentals','main',{...rentalInfo(),name:fd.name.trim(),address:(fd.address||'').trim(),courts:Number(fd.courts)||3,fee:numOf(fd.fee),from:fd.from,to:fd.to,contact:fd.contact.trim(),memo:fd.memo.trim()}))};
 
 /* =========================================================
    MONEY (정산): 월 회비 · 행사 정산 · 정기대관 분기 정산
@@ -1510,9 +1522,9 @@ ACT['bk-xlsx']=async t=>{
     '대진표':S.brackets.slice().sort((x,y)=>(x.cfg?.date||'').localeCompare(y.cfg?.date||'')).map(b=>({'날짜':b.cfg?.date||'','제목':b.cfg?.title||'','상태':b.status,'참석 인원':Object.keys(b.players||{}).length,'타임 수':(b.rounds||[]).length,'참석자':Object.values(b.players||{}).map(p=>dn(p.name)+(p.guest?'(G)':'')).join(', ')})),
     '회비':S.dues.filter(d=>d.id!=='cfg'&&d.memberId).sort((x,y)=>(x.year-y.year)||(memberById(x.memberId)?.name||'').localeCompare(memberById(y.memberId)?.name||'')).map(d=>{const o={'연도':d.year,'이름':memberById(d.memberId)?.name||'(삭제된 회원)'};for(let i=1;i<=12;i++){const v=(d.m||{})[i];o[i+'월']=v==='paid'?'O':v==='free'?'면제':''}o['납부 횟수']=Object.values(d.m||{}).filter(v=>v==='paid').length;return o}),
     '행사 정산':S.ledger.slice().sort((x,y)=>(x.date||'').localeCompare(y.date||'')).map(x=>({'날짜':x.date||'','행사':x.eventId?(S.events.find(e=>e.id===x.eventId)?.title||'(삭제된 행사)'):'행사 외 일반','구분':x.kind==='in'?'수입':'지출','분류':x.cat||'','내용':x.item||'','금액':Number(x.amount)||0,'결제·담당':x.payer||'','메모':x.memo||''})),
-    '코트':S.courts.map(c=>({'이름':c.name,'지역':c.district||'','예약 링크':c.url||'','일반 오픈':ruleText(c.genRule),'주민 우선':yn(c.resident),'주민 오픈':c.resident?ruleText(c.resRule):'','요금':c.fee||'','메모':c.memo||''})),
+    '코트':S.courts.map(c=>({'이름':c.name,'지역':c.district||'','주소':c.address||'','예약 링크':c.url||'','일반 오픈':ruleText(c.genRule),'주민 우선':yn(c.resident),'주민 오픈':c.resident?ruleText(c.resRule):'','요금':c.fee||'','메모':c.memo||''})),
   };
-  const r=rentalInfo();if(S.rentals.length)sheets['정기대관']=[{'코트':r.name,'면 수':r.courts,'회당 대관료':r.fee,'계약 시작':r.from||'','계약 종료':r.to||'','담당·연락처':r.contact||'','메모':r.memo||''}];
+  const r=rentalInfo();if(S.rentals.length)sheets['정기대관']=[{'코트':r.name,'주소':r.address||'','면 수':r.courts,'회당 대관료':r.fee,'계약 시작':r.from||'','계약 종료':r.to||'','담당·연락처':r.contact||'','메모':r.memo||''}];
   const wb=X.utils.book_new();
   Object.entries(sheets).forEach(([name,rows])=>{const ws=X.utils.json_to_sheet(rows.length?rows:[{'':'데이터 없음'}]);if(rows.length){ws['!cols']=Object.keys(rows[0]).map(k=>({wch:Math.min(40,Math.max(6,k.length*2,...rows.map(r=>String(r[k]??'').length+2)))}))}X.utils.book_append_sheet(wb,ws,name)});
   const buf=X.write(wb,{type:'array',bookType:'xlsx'});t.disabled=false;
