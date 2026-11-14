@@ -118,6 +118,33 @@ document.addEventListener('input',e=>{
     e.target.setCustomValidity(ok?'':'올바른 날짜 입력 필요');if(ok){const iso=`${y}-${pad(m)}-${pad(dd)}`;hid.value=iso;if(o)o.value='만 '+ageOf(iso)+'세'}else{hid.value='';if(o)o.value=''}}
   else{e.target.setCustomValidity(d.length?'8자리 숫자로 입력 (예: 19900115)':'');hid.value='';if(o)o.value=''}
 });
+
+/* ---------- date fields ----------
+   달력: 일정 날짜 (요일이 보이도록) · 휠: 기본 정보 날짜 (생년월일·테니스 시작 연월·가입일) */
+const fmtCal=(s,short)=>s?(short?fmtD(s):fmtFull(s)):'';
+function calField(val,{name='',id='',extra='',cell=false,required=false,ph='날짜 선택'}={}){
+  return `<div class="lvsel dfield${cell?' dcell':''}"${required?' data-required="1"':''} data-short="${cell?1:''}"><input type="hidden"${name?` name="${name}"`:''}${id?` id="${id}"`:''} ${extra} value="${h(val||'')}"><button type="button" class="${cell?'cell':'in'} pickbtn dbtn${val?'':' ph'}" data-act="cal-open" aria-haspopup="dialog">${val?fmtCal(val,cell):ph}<span class="lv-caret" aria-hidden="true">▾</span></button><div class="lv-pop calpop" hidden></div></div>`}
+function calHtml(pop){const wrap=pop.closest('.dfield');const val=wrap.querySelector('input').value;const [y,m]=pop.dataset.ym.split('-').map(Number);
+  const first=new Date(y,m-1,1),days=new Date(y,m,0).getDate(),td=ymd(today0());let cells=WD.map((w,i)=>`<span class="${i===0?'sun':i===6?'sat':''}">${w}</span>`).join('');
+  for(let i=0;i<first.getDay();i++)cells+='<span></span>';
+  for(let d=1;d<=days;d++){const ds=`${y}-${pad(m)}-${pad(d)}`;const wd=new Date(y,m-1,d).getDay();cells+=`<button type="button" data-act="cal-pick" data-v="${ds}" class="${wd===0?'sun':wd===6?'sat':''}${ds===td?' today':''}${ds===val?' sel':''}">${d}</button>`}
+  return `<div class="cal-h"><button type="button" data-act="cal-nav" data-v="-1" aria-label="이전 달">‹</button><b>${y}년 ${m}월</b><button type="button" data-act="cal-nav" data-v="1" aria-label="다음 달">›</button></div><div class="cal-g">${cells}</div><div class="cal-f"><button type="button" data-act="cal-pick" data-v="${td}">오늘</button>${wrap.dataset.required?'':'<button type="button" data-act="cal-pick" data-v="">지우기</button>'}</div>`}
+ACT['cal-open']=t=>{const wrap=t.closest('.dfield');const pop=wrap.querySelector('.calpop');const open=pop.hidden;closeLv();if(!open)return;
+  const v=wrap.querySelector('input').value||ymd(today0());pop.dataset.ym=v.slice(0,7);pop.innerHTML=calHtml(pop);pop.hidden=false;t.setAttribute('aria-expanded','true');placePop(t,pop)};
+ACT['cal-nav']=t=>{const pop=t.closest('.calpop');let [y,m]=pop.dataset.ym.split('-').map(Number);m+=+t.dataset.v;if(m<1){m=12;y--}if(m>12){m=1;y++}pop.dataset.ym=`${y}-${pad(m)}`;pop.innerHTML=calHtml(pop)};
+ACT['cal-pick']=t=>{const wrap=t.closest('.dfield');const inp=wrap.querySelector('input');const btn=wrap.querySelector('.dbtn');const v=t.dataset.v;
+  inp.value=v;btn.classList.toggle('ph',!v);btn.innerHTML=(v?fmtCal(v,!!wrap.dataset.short):'날짜 선택')+'<span class="lv-caret" aria-hidden="true">▾</span>';closeLv();
+  inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}))};
+function wheelText(v,kind){if(!v)return '';const [y,m,d]=v.split('-').map(Number);return kind==='ym'?`${y}년 ${m}월`:`${y}.${pad(m)}.${pad(d)}`}
+function wheelField(val,name,kind,title){return `<div class="wfield"><input type="hidden" name="${name}" value="${h(val||'')}"><button type="button" class="in pickbtn${val?'':' ph'}" data-act="wheel-open" data-kind="${kind}" data-title="${h(title)}">${val?wheelText(val,kind):'선택'}<span class="lv-caret" aria-hidden="true">▾</span></button></div>`}
+ACT['wheel-open']=t=>{const wrap=t.closest('.wfield');const inp=wrap.querySelector('input');const kind=t.dataset.kind;const ty=today0().getFullYear();
+  const cur=inp.value?inp.value.split('-').map(Number):[ty,today0().getMonth()+1,today0().getDate()];
+  const top=kind==='ym'?ty:ty+1,bottom=kind==='ym'?1970:2015;const years=[];for(let y=top;y>=bottom;y--)years.push({v:y,l:y+'년'});
+  const months=Array.from({length:12},(_,i)=>({v:i+1,l:(i+1)+'월'}));const days=(y,m)=>Array.from({length:birthDays(y,m)},(_,i)=>({v:i+1,l:(i+1)+'일'}));
+  const cols=[{items:years,index:Math.max(0,top-cur[0]),flex:1.3},{items:months,index:(cur[1]||1)-1}];if(kind==='ymd')cols.push({items:days(cur[0],cur[1]||1),index:(cur[2]||1)-1});
+  openWheel(t.dataset.title,cols,vals=>{const v=kind==='ym'?`${vals[0]}-${pad(vals[1])}`:`${vals[0]}-${pad(vals[1])}-${pad(vals[2])}`;inp.value=v;t.classList.remove('ph');t.innerHTML=wheelText(v,kind)+'<span class="lv-caret" aria-hidden="true">▾</span>'},
+    kind==='ymd'?(ov,i)=>{if(i===2)return;const st=ov._st;const y=st.cols[0].items[st.cols[0].index].v,m=st.cols[1].items[st.cols[1].index].v;const n=birthDays(y,m);if(st.cols[2].items.length!==n)fillCol(ov,2,days(y,m),Math.min(st.cols[2].index,n-1))}:undefined)};
+
 /* area: wheel with "직접 입력" */
 const AREA_ITEMS=()=>[{v:'',l:'선택 안 함'},...SEOUL.map(a=>({v:a,l:'서울 '+a})),...NEAR.map(a=>({v:a,l:'경기 '+a})),{v:'__custom',l:'직접 입력'}];
 function areaField(name,val,ph){
@@ -136,10 +163,10 @@ function makeRoom(btn,need){const box=scrollBoxOf(btn);let below=roomBelow(btn,b
   if(box){const max=box.scrollHeight-box.clientHeight-box.scrollTop;if(max<d){box.dataset.padx=box.dataset.padx||box.style.paddingBottom||'';box.style.paddingBottom=(parseFloat(getComputedStyle(box).paddingBottom)+d-max+8)+'px'}box.scrollTop+=d}
   else window.scrollBy(0,d);
   return roomBelow(btn,box)}
-function placePop(btn,pop){pop.style.maxHeight='none';const want=Math.min(pop.scrollHeight,360);
-  const below=makeRoom(btn,Math.min(want,POP_MIN));const r=btn.getBoundingClientRect();
+function placePop(btn,pop){pop.style.maxHeight='none';const cal=pop.classList.contains('calpop');const cap=cal?460:360;const want=Math.min(pop.scrollHeight,cap);
+  const below=makeRoom(btn,cal?want:Math.min(want,POP_MIN));/* a calendar is shown whole */const r=btn.getBoundingClientRect();
   const w=Math.min(Math.max(r.width,240),innerWidth-16);const left=Math.max(8,Math.min(r.left,innerWidth-w-8));
-  Object.assign(pop.style,{position:'fixed',left:left+'px',right:'auto',width:w+'px',minWidth:'0',maxHeight:Math.max(120,Math.min(360,below))+'px',zIndex:'45',top:(r.bottom+4)+'px'})}
+  Object.assign(pop.style,{position:'fixed',left:left+'px',right:'auto',width:w+'px',minWidth:'0',maxHeight:Math.max(120,Math.min(cap,below))+'px',zIndex:'45',top:(r.bottom+4)+'px'})}
 function releaseRoom(){document.querySelectorAll('[data-padx]').forEach(b=>{b.style.paddingBottom=b.dataset.padx;delete b.dataset.padx})}
 function placeOpenPop(e){const p=document.querySelector('.lv-pop:not([hidden])');if(!p||(e&&e.target&&e.target.nodeType===1&&p.contains(e.target)))return;const b=p.previousElementSibling;if(b&&b.offsetParent)placePop(b,p);else closeLv()}
 document.addEventListener('scroll',placeOpenPop,true);window.addEventListener('resize',()=>placeOpenPop());if(window.visualViewport)visualViewport.addEventListener('resize',()=>placeOpenPop());
@@ -161,7 +188,7 @@ const mkOn=ds=>S.regstat.find(r=>isCourtCx(r)&&r.mkDate===ds&&!r.mkUnused);
 const MK_CLS={'미정':'st-plan','예정':'st-plan','사용':'st-used','미사용':'st-del'};
 function mkInfo(rs){if(!isCourtCx(rs))return '';const st=mkState(rs);
   return `<div class="mk-info">대체일 ${rs.mkDate?`<b>${fmtD(rs.mkDate)} ${h(rs.mkStart||REG.start)}–${h(rs.mkEnd||REG.end)}</b>`:'미정'} <span class="st ${MK_CLS[st]}">${st==='미정'?'지정 전':st==='미사용'?'미사용 · 비용 없음':st}</span></div>`}
-function mkFields(rs){return `<div class="grid3"><label class="f">대체일<input class="in" type="date" name="mkDate" value="${h(rs.mkDate||'')}"></label><label class="f">시작<input class="in" type="time" name="mkStart" value="${h(rs.mkStart||REG.start)}"></label><label class="f">종료<input class="in" type="time" name="mkEnd" value="${h(rs.mkEnd||REG.end)}"></label></div>`}
+function mkFields(rs){return `<div class="grid3"><label class="f">대체일${calField(rs.mkDate,{name:'mkDate'})}</label><label class="f">시작<input class="in" type="time" name="mkStart" value="${h(rs.mkStart||REG.start)}"></label><label class="f">종료<input class="in" type="time" name="mkEnd" value="${h(rs.mkEnd||REG.end)}"></label></div>`}
 let db=null,userCap=null,myId=null,dl=null,mode='connecting',slow=false,RO=false,art=null,snapKey=null;
 const loaded=new Set();
 const names={};
@@ -311,7 +338,7 @@ let modalSubmit=null;
 function openModal(title,body,onSubmit,extraActs='',cls=''){
   modalSubmit=onSubmit;
   $('#modal-root').innerHTML=`<div class="ov" data-act="ov-close"><div class="modal fm${cls?' '+cls:''}" role="dialog" aria-modal="true" aria-label="${h(title)}"><div class="m-head"><h2>${h(title)}</h2><button type="button" class="modal-x" data-act="close-modal" aria-label="닫기">×</button></div><form id="mform" novalidate><div class="m-body">${body}</div><div class="acts"><div class="row">${extraActs}</div><div class="row"><button type="button" class="btn" data-act="close-modal">취소</button><button class="btn pri" type="submit">저장</button></div></div></form></div></div>`;
-  const f=$('#mform');f.querySelectorAll('.starpick').forEach(paintPicker);f.querySelectorAll('.lvsel:not(.areaf)').forEach(paintLv);lockPage();if(window.matchMedia&&matchMedia('(pointer:fine)').matches){const first=f.querySelector('input:not([type=hidden]),select,textarea');first&&first.focus()}
+  const f=$('#mform');f.querySelectorAll('.starpick').forEach(paintPicker);f.querySelectorAll('.lvsel:not(.areaf):not(.dfield)').forEach(paintLv);lockPage();if(window.matchMedia&&matchMedia('(pointer:fine)').matches){const first=f.querySelector('input:not([type=hidden]),select,textarea');first&&first.focus()}
 }
 let lockY=0;
 function lockPage(){const r=document.documentElement;if(r.classList.contains('modal-open'))return;lockY=window.scrollY;r.classList.add('modal-open');document.body.style.top=`-${lockY}px`}
@@ -319,6 +346,8 @@ function unlockPage(){const r=document.documentElement;if(!r.classList.contains(
 function closeModal(){$('#modal-root').innerHTML='';modalSubmit=null;unlockPage()}
 document.addEventListener('submit',async e=>{
   if(e.target.id==='mform'){e.preventDefault();const f=e.target;if(f.dataset.busy)return;
+    const missD=[...f.querySelectorAll('.dfield[data-required]')].find(d=>!d.querySelector('input').value);
+    if(missD){const lb=missD.closest('label.f,div.f');toast(`${lb?lb.firstChild.textContent.trim():'날짜'} 입력 필요`);missD.scrollIntoView({block:'center'});return}
     const bad=[...f.elements].find(el=>el.willValidate&&!el.disabled&&!el.checkValidity());
     if(bad){const lb=bad.closest('label.f,div.f');const nm=lb?(lb.firstChild&&lb.firstChild.nodeType===3?lb.firstChild.textContent:lb.textContent).trim().split('\n')[0]:'';toast(bad.validationMessage&&bad.validity.customError?bad.validationMessage:`${nm||'필수 항목'} 입력 필요`);bad.focus({preventScroll:true});bad.scrollIntoView({block:'center',behavior:'smooth'});return}
     const fd=Object.fromEntries(new FormData(f));f.querySelectorAll('input[type=checkbox]').forEach(cb=>fd[cb.name]=cb.checked);
@@ -526,12 +555,12 @@ function memberForm(m={}){
   return `<div class="grid2"><label class="f">이름<input class="in" name="name" required value="${h(m.name)}"></label>
   <label class="f">성별<select class="in" name="gender"><option value="M"${m.gender==='M'?' selected':''}>남</option><option value="F"${m.gender==='F'?' selected':''}>여</option></select></label></div>
   <div class="grid2"><div class="f">생년월일<div class="pickrow"><input class="in" id="birth-txt" inputmode="numeric" autocomplete="bday" placeholder="예: 1990.01.15" value="${h(fmtBirth(m.birth))}" aria-label="생년월일 숫자 입력"><button type="button" class="btn" data-act="birth-wheel">선택</button></div><input type="hidden" name="birth" id="birth-val" value="${h(m.birth)}"></div><label class="f">나이 (자동 계산)<input class="in" id="age-out" value="${m.birth?'만 '+ageOf(m.birth)+'세':''}" readonly tabindex="-1" placeholder="생년월일 입력 시 표시"></label></div>
-  <div class="grid2"><label class="f">테니스 시작 연월<input class="in" type="month" name="since" value="${h(m.since)}"></label>
+  <div class="grid2"><label class="f">테니스 시작 연월${wheelField(m.since,'since','ym','테니스 시작 연월')}</label>
   <div class="f">실력 레벨${levelSelect('level',m.level??3,false)}</div></div>
   <div class="grid2"><div class="f">거주지 (구·시)${areaField('district',m.district,'선택')}</div>
   <div class="f">직장 소재지 (선택)${areaField('work',m.work,'선택 안 함')}</div></div>
   <div class="grid2"><label class="f">상태<select class="in" name="status">${['활동','휴면','탈퇴'].concat(ST(m)==='게스트'?['게스트']:[]).map(s=>`<option value="${s}"${ST(m)===s?' selected':''}>${ST_LABEL[s]}</option>`).join('')}</select></label>
-  <label class="f">가입일 (선택)<input class="in" type="date" name="joined" value="${h(m.joined)}"></label></div>
+  <label class="f">가입일 (선택)${wheelField(m.joined,'joined','ymd','가입일')}</label></div>
   <div class="grid2"><label class="check" style="align-self:end;padding-bottom:8px"><input type="checkbox" name="staff"${m.staff?' checked':''}> 운영진</label>
   <label class="f">직책 (운영진 체크 시 선택)<select class="in" name="role"${m.staff?'':' disabled'}><option value="">선택</option>${ROLES.map(r=>`<option${m.role===r?' selected':''}>${r}</option>`).join('')}</select></label></div>
   <div class="f">등록 연도 <span style="font-weight:500">(매년 연장 시 체크 · 탈퇴·게스트 전환 후에도 기록 유지)</span><div class="cbchips">${(()=>{const ys=yearsOf(m);const mx=Math.max(new Date().getFullYear()+1,...ys);const o=[];for(let y=CLUB_Y;y<=mx;y++)o.push(y);return o.map(y=>`<label><input type="checkbox" name="yr_${y}"${ys.includes(y)?' checked':''}>${y}년</label>`).join('')})()}</div></div>
@@ -874,7 +903,7 @@ function viewDraw(){
   const settings=`<section class="panel"><div class="panel-h"><h2>모임 설정</h2><button class="btn sm" data-act="reg-defaults" title="${REG.place} · 토 ${REG.gameStart}–${REG.end}">정기모임 기본값</button></div>
     <div style="display:flex;flex-direction:column;gap:10px">
     <label class="f">제목<input class="in" id="c-title" data-cfg="title" value="${h(cfg.title)}"></label>
-    <div class="grid2"><label class="f">날짜<input class="in" type="date" id="c-date" data-cfg="date" value="${h(cfg.date)}"></label><label class="f">장소<input class="in" id="c-place" data-cfg="place" list="courtlist" value="${h(cfg.place)}"></label></div>
+    <div class="grid2"><label class="f">날짜${calField(cfg.date,{id:'c-date',extra:'data-cfg="date"'})}</label><label class="f">장소<input class="in" id="c-place" data-cfg="place" list="courtlist" value="${h(cfg.place)}"></label></div>
     <div class="grid3"><label class="f">첫 게임<input class="in" type="time" id="c-start" data-cfg="start" value="${h(cfg.start)}"></label><label class="f">게임(분)<input class="in" type="number" min="10" max="120" step="5" id="c-mins" data-cfg="mins" value="${h(cfg.mins)}"></label><label class="f">종료<input class="in" type="time" id="c-end" data-cfg="end" value="${h(cfg.end)}"></label></div>
     <div class="small muted" id="c-rinfo">${toMin(cfg.end)>toMin(cfg.start)?`총 ${R}타임 · 쉬는 시간 없음`:'종료 시각은 첫 게임 이후로 입력 필요'}</div>
     <div><div class="row" style="justify-content:space-between"><span class="small muted" style="font-weight:600">코트 ${C}면</span><div class="row"><button class="btn sm" data-act="court-n" data-v="-1" aria-label="코트 줄이기"${C<=1?' disabled':''}>−</button><button class="btn sm" data-act="court-n" data-v="1" aria-label="코트 늘리기"${C>=6?' disabled':''}>+</button></div></div>
@@ -1011,7 +1040,7 @@ function evForm(ev={}){
   return `<label class="f">행사명<input class="in" name="title" required value="${h(ev.title)}" placeholder="예: 2026 송년 내부대회"></label>
   <div class="grid2"><label class="f">종류<select class="in" name="type">${EV_TYPES.map(t=>`<option${ev.type===t?' selected':''}>${t}</option>`).join('')}</select></label>
   <label class="f">진행 상태<select class="in" name="status">${EV_STATUS.map(t=>`<option${ev.status===t?' selected':''}>${t}</option>`).join('')}</select></label></div>
-  <div class="grid2"><label class="f">시작일<input class="in" type="date" name="date" required value="${h(ev.date)}"></label><label class="f">종료일 (MT 등)<input class="in" type="date" name="endDate" value="${h(ev.endDate)}"></label></div>
+  <div class="grid2"><label class="f">시작일${calField(ev.date,{name:'date',required:true})}</label><label class="f">종료일 (MT 등)${calField(ev.endDate,{name:'endDate'})}</label></div>
   <div class="grid2"><label class="f">장소<input class="in" name="place" value="${h(ev.place)}"></label><label class="f">담당 운영진<input class="in" name="owner" list="staffs" value="${h(ev.owner)}"><datalist id="staffs">${S.members.filter(m=>m.staff).map(m=>`<option value="${h(m.name)}">`).join('')}</datalist></label></div>
   <div class="grid2" id="gen-fields"${ev.type==='개인대회'?' hidden':''}><label class="f">예상 인원<input class="in" type="number" name="headcount" value="${h(ev.headcount)}"></label><label class="f">예산 (원)<input class="in" type="number" name="budget" value="${h(ev.budget)}"></label></div>
   <fieldset class="fs" id="tour-fields"${ev.type==='개인대회'?'':' hidden'}><legend>개인 대회 출전 정보</legend>
@@ -1207,7 +1236,7 @@ ACT['rent-y']=t=>{rentYear+=+t.dataset.v;render()};
 ACT['arch-f']=t=>{archFilter=t.dataset.v;render()};
 ACT['rent-edit']=()=>{const r=rentalInfo();openModal('정기대관 정보',`<label class="f">코트 이름<input class="in" name="name" required value="${h(r.name)}"></label>
   <div class="grid2"><label class="f">사용 면 수<input class="in" type="number" min="1" name="courts" value="${h(r.courts||3)}"></label><label class="f">회당 대관료 (원)<input class="in" inputmode="numeric" data-comma="1" name="fee" value="${r.fee?h(Number(r.fee).toLocaleString('ko-KR')):''}" placeholder="예: 60,000"></label></div>
-  <div class="grid2"><label class="f">계약 시작일<input class="in" type="date" name="from" value="${h(r.from)}"></label><label class="f">계약 종료일<input class="in" type="date" name="to" value="${h(r.to)}"></label></div>
+  <div class="grid2"><label class="f">계약 시작일${calField(r.from,{name:'from'})}</label><label class="f">계약 종료일${calField(r.to,{name:'to'})}</label></div>
   <label class="f">담당자·연락처<input class="in" name="contact" value="${h(r.contact)}" placeholder="예: 체육시설 관리팀 02-000-0000"></label>
   <label class="f">정산·운영 메모<textarea class="in" name="memo" placeholder="예: 우천 취소분 익월 이월, 코트 측 취소 시 환불">${h(r.memo)}</textarea></label>`,fd=>put('rentals','main',{name:fd.name.trim(),courts:Number(fd.courts)||3,fee:numOf(fd.fee),from:fd.from,to:fd.to,contact:fd.contact.trim(),memo:fd.memo.trim()}))};
 
@@ -1225,7 +1254,7 @@ function ledRow(x){
     <td><select class="cell" ${f('kind')} aria-label="구분"><option value="out"${x.kind!=='in'?' selected':''}>지출</option><option value="in"${x.kind==='in'?' selected':''}>수입</option></select></td>
     <td><button type="button" class="cell cpick" ${f('cat')} data-act="cp-open" data-k="cat" aria-haspopup="listbox" aria-label="분류">${x.cat?h(x.cat):'<span class="ph">분류</span>'}<i aria-hidden="true">▾</i></button></td>
     <td><button type="button" class="cell cpick" ${f('payer')} data-act="cp-open" data-k="payer" aria-haspopup="listbox" aria-label="결제·담당">${x.payer?h(x.payer):'<span class="ph">결제·담당</span>'}<i aria-hidden="true">▾</i></button></td>
-    <td><input class="cell" type="date" ${f('date')} value="${h(x.date||'')}" aria-label="날짜"></td>
+    <td>${calField(x.date,{extra:f('date'),cell:true,required:true})}</td>
     <td><input class="cell" ${f('memo','placeholder="메모" aria-label="메모"')} value="${h(x.memo||'')}"></td>
     <td>${x.draft?'':`<button type="button" class="cell-x" data-act="led-del" data-id="${x.id}" aria-label="행 삭제">×</button>`}</td></tr>`;
 }
@@ -1265,7 +1294,7 @@ function bankHtml(Y){
 ACT['bank-cfg']=()=>{const Y=monY;const c=bankCfg(Y);const auto=(()=>{if(Y<=CLUB_Y)return 0;const p=bankYear(Y-1);return opening(Y-1)+p.I-p.O})();const fm=v=>v===undefined||v===null||v===''?'':Number(v).toLocaleString('ko-KR');
   openModal(`${Y}년 모임 통장 설정`,`<label class="f">${Y-1}년 이월 잔액 (원)<input class="in" inputmode="numeric" data-comma="1" name="opening" value="${fm(c.opening)}" placeholder="${Y<=CLUB_Y?'예: 500,000':'비우면 자동 '+auto.toLocaleString('ko-KR')}"></label>
   <p class="small muted" style="margin:0">${Y<=CLUB_Y?'모임 통장 시작 잔액 입력':'비워 두면 '+(Y-1)+'년 장부 잔액으로 자동 이월'}</p>
-  <div class="grid2"><label class="f">통장 실잔액 (선택)<input class="in" inputmode="numeric" data-comma="1" name="actual" value="${fm(c.actual)}" placeholder="은행 앱 잔액"></label><label class="f">확인 날짜<input class="in" type="date" name="actualAt" value="${h(c.actualAt||ymd(today0()))}"></label></div>
+  <div class="grid2"><label class="f">통장 실잔액 (선택)<input class="in" inputmode="numeric" data-comma="1" name="actual" value="${fm(c.actual)}" placeholder="은행 앱 잔액"></label><label class="f">확인 날짜${calField(c.actualAt||ymd(today0()),{name:'actualAt'})}</label></div>
   <p class="small muted" style="margin:0">실잔액 입력 시 장부 잔액과 차이 표시. 차이가 있으면 누락된 기록 확인</p>`,
   fd=>put('dues','bank-'+Y,{opening:String(fd.opening||'').trim()===''?null:numOf(fd.opening),actual:String(fd.actual||'').trim()===''?null:numOf(fd.actual),actualAt:fd.actualAt||''}))};
 ACT['rent-pay']=async t=>{const Y=+t.dataset.y,q=+t.dataset.q,amt=+t.dataset.amt;if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent=`${won(amt)} 지출 기록`;t.classList.add('pri');return}

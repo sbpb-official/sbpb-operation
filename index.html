@@ -726,6 +726,24 @@ body.ro [data-act="renew-open"]{display:none!important}
 .modal.pick .pk-list{flex:1;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain}
 .modal.pick .m-head{position:static}
 
+/* date fields: calendar dropdown */
+.lv-pop.calpop{padding:10px;min-width:280px}
+.calpop .cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.calpop .cal-h b{font-family:var(--f-display);font-size:15px}
+.lv-pop.calpop .cal-h button,.lv-pop.calpop .cal-f button{all:unset;cursor:pointer;padding:6px 12px;border-radius:8px;font-size:14px;color:var(--ink);width:auto;display:inline-block}
+.lv-pop.calpop .cal-h button{font-size:20px;line-height:1;padding:4px 12px}
+.lv-pop.calpop .cal-h button:hover,.lv-pop.calpop .cal-f button:hover{background:var(--surface-2)}
+.calpop .cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.calpop .cal-g span{font-size:11px;font-weight:700;color:var(--muted);text-align:center;padding:4px 0}
+.lv-pop.calpop .cal-g button{all:unset;box-sizing:border-box;display:block;width:100%;text-align:center;height:34px;line-height:34px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums}
+.lv-pop.calpop .cal-g button:hover{background:var(--surface-2)}
+.calpop .cal-g .sun{color:var(--bad)}.calpop .cal-g .sat{color:var(--t-ex)}
+.lv-pop.calpop .cal-g button.today{box-shadow:inset 0 0 0 1.5px var(--ink)}
+.lv-pop.calpop .cal-g button.sel{background:var(--court);color:var(--on-court);font-weight:700}
+.calpop .cal-f{display:flex;justify-content:space-between;margin-top:6px;border-top:1px solid var(--line);padding-top:6px}
+.dfield .dbtn,.wfield .pickbtn{display:flex;align-items:center;justify-content:space-between;width:100%}
+.dcell .dbtn{border:0;border-radius:0;white-space:nowrap}
+
 /* modal */
 .ov{position:fixed;left:0;right:0;top:0;bottom:0;height:auto;   /* full screen, not the area above the keyboard: the keyboard covers the modal instead of shrinking it */
   background:rgba(10,16,24,.5);z-index:20;display:flex;align-items:center;justify-content:center;overflow:hidden;overflow:clip;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
@@ -926,7 +944,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=c8e94cddb9';
+const CUR_APP = 'app.js?v=dfc03eda40';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -954,7 +972,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=c8e94cddb9';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=dfc03eda40';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
