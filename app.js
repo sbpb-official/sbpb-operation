@@ -245,11 +245,12 @@ async function boot(){
   if(!d||canWrite===false){clearTimeout(timer);await enterRO();if(WEB&&window.SBPB_WEB.user())toast('운영진 권한 없는 계정. 운영진 계정에 이메일 등록 필요');return}
   db=d;mode='db';setConn();
   c.use('artifact').then(x=>{art=x;setConn();render()});
+  const fresh=new Set();let migRan=false;
   COLS.forEach(col=>{
     db.collection(col).onSnapshot(snap=>{
       S[col]=snap.docs.map(d=>({id:d.id,...d.data()}));
       loaded.add(col);
-      if(!snap.metadata.fromCache&&loaded.size===COLS.length){clearTimeout(timer);if(slow){slow=false}runMigrations()}
+      if(!snap.metadata.fromCache)fresh.add(col);if(fresh.size===COLS.length&&!migRan){migRan=true;clearTimeout(timer);if(slow){slow=false}runMigrations()}
       if(col==='notes')resolveNames(S.notes.map(n=>n.authorId));
       setConn();render();
     },err=>{loaded.add(col);toast('데이터 불러오기 실패: '+col);render()});
@@ -267,10 +268,11 @@ async function runMigrations(){
   const F5='mig-court-boramae-mmove';
   const F6='mig-court-boramae-addr';
   const F7='mig-court-ts-link';
-  const F8='mig-court-gyenam';                       // 2026-11-14: 계남테니스장 (구로구) 추가                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
+  const F8='mig-court-gyenam';
+  const F9='mig-court-ts-naver';                     // 2026-11-14: TS는 네이버 링크 예약 (스매시 아님) · 메모의 '○○에서 예약' 안내 문구 제거                       // 2026-11-14: 계남테니스장 (구로구) 추가                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
   const TS_MEMO='예약 링크는 네이버 지도 · 9호선 둔촌오륜역 1번 출구 도보 약 860m\n대관료 (개장 당시): 평일 야간·주말 주간 35,000원 · 주말 야간 40,000원\n※ 현재 요금·예약 오픈 방식은 네이버 지도 업체 정보로 확인 필요';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
   const has=id=>S.dues.find(d=>d.id===id);
-  if(has(F)&&has(F2)&&has(F3)&&has(F4)&&has(F5)&&has(F6)&&has(F7)&&has(F8))return;
+  if(has(F)&&has(F2)&&has(F3)&&has(F4)&&has(F5)&&has(F6)&&has(F7)&&has(F8)&&has(F9))return;
   migBusy=true;
   try{if(!has(F)){const targets=S.members.filter(m=>isCur(m)&&!m.sample);
     for(const m of targets)if(m.joined!=='2026-01-01')await put('members',m.id,{...m,joined:'2026-01-01'});
@@ -319,7 +321,13 @@ async function runMigrations(){
       genRule:{type:'monthly',day:'25',time:'07:00'},resident:false,resRule:{},area:'',workers:false,
       memo:'서울시 공공서비스예약 · 다음 달 일일 대관 매월 25일 07:00부터 신청\n1인·1팀 최대 1코트 2시간 · 당일 신청 불가 · 공휴일 휴관\n문의 구로구시설관리공단 02-2611-9007\n※ 요금 단위(1회 2시간 추정)·면 수·바닥은 예약 페이지로 확인 필요',createdAt:Date.now()});
     await put('dues',F8,{done:true,skipped:dup,at:Date.now()});
-    if(!dup)toast('코트 추가 완료 · 계남테니스장')}}
+    if(!dup)toast('코트 추가 완료 · 계남테니스장')}
+  if(!has(F9)){let n=0;const drop=s=>String(s||'').split('\n').filter(l=>!/^\s*(스매시\s*앱|엠무브\s*사이트)에서\s*예약\s*$/.test(l)).join('\n').trim();
+    for(const c0 of S.courts){const c=S.courts.find(x=>x.id===c0.id);const isTS=/^\s*TS\b|TS\s*SPORT|TS\s*스포츠|TS\s*테니스/i.test(c.name||'');
+      const next={...c,memo:drop(c.memo)};if(/고비용/.test(next.fee||''))next.fee=String(next.fee).replace(/\(?\s*고비용\s*\)?/g,'').trim();
+      if(isTS){next.smash=false;next.kind='private';if(!next.url)next.url='https://naver.me/xKy8BCdY';if(!next.map)next.map=next.url;if(!next.address)next.address='경기 하남시 서하남로 9-16'}
+      if(JSON.stringify(next)!==JSON.stringify(c)){await put('courts',c.id,next);n++}}
+    await put('dues',F9,{done:true,count:n,at:Date.now()});if(n)toast(`코트 정보 정리 완료 (${n}곳)`)}}
   catch(e){}
   migBusy=false;
 }

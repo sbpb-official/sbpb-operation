@@ -54,7 +54,7 @@ const dbCap = {
       set: body => setDoc(doc(fs, col, id), body),
       delete: () => deleteDoc(doc(fs, col, id))
     }),
-    onSnapshot: (next, err) => onSnapshot(collection(fs, col), s => next({ docs: s.docs, metadata: s.metadata }), err)
+    onSnapshot: (next, err) => onSnapshot(collection(fs, col), { includeMetadataChanges: true }, s => next({ docs: s.docs, metadata: s.metadata }), err)
   })
 };
 
