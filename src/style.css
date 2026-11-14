@@ -725,6 +725,14 @@ body.ro [data-act="renew-open"]{display:none!important}
 
 .f[hidden]{display:none!important}
 
+.due-yr{margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+.due-yr>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:4px 0}
+.due-yr>summary::-webkit-details-marker{display:none}
+.due-yr>summary h3{margin:0}
+.due-yr[open]>summary{margin-bottom:6px}
+.due-yr .tg-c,.due-yr[open] .tg-o{display:none}.due-yr[open] .tg-c{display:inline}
+.due-yr[open] .led-tg i{transform:rotate(180deg)}
+
 /* modal */
 .ov{position:fixed;left:0;right:0;top:0;bottom:0;height:auto;   /* full screen, not the area above the keyboard: the keyboard covers the modal instead of shrinking it */
   background:rgba(10,16,24,.5);z-index:20;display:flex;align-items:center;justify-content:center;overflow:hidden;overflow:clip;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}

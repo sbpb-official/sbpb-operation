@@ -1329,9 +1329,10 @@ function viewMoney(){
       <div class="chips"><span class="chip ok">납부 ${cnt.paid}</span><span class="chip warn">미납 ${cnt.none}</span>${cnt.free?`<span class="chip">면제 ${cnt.free}</span>`:''}<span class="chip court">${M}월 걷은 금액 ${won(cnt.paid*fee)}</span></div></div>
     <div class="due-list">${rows}</div>
     ${cnt.none&&!RO?`<details class="recruit" id="due-pv"${lsGet('sbpb-due-pv',false)?' open':''}><summary>미납 안내 문구 미리보기</summary><pre class="rtext">${h(dueText())}</pre><button class="btn sm" data-act="due-copy">문구 복사</button></details>`:''}
-    <h3 style="margin:18px 0 8px">${Y}년 납부 현황 <span class="small muted" style="font-weight:500">● 납부 · ○ 미납 · 면 면제 · 월 선택 시 해당 월 납부 체크로 이동</span></h3>
+    <details class="due-yr" id="due-yr"${lsGet('sbpb-due-yr',false)?' open':''}><summary><h3>${Y}년 납부 현황</h3><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
+    <div class="small muted" style="margin:0 0 8px">● 납부 · ○ 미납 · 면 면제 · 월 선택 시 해당 월 납부 체크로 이동</div>
     <div class="xwrap"><table class="dtbl"><thead><tr><th>이름</th>${Array.from({length:12},(_,i)=>`<td class="${i+1===M?'cur':''}">${i+1}</td>`).join('')}<td>횟수</td><td>금액</td></tr></thead><tbody>${yRows}</tbody>
-    <tfoot><tr><th>합계</th>${colSum.map((n,i)=>`<td class="num${i+1===M?' cur':''}">${n||''}</td>`).join('')}<td class="num">${yTot}</td><td class="num">${fee?won(yTot*fee):'–'}</td></tr></tfoot></table></div></section>`;
+    <tfoot><tr><th>합계</th>${colSum.map((n,i)=>`<td class="num${i+1===M?' cur':''}">${n||''}</td>`).join('')}<td class="num">${yTot}</td><td class="num">${fee?won(yTot*fee):'–'}</td></tr></tfoot></table></div></details></section>`;
   // ----- event ledger (accordion + editable sheet) -----
   const evs=S.events.filter(e=>(e.date||'').startsWith(String(Y))&&(e.type!=='개인대회'||ledSum(e.id).es.length)).sort((x,y)=>(y.date||'').localeCompare(x.date||''));
   if(ledOpen===null&&S.ledger.length){const f=evs.find(e=>ledSum(e.id).es.length);if(f)ledOpen=new Set([f.id])}
@@ -1364,7 +1365,7 @@ ACT['due-set']=async t=>{const {id,y,m,v}=t.dataset;const did=`${y}-${id}`;const
 ACT['due-cfg']=()=>{const c=duesCfg();openModal('회비 설정',`<div class="grid2"><label class="f">월 회비 (원)<input class="in" inputmode="numeric" data-comma="1" name="fee" value="${h(Number(c.fee||0).toLocaleString('ko-KR'))}" required></label><label class="f">회비 시작 월${wheelField(c.start,'start','ym','회비 시작 월')}</label></div><p class="small muted" style="margin:0">시작 월 이전은 납부 대상에서 제외. 휴면·개인 사정 등은 회원별 '면제'로 처리</p>`,fd=>put('dues','cfg',{fee:numOf(fd.fee),start:fd.start||''}))};
 function dueText(){const Y=monY,M=monM;const fee=Number(duesCfg().fee)||0;const un=duesPeople(Y).filter(m=>isCur(m)&&dueState(m,Y,M)==='none');
   return `[SBPB ${M}월 회비 안내]\n${M}월 회비 ${won(fee)} 미납 확인 부탁드립니다 🙏\n${un.map(m=>m.name).join(', ')}`}
-document.addEventListener('toggle',e=>{if(e.target.id==='due-pv')lsSet('sbpb-due-pv',e.target.open)},true);
+document.addEventListener('toggle',e=>{if(e.target.id==='due-pv')lsSet('sbpb-due-pv',e.target.open);if(e.target.id==='due-yr')lsSet('sbpb-due-yr',e.target.open)},true);
 ACT['due-copy']=async()=>{const txt=dueText();
   try{await navigator.clipboard.writeText(txt);toast('미납 안내 문구 복사 완료')}catch(e){openModal('미납 안내 문구',`<textarea class="in" rows="5" readonly>${h(txt)}</textarea><p class="small muted" style="margin:0">문구 칸을 길게 눌러 복사</p>`,async()=>{})}};
 // ledger entries
