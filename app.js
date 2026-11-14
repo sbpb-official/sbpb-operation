@@ -1224,7 +1224,8 @@ function courtForm(c={}){
   return `<div class="grid2"><label class="f">코트 이름<input class="in" name="name" required value="${h(c.name)}" placeholder="예: OO공원 테니스장"></label><label class="f">위치 (구·시)<input class="in" name="district" list="areas-c" value="${h(c.district)}" placeholder="예: 송파구"></label></div>
   <label class="f">주소 (선택 시 네이버 지도 연결)<input class="in" name="address" value="${h(c.address)}" placeholder="예: 서울 광진구 천호대로 731"></label>
   <label class="f">네이버 지도 링크 (선택 · 비우면 주소로 검색)<input class="in" type="url" name="map" value="${h(c.map)}" placeholder="https://naver.me/..."></label>
-  <div class="grid3"><label class="f">면 수<input class="in" name="courts" value="${h(c.courts)}" placeholder="4면"></label><label class="f">바닥${optSel('surface',c.surface,['하드','클레이','인조잔디'])}</label><label class="f">요금<input class="in" name="fee" value="${h(c.fee)}" placeholder="시간당 약 5천원"></label></div>
+  <div class="grid2"><label class="f">면 수<input class="in" name="courts" value="${h(c.courts)}" placeholder="4면"></label><label class="f">요금<input class="in" name="fee" value="${h(c.fee)}" placeholder="시간당 약 5천원"></label></div>
+  <div class="f"><span>바닥 (중복 선택 가능)</span><div class="iopick">${(()=>{const cur=surfList(c.surface);return [...new Set([...SURFACES,...cur])].map(s=>`<label><input type="checkbox" name="surf_${h(s)}"${cur.includes(s)?' checked':''}><span>${h(s)}</span></label>`).join('')})()}</div></div>
   <div class="f"><span>실내 · 실외 (중복 선택 가능)</span><div class="iopick"><label><input type="checkbox" name="indoor"${c.indoor?' checked':''}><span>실내</span></label><label><input type="checkbox" name="outdoor"${c.outdoor?' checked':''}><span>실외</span></label></div></div>
   <div class="grid2"><label class="f">구분<select class="in" name="kind">${KINDS.map(([k,l])=>`<option value="${k}"${kindOf(c)===k?' selected':''}>${l}</option>`).join('')}</select></label>
   <label class="f">예약 링크<input class="in" type="url" name="url" value="${h(c.url)}" placeholder="https://..."></label></div>
@@ -1236,7 +1237,7 @@ function courtForm(c={}){
   <label class="f">예약 대상 기간 / 메모<textarea class="in" name="memo" placeholder="예: 다음 달 이용분 오픈, 1인 월 2회 제한, 추첨제">${h(c.memo)}</textarea></label>
   <datalist id="areas-c">${SEOUL.concat(NEAR).map(a=>`<option value="${a}">`).join('')}</datalist>`;
 }
-const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:(fd.map||'').trim(),courts:fd.courts.trim(),surface:(fd.surface||'').trim(),indoor:!!fd.indoor,outdoor:!!fd.outdoor,fee:fd.fee.trim(),url:fd.url.trim(),platform:old.platform||'etc',kind:fd.kind||'public',smash:!!fd.smash,genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:fd.memo.trim()});
+const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:(fd.map||'').trim(),courts:fd.courts.trim(),surface:Object.keys(fd).filter(k=>k.startsWith('surf_')&&fd[k]===true).map(k=>k.slice(5)).join('·'),indoor:!!fd.indoor,outdoor:!!fd.outdoor,fee:fd.fee.trim(),url:fd.url.trim(),platform:old.platform||'etc',kind:fd.kind||'public',smash:!!fd.smash,genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:fd.memo.trim()});
 ACT['c-new']=()=>openModal('코트 추가',courtForm(),fd=>put('courts',uid(),{...courtFromFd(fd),createdAt:Date.now()}));
 ACT['c-edit']=t=>{const c=S.courts.find(x=>x.id===t.dataset.id);if(!c)return;openModal('코트 수정',courtForm(c),fd=>put('courts',c.id,courtFromFd(fd,c)),`<button type="button" class="btn danger" data-act="c-del" data-id="${c.id}">삭제</button>`)};
 ACT['c-del']=t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 삭제';return}del('courts',t.dataset.id);closeModal()};
@@ -1248,6 +1249,8 @@ const PLATFORMS=[
   {k:'smash',url:''},
   {k:'etc',url:''}];
 const KINDS=[['public','공공 코트'],['private','사설 코트']];
+const SURFACES=['하드','클레이','인조잔디'];
+const surfList=s=>String(s||'').split(/\s*[·,\/]\s*/).map(x=>x.trim()).filter(Boolean);
 const isSmash=c=>c.smash!==undefined?!!c.smash:(c.platform==='smash'&&!c.url&&!/엠무브|mmove/i.test(c.name||''));
 const kindOf=c=>c.kind||(c.platform==='smash'||c.platform==='naver'?'private':'public');
 const platOf=c=>PLATFORMS.find(p=>p.k===c.platform)||PLATFORMS[PLATFORMS.length-1];
@@ -1270,7 +1273,7 @@ function viewCourts(){
         return `<div class="open-box roll"><div class="l">${l}</div><div class="big">이용일 <b>${n}일 전</b>${rule.time?` <b>${h(rule.time)}</b>`:''}</div><div class="d">지금 <b>${fd(upto)}</b> 이용분까지 예약 가능</div><div class="d">다음 오픈 ${opened?'내일':'오늘'} ${h(rule.time||'')} → ${fd(nxUse)} 이용분</div></div>`}
       if(!d)return `<div class="open-box"><div class="l">${l}</div><div class="big">미정</div><div class="d">${h(ruleText(rule))}</div></div>`;
       const dd=diffDays(ymd(d));return `<div class="open-box${dd<=1?' soon':''}"><div class="l">${l}</div><div class="big"><span class="dday">${ddayLabel(ymd(d))}</span><b>${fd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}</b></div><div class="d">${h(ruleText(rule))}</div></div>`};
-    return `<article class="ccard"><div class="hd"><div><h3>${h(c.name)}</h3><div class="cbadges">${c.district?`<span class="cb cb-area">${h(c.district)}</span>`:''}${c.surface?`<span class="cb ${({'인조잔디':'cb-grass','하드':'cb-hard','클레이':'cb-clay'})[c.surface]||'cb-etc'}">${h(c.surface)}</span>`:''}${c.indoor?'<span class="cb cb-io">실내</span>':''}${c.outdoor?'<span class="cb cb-io">실외</span>':''}${c.courts?`<span class="cb-n">${h(c.courts)}</span>`:''}${isSmash(c)?'<span class="cb cb-etc">스매시 앱 예약</span>':''}</div>${addrLink(c.address,c.name,c.map)}</div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
+    return `<article class="ccard"><div class="hd"><div><h3>${h(c.name)}</h3><div class="cbadges">${c.district?`<span class="cb cb-area">${h(c.district)}</span>`:''}${surfList(c.surface).map(s=>`<span class="cb ${({'인조잔디':'cb-grass','하드':'cb-hard','클레이':'cb-clay'})[s]||'cb-etc'}">${h(s)}</span>`).join('')}${c.indoor?'<span class="cb cb-io">실내</span>':''}${c.outdoor?'<span class="cb cb-io">실외</span>':''}${c.courts?`<span class="cb-n">${h(c.courts)}</span>`:''}${isSmash(c)?'<span class="cb cb-etc">스매시 앱 예약</span>':''}</div>${addrLink(c.address,c.name,c.map)}</div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
     ${c.genRule&&c.genRule.type?`<div class="opens">${c.resident?ob('주민 우선 오픈',r,c.resRule):''}${ob('일반 오픈',g,c.genRule)}</div>`:''}
     <dl class="kv"><dt>요금</dt><dd>${c.fee?h(c.fee):'-'}</dd>${c.memo?`<dt>메모</dt><dd style="white-space:pre-wrap">${h(c.memo)}</dd>`:''}</dl>
     ${c.resident?`<div class="prio"><div class="l">우선 예약 가능 회원 · ${h(c.area||c.district)}${c.workers?' 거주·직장':' 거주'} 기준 ${pm.length}명</div><div class="chips">${pm.length?pm.map(({m,why})=>`<span class="chip ${why==='거주'?'court':''}">${h(m.name)}${why==='직장'?' (직장)':''}</span>`).join(''):'<span class="small muted">해당 지역 회원 없음</span>'}</div></div>`:''}
