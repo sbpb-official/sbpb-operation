@@ -128,9 +128,11 @@ function areaField(name,val,ph){
 // dropdown lists (level, area): float over the form at the button, always fully on screen with their own scroll
 function placePop(btn,pop){const r=btn.getBoundingClientRect();const vv=window.visualViewport;const vh=vv?vv.height:innerHeight,vt=vv?vv.offsetTop:0;
   const w=Math.min(Math.max(r.width,240),innerWidth-16);const left=Math.max(8,Math.min(r.left,innerWidth-w-8));
-  const below=vt+vh-r.bottom-12,above=r.top-vt-12;pop.style.maxHeight='none';const want=Math.min(pop.scrollHeight,360);
-  const up=below<Math.min(want,220)&&above>below;const mh=Math.max(140,Math.min(360,up?above:below));
-  Object.assign(pop.style,{position:'fixed',left:left+'px',right:'auto',width:w+'px',minWidth:'0',maxHeight:mh+'px',zIndex:'45',top:(up?Math.max(vt+8,r.top-Math.min(want,mh)-4):r.bottom+4)+'px'})}
+  // stay inside the visible form area (between the title bar and the save bar), not just the screen
+  const box=btn.closest('.m-body');const br=box?box.getBoundingClientRect():null;const lo=Math.min(vt+vh,br?br.bottom:vt+vh),hi=Math.max(vt,br?br.top:vt);
+  const below=lo-r.bottom-8,above=r.top-hi-8;pop.style.maxHeight='none';const want=Math.min(pop.scrollHeight,360);
+  const up=below<Math.min(want,220)&&above>below;const mh=Math.max(120,Math.min(360,up?above:below));
+  Object.assign(pop.style,{position:'fixed',left:left+'px',right:'auto',width:w+'px',minWidth:'0',maxHeight:mh+'px',zIndex:'45',top:(up?Math.max(hi+4,r.top-Math.min(want,mh)-4):r.bottom+4)+'px'})}
 function placeOpenPop(e){const p=document.querySelector('.lv-pop:not([hidden])');if(!p||(e&&e.target&&e.target.nodeType===1&&p.contains(e.target)))return;const b=p.previousElementSibling;if(b&&b.offsetParent)placePop(b,p);else closeLv()}
 document.addEventListener('scroll',placeOpenPop,true);window.addEventListener('resize',()=>placeOpenPop());if(window.visualViewport)visualViewport.addEventListener('resize',()=>placeOpenPop());
 ACT['area-open']=t=>{const wrap=t.closest('.areaf');const pop=wrap.querySelector('.lv-pop');const open=pop.hidden;closeLv();pop.hidden=!open;t.setAttribute('aria-expanded',String(open));if(open){placePop(t,pop);const s=pop.querySelector('[aria-selected="true"]');if(s)pop.scrollTop=s.offsetTop-pop.clientHeight/2+s.offsetHeight/2}};
