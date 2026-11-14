@@ -981,7 +981,7 @@ document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.tar
 let noteView=lsGet('sbpb-note-view','sticky');
 ACT['note-more']=t=>{t.classList.toggle('open')};
 ACT['note-view']=t=>{noteView=t.dataset.v;lsSet('sbpb-note-view',noteView);render()};
-let evSel=null,evFilter='upcoming',noteColor='yellow';
+let evSel=null,evFilter='all',evPastMore=false,noteColor='yellow';
 function evForm(ev={}){
   return `<label class="f">행사명<input class="in" name="title" required value="${h(ev.title)}" placeholder="예: 2026 송년 내부대회"></label>
   <div class="grid2"><label class="f">종류<select class="in" name="type">${EV_TYPES.map(t=>`<option${ev.type===t?' selected':''}>${t}</option>`).join('')}</select></label>
@@ -1020,22 +1020,29 @@ ACT['ev-del']=async t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textConte
 ACT['ev-open']=t=>{closeDayPop();if(route==='events'&&evSel===t.dataset.id&&!t.closest('#daypop')){setMemoOpen(!memoOpen);return}evSel=t.dataset.id;if(route!=='events')location.hash='#events';else{render();if(window.innerWidth<=1000){const d=$('#evdetail');d&&d.scrollIntoView({behavior:'smooth',block:'start'})}}};
 ACT['cheer']=async t=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const id=t.dataset.id;const c=new Set(ev.cheer||[]);c.has(id)?c.delete(id):c.add(id);try{await put('events',ev.id,{...ev,cheer:[...c]})}catch(e){}};
 const nameOf=id=>memberById(id)?.name||'(삭제된 회원)';
-ACT['ev-filter']=t=>{evFilter=t.dataset.v;render()};
+ACT['ev-filter']=t=>{evFilter=t.dataset.v;evPastMore=false;render()};
+ACT['ev-past-more']=()=>{evPastMore=true;render()};
 ACT['note-color']=t=>{noteColor=t.dataset.c;document.querySelectorAll('.sw').forEach(s=>s.setAttribute('aria-pressed',s.dataset.c===noteColor))};
 ACT['note-add']=async()=>{const ta=$('#note-text');const txt=ta.value.trim();if(!txt){ta.focus();return}const id=uid();try{await put('notes',id,{eventId:evSel,text:txt,color:noteColor,authorId:myId||null,createdAt:Date.now(),rot:(Math.random()*3-1.5).toFixed(1)});ta.value='';lsSet('sbpb-notedraft','')}catch(e){}};
 ACT['note-del']=t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='삭제?';setTimeout(()=>{t.dataset.confirm='';t.textContent='×'},2500);return}del('notes',t.dataset.id)};
 ACT['note-edit']=t=>{const n=S.notes.find(x=>x.id===t.dataset.id);if(!n)return;openModal('메모 수정',`<label class="f">내용<textarea class="in" name="text" rows="6">${h(n.text)}</textarea></label><label class="f">분류<select class="in" name="color">${Object.entries(NOTE_KIND).map(([c,k])=>`<option value="${c}"${n.color===c?' selected':''}>${k}</option>`).join('')}</select></label>`,fd=>put('notes',n.id,{...n,text:fd.text.trim(),color:fd.color}))};
 function viewEvents(){
   const sorted=S.events.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-  let list=sorted;
-  if(evFilter==='upcoming')list=sorted.filter(e=>e.date&&diffDays(e.endDate||e.date)>=0);
-  else if(evFilter==='past')list=sorted.filter(e=>e.date&&diffDays(e.endDate||e.date)<0).reverse();
-  else if(EV_TYPES.includes(evFilter))list=sorted.filter(e=>e.type===evFilter);
+  // 예정: 가까운 날짜부터 · 지난 이벤트: 최근 것부터
+  const base=EV_TYPES.includes(evFilter)?sorted.filter(e=>e.type===evFilter):sorted;
+  const isUp=e=>e.date&&diffDays(e.endDate||e.date)>=0;
+  const up=base.filter(isUp),past=base.filter(e=>!isUp(e)).reverse();
+  const PAST_N=5;const showUp=evFilter!=='past',showPast=evFilter!=='upcoming',secs=showUp&&showPast;
+  const pastShown=secs&&!evPastMore?past.slice(0,PAST_N):past;
+  const list=(showUp?up:[]).concat(showPast?pastShown:[]);
   if(!evSel||!S.events.find(e=>e.id===evSel))evSel=(list[0]||sorted[0]||{}).id||null;
   const ev=S.events.find(e=>e.id===evSel);
-  const filters=[['upcoming','예정'],['past','지난 행사'],['all','전체'],...EV_TYPES.map(t=>[t,t==='개인대회'?'개인 대회':t])];
+  const filters=[['all','전체'],['upcoming','예정'],['past','지난 이벤트'],...EV_TYPES.map(t=>[t,t==='개인대회'?'개인 대회':t])];
   const left=`<section class="panel evlist"><div class="row" style="margin-bottom:10px">${filters.map(([v,l])=>`<button class="btn sm ${evFilter===v?'pri':'ghost'}" data-act="ev-filter" data-v="${v}">${l}</button>`).join('')}</div>
-   <div class="list">${list.map(e=>{const d=parseYmd(e.date);const nc=S.notes.filter(n=>n.eventId===e.id).length;return `<div class="li click t-${h(e.type)}${e.id===evSel?' on':''}" data-act="ev-open" data-id="${e.id}"><div class="datebox"><b>${d?d.getDate():'?'}</b><span>${d?(d.getMonth()+1)+'월':''}</span></div><div class="grow"><div class="ttl">${h(e.title)}</div><div class="sub"><span class="chip ttag">${e.type==='개인대회'?'개인 대회':h(e.type)}</span> ${e.type==='개인대회'?`${h((e.entrants||[]).map(nameOf).join(', '))}${e.result&&e.result!=='대기'?` · <b>${h(e.result)}</b>`:''}`:h(e.status||'')}${nc?` · 메모 ${nc}`:''}</div></div>${e.date&&diffDays(e.date)>=0?`<span class="dday small">${ddayLabel(e.date)}</span>`:''}</div>`}).join('')||'<div class="muted small" style="padding:8px">해당 행사 없음</div>'}</div></section>`;
+   <div class="list">${(()=>{const row=e=>{const d=parseYmd(e.date);const nc=S.notes.filter(n=>n.eventId===e.id).length;return `<div class="li click t-${h(e.type)}${e.id===evSel?' on':''}" data-act="ev-open" data-id="${e.id}"><div class="datebox"><b>${d?d.getDate():'?'}</b><span>${d?(d.getMonth()+1)+'월':''}</span></div><div class="grow"><div class="ttl">${h(e.title)}</div><div class="sub"><span class="chip ttag">${e.type==='개인대회'?'개인 대회':h(e.type)}</span> ${e.type==='개인대회'?`${h((e.entrants||[]).map(nameOf).join(', '))}${e.result&&e.result!=='대기'?` · <b>${h(e.result)}</b>`:''}`:h(e.status||'')}${nc?` · 메모 ${nc}`:''}</div></div>${e.date&&diffDays(e.date)>=0?`<span class="dday small">${ddayLabel(e.date)}</span>`:''}</div>`};const sec=(l,n)=>`<div class="ev-sec">${l} <span class="num">${n}</span></div>`;
+     let o='';if(showUp){if(secs)o+=sec('예정',up.length);o+=up.map(row).join('')||(secs?'<div class="muted small ev-none">예정된 행사 없음</div>':'')}
+     if(showPast){if(secs)o+=sec('지난 이벤트',past.length);o+=pastShown.map(row).join('');if(secs&&past.length>PAST_N&&!evPastMore)o+=`<button class="btn sm ghost ev-more" data-act="ev-past-more">지난 이벤트 ${past.length-PAST_N}건 더 보기</button>`;if(secs&&!past.length)o+='<div class="muted small ev-none">지난 행사 없음</div>'}
+     return o||'<div class="muted small" style="padding:8px">해당 행사 없음</div>'})()}</div></section>`;
   let right;
   if(!ev)right=`<div class="empty" style="padding:60px 16px"><b>등록된 행사 없음</b>행사별 회의 내용과 할 일을 스티커 메모로 기록 가능<div class="row"><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>`;
   else{
