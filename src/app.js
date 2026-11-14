@@ -260,10 +260,11 @@ async function runMigrations(){
   const F2='mig-court-achasan';                      // 2026-11-14: 아차산배수지 테니스장 코트 정보 추가 (같은 이름 코트가 있으면 건너뜀)
   const F3='mig-court-ts';
   const F4='mig-court-addr';
-  const F5='mig-court-boramae-mmove';                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
+  const F5='mig-court-boramae-mmove';
+  const F6='mig-court-boramae-addr';                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
   const TS_MEMO='예약 링크는 네이버 지도 · 9호선 둔촌오륜역 1번 출구 도보 약 860m\n대관료 (개장 당시): 평일 야간·주말 주간 35,000원 · 주말 야간 40,000원\n※ 현재 요금·예약 오픈 방식은 네이버 지도 업체 정보로 확인 필요';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
   const has=id=>S.dues.find(d=>d.id===id);
-  if(has(F)&&has(F2)&&has(F3)&&has(F4)&&has(F5))return;
+  if(has(F)&&has(F2)&&has(F3)&&has(F4)&&has(F5)&&has(F6))return;
   migBusy=true;
   try{if(!has(F)){const targets=S.members.filter(m=>isCur(m)&&!m.sample);
     for(const m of targets)if(m.joined!=='2026-01-01')await put('members',m.id,{...m,joined:'2026-01-01'});
@@ -290,13 +291,16 @@ async function runMigrations(){
   if(!has(F5)){const done=[];const BM_NOTE='예약 가능: 이용일 14일 전 09:00 ~ 이용 당일 20:00 (예: 11.30 이용분은 11.16 09:00부터)';
     const bm=S.courts.filter(c=>/보라매/.test(c.name||''));
     for(const c of bm){await put('courts',c.id,{...c,genRule:{type:'rolling',days:14,time:'09:00'},memo:/14일 전/.test(c.memo||'')?c.memo:[c.memo,BM_NOTE].filter(Boolean).join('\n')});done.push('보라매')}
-    if(!bm.length){await put('courts','c-boramae',{name:'보라매공원 테니스장',district:'동작구',address:'',courts:'',surface:'',fee:'',url:'',platform:'seoul',genRule:{type:'rolling',days:14,time:'09:00'},resident:false,area:'',workers:false,memo:BM_NOTE,createdAt:Date.now()});done.push('보라매 (새로 추가)')}
+    if(!bm.length){await put('courts','c-boramae',{name:'보라매공원 테니스장',district:'동작구',address:'서울 동작구 여의대방로20길 33',courts:'',surface:'',fee:'',url:'',platform:'seoul',genRule:{type:'rolling',days:14,time:'09:00'},resident:false,area:'',workers:false,memo:BM_NOTE,createdAt:Date.now()});done.push('보라매 (새로 추가)')}
     const MV={address:'서울 중랑구 망우로70길 103',map:'https://naver.me/FbV4sRlZ'};const mv=S.courts.filter(c=>/엠무브|mmove/i.test(c.name||''));
     for(const c of mv){await put('courts',c.id,{...c,...MV,district:c.district||'중랑구'});done.push('엠무브')}
     if(!mv.length){await put('courts','c-mmove',{name:'엠무브테니스 용마점',district:'중랑구',...MV,courts:'',surface:'',fee:'',url:MMOVE,platform:'smash',resident:false,area:'',workers:false,memo:'',createdAt:Date.now()});done.push('엠무브 (새로 추가)')}
     const ts=S.courts.find(c=>c.id==='c-ts-hanam');if(ts&&!ts.map)await put('courts',ts.id,{...ts,map:ts.url||'https://naver.me/xKy8BCdY'});
     await put('dues',F5,{done:true,list:done,at:Date.now()});
-    toast('코트 정보 반영 완료 · '+done.join(', '))}}
+    toast('코트 정보 반영 완료 · '+done.join(', '))}
+  if(!has(F6)){const bm=S.courts.filter(c=>/보라매/.test(c.name||'')&&!c.address);
+    for(const c of bm)await put('courts',c.id,{...c,address:'서울 동작구 여의대방로20길 33'});
+    await put('dues',F6,{done:true,count:bm.length,at:Date.now()})}}
   catch(e){}
   migBusy=false;
 }
@@ -1218,7 +1222,7 @@ const KINDS=[['public','공공 코트'],['private','사설 코트']];
 const kindOf=c=>c.kind||(c.platform==='smash'||c.platform==='naver'?'private':'public');
 const platOf=c=>PLATFORMS.find(p=>p.k===c.platform)||PLATFORMS[PLATFORMS.length-1];
 const mapUrl=q=>'https://map.naver.com/p/search/'+encodeURIComponent(q);
-const addrLink=(addr,name,map)=>`<a class="addr" href="${h(map||mapUrl(addr||name||''))}" target="_blank" rel="noopener">${addr?h(addr):'지도에서 위치 보기'} <span aria-hidden="true">↗</span></a>`;
+const addrLink=(addr,name,map)=>`<a class="addr" href="${h(map||mapUrl(addr||name||''))}" target="_blank" rel="noopener">${addr?h(addr):'도로명주소 미입력 · 이름으로 검색'} <span aria-hidden="true">↗</span></a>`;
 const MMOVE='https://mmove.co.kr/bbs/page.php?hid=m02_01';
 const courtUrl=c=>c.url||(/엠무브|mmove/i.test(c.name||'')?MMOVE:platOf(c).url);
 let courtArea='';
