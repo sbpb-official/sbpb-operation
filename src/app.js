@@ -1186,6 +1186,7 @@ function ruleFrom(fd,p){const type=fd[p+'type'],v=(fd[p+'val']||'').trim(),time=
   if(type==='weekly'){const i=WD.indexOf(v.replace('요일',''));return {type,weekday:i<0?1:i,time}}
   if(type==='manual'){const d=fd[p+'date']||v;return {type,date:/^\d{4}-\d{2}-\d{2}$/.test(d)?d:'',time}}
   if(type==='rolling'){const n=parseInt(v);return {type,days:n>0?n:30,time:fd[p+'time']||''}}
+  if(!v)return {};/* 일 입력 없으면 오픈 규칙 없음 */
   const parts=v.split(/[,·\s]+/).filter(Boolean);const ds=parts.filter(x=>!/말/.test(x)).map(n=>parseInt(n)).filter(n=>n>=1&&n<=31);const last=parts.some(x=>/말/.test(x));
   const list=[...new Set(ds)].sort((a,b)=>a-b).map(String);if(last)list.push('L');return {type:'monthly',day:(list.length?list:['1']).join(','),time}}
 function courtForm(c={}){
@@ -1193,7 +1194,7 @@ function courtForm(c={}){
   <label class="f">주소 (선택 시 네이버 지도 연결)<input class="in" name="address" value="${h(c.address)}" placeholder="예: 서울 광진구 천호대로 731"></label>
   <label class="f">네이버 지도 링크 (선택 · 비우면 주소로 검색)<input class="in" type="url" name="map" value="${h(c.map)}" placeholder="https://naver.me/..."></label>
   <div class="grid3"><label class="f">면 수<input class="in" name="courts" value="${h(c.courts)}" placeholder="4면"></label><label class="f">바닥<input class="in" name="surface" value="${h(c.surface)}" placeholder="하드 / 인조잔디"></label><label class="f">요금<input class="in" name="fee" value="${h(c.fee)}" placeholder="시간당 약 5천원"></label></div>
-  <div class="grid2"><label class="f">예약처<select class="in" name="platform">${PLATFORMS.map(p=>`<option value="${p.k}"${(c.platform||'etc')===p.k?' selected':''}>${p.name}</option>`).join('')}</select></label>
+  <div class="grid2"><label class="f">구분<select class="in" name="kind">${KINDS.map(([k,l])=>`<option value="${k}"${kindOf(c)===k?' selected':''}>${l}</option>`).join('')}</select></label>
   <label class="f">예약 링크 (비우면 예약처 링크)<input class="in" type="url" name="url" value="${h(c.url)}" placeholder="https://..."></label></div>
   <div><div class="small muted" style="font-weight:600;margin-bottom:4px">일반 예약 오픈</div>${ruleFields('g_',c.genRule)}</div>
   <label class="check"><input type="checkbox" name="resident"${c.resident?' checked':''}> 관내 주민 우선 예약 있음</label>
@@ -1202,16 +1203,19 @@ function courtForm(c={}){
   <label class="f">예약 대상 기간 / 메모<textarea class="in" name="memo" placeholder="예: 다음 달 이용분 오픈, 1인 월 2회 제한, 추첨제">${h(c.memo)}</textarea></label>
   <datalist id="areas-c">${SEOUL.concat(NEAR).map(a=>`<option value="${a}">`).join('')}</datalist>`;
 }
-const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:(fd.map||'').trim(),courts:fd.courts.trim(),surface:fd.surface.trim(),fee:fd.fee.trim(),url:fd.url.trim(),platform:fd.platform||'etc',genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:fd.memo.trim()});
+const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:(fd.map||'').trim(),courts:fd.courts.trim(),surface:fd.surface.trim(),fee:fd.fee.trim(),url:fd.url.trim(),platform:old.platform||'etc',kind:fd.kind||'public',genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:fd.memo.trim()});
 ACT['c-new']=()=>openModal('코트 추가',courtForm(),fd=>put('courts',uid(),{...courtFromFd(fd),createdAt:Date.now()}));
 ACT['c-edit']=t=>{const c=S.courts.find(x=>x.id===t.dataset.id);if(!c)return;openModal('코트 수정',courtForm(c),fd=>put('courts',c.id,courtFromFd(fd,c)),`<button type="button" class="btn danger" data-act="c-del" data-id="${c.id}">삭제</button>`)};
 ACT['c-del']=t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 삭제';return}del('courts',t.dataset.id);closeModal()};
+// 예약처: 카드에 예약 링크가 없을 때 연결할 기본 사이트 (예전 데이터 호환)
 const PLATFORMS=[
-  {k:'seoul',name:'서울시 공공서비스예약',url:'https://yeyak.seoul.go.kr/web/search/selectPageListDetailSearchImg.do?code=T100&dCode=T108',login:'서울시 통합계정 로그인'},
-  {k:'olympic',name:'올림픽공원 테니스장 예약',url:'https://www.ksponco.or.kr/online/tennis/index.do',login:''},
-  {k:'naver',name:'네이버 예약',url:'https://booking.naver.com',login:'네이버 계정 로그인'},
-  {k:'smash',name:'사설 코트 (고비용)',url:'',login:'스매시 앱에서 예약 (엠무브는 엠무브 사이트) · 게스트 매칭도 스매시 앱',links:[{l:'엠무브 예약',u:'https://mmove.co.kr/bbs/page.php?hid=m02_01'}]},
-  {k:'etc',name:'기타',url:'',login:''}];
+  {k:'seoul',url:'https://yeyak.seoul.go.kr/web/search/selectPageListDetailSearchImg.do?code=T100&dCode=T108'},
+  {k:'olympic',url:'https://www.ksponco.or.kr/online/tennis/index.do'},
+  {k:'naver',url:'https://booking.naver.com'},
+  {k:'smash',url:''},
+  {k:'etc',url:''}];
+const KINDS=[['public','공공 코트'],['private','사설 코트']];
+const kindOf=c=>c.kind||(c.platform==='smash'||c.platform==='naver'?'private':'public');
 const platOf=c=>PLATFORMS.find(p=>p.k===c.platform)||PLATFORMS[PLATFORMS.length-1];
 const mapUrl=q=>'https://map.naver.com/p/search/'+encodeURIComponent(q);
 const addrLink=(addr,name,map)=>`<a class="addr" href="${h(map||mapUrl(addr||name||''))}" target="_blank" rel="noopener">${addr?h(addr):'지도에서 위치 보기'} <span aria-hidden="true">↗</span></a>`;
@@ -1238,7 +1242,7 @@ function viewCourts(){
     ${c.resident?`<div class="prio"><div class="l">우선 예약 가능 회원 · ${h(c.area||c.district)}${c.workers?' 거주·직장':' 거주'} 기준 ${pm.length}명</div><div class="chips">${pm.length?pm.map(({m,why})=>`<span class="chip ${why==='거주'?'court':''}">${h(m.name)}${why==='직장'?' (직장)':''}</span>`).join(''):'<span class="small muted">해당 지역 회원 없음</span>'}</div></div>`:''}
     ${courtUrl(c)?`<a class="btn pri" href="${h(courtUrl(c))}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">예약 페이지 열기 ↗</a>`:''}
     </article>`};
-  const cards=`<div class="cards">${list.map(card).join('')}</div>`;
+  const cards=KINDS.map(([k,l])=>{const items=list.filter(({c})=>kindOf(c)===k);return items.length?`<section class="plat"><div class="plat-h"><h3>${l} <span class="num muted" style="font-size:13px">${items.length}</span></h3></div><div class="cards">${items.map(card).join('')}</div></section>`:''}).join('');
   // area coverage: which districts have members
   const memAreas={};activeMembers().forEach(m=>{if(m.district)memAreas[m.district]=(memAreas[m.district]||0)+1});
   return `<div class="page-head"><div><h1>코트</h1><p>정기대관 코트 사용 현황 및 추가 코트 예약 관리</p></div></div>
