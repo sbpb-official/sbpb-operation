@@ -136,6 +136,7 @@ async function checkUpdate() {
     wait();
   } catch (e) {}
 }
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); });
 setInterval(checkUpdate, 120000);
 setTimeout(checkUpdate, 15000);
