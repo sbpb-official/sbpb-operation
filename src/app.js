@@ -1033,7 +1033,7 @@ function viewEvents(){
   const base=EV_TYPES.includes(evFilter)?sorted.filter(e=>e.type===evFilter):sorted;
   const isUp=e=>e.date&&diffDays(e.endDate||e.date)>=0;
   const up=base.filter(isUp),past=base.filter(e=>!isUp(e)).reverse();
-  const PAST_N=5;const showUp=evFilter!=='past',showPast=evFilter!=='upcoming',secs=showUp&&showPast;
+  const PAST_N=3;const showUp=evFilter!=='past',showPast=evFilter!=='upcoming',secs=showUp&&showPast;
   const pastShown=secs&&!evPastMore?past.slice(0,PAST_N):past;
   const list=(showUp?up:[]).concat(showPast?pastShown:[]);
   if(!evSel||!S.events.find(e=>e.id===evSel))evSel=(list[0]||sorted[0]||{}).id||null;
