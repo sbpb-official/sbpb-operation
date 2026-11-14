@@ -258,8 +258,9 @@ async function runMigrations(){
   if(migBusy||RO||!db)return;
   const F='mig-joined-2026';                         // 2026-11-14: 현 회원 22명 가입일을 2026-01-01로 일괄 적용 (덮어쓰기)
   const F2='mig-court-achasan';                      // 2026-11-14: 아차산배수지 테니스장 코트 정보 추가 (같은 이름 코트가 있으면 건너뜀)
+  const F3='mig-court-ts';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
   const has=id=>S.dues.find(d=>d.id===id);
-  if(has(F)&&has(F2))return;
+  if(has(F)&&has(F2)&&has(F3))return;
   migBusy=true;
   try{if(!has(F)){const targets=S.members.filter(m=>isCur(m)&&!m.sample);
     for(const m of targets)if(m.joined!=='2026-01-01')await put('members',m.id,{...m,joined:'2026-01-01'});
@@ -271,7 +272,12 @@ async function runMigrations(){
       genRule:{type:'monthly',day:'25',time:'09:00'},resident:true,resRule:{type:'monthly',day:'20',time:'09:00'},area:'광진구',workers:false,
       memo:'광진구통합예약시스템 · 이용 전월에 신청\n구민 우선 접수 20~21일 (주민등록 주소지 기준, 마이페이지 거주지 인증 필요 · 타구민 신청은 관리자 취소 가능)\n일반 접수 25일 09:00\n운영 06:00~23:00 · 1회 최대 4시간\n당일 예약: 빈 코트만, 운영 사무실 전화 02-3437-7234 (09~18시, 이용 1시간 전까지 결제)\n※ 면 수·바닥·구민 우선 시각·현재 요금은 공단 공지로 확인 필요',createdAt:Date.now()});
     await put('dues',F2,{done:true,skipped:dup,at:Date.now()});
-    if(!dup)toast('코트 추가 완료 · 아차산배수지 테니스장')}}
+    if(!dup)toast('코트 추가 완료 · 아차산배수지 테니스장')}
+  if(!has(F3)){const dup=S.courts.some(c=>/TS\s*SPORT|TS\s*테니스/i.test(c.name||''));
+    if(!dup)await put('courts','c-ts-hanam',{name:'TS SPORT TENNIS CLUB',district:'하남시',courts:'',surface:'',fee:'',url:'https://naver.me/xKy8BCdY',platform:'naver',
+      resident:false,area:'',workers:false,memo:'경기 하남시 서하남로 9-16 · 예약 링크는 네이버 지도',createdAt:Date.now()});
+    await put('dues',F3,{done:true,skipped:dup,at:Date.now()});
+    if(!dup)toast('코트 추가 완료 · TS SPORT TENNIS CLUB')}}
   catch(e){}
   migBusy=false;
 }
