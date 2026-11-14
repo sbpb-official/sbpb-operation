@@ -75,8 +75,8 @@ function levelSelect(name,val,allowUnknown){
   return `<div class="lvsel"><input type="hidden" name="${name}" value="${val===null||val===undefined?'':val}"><button type="button" class="in lv-btn" data-act="lv-open" aria-haspopup="listbox" aria-expanded="false"></button><div class="lv-pop" role="listbox" hidden>${opts.map(v=>`<button type="button" role="option" data-act="lv-pick" data-v="${v===null?'':v}">${v===null?'<span class="lv-unk">모름</span><span class="lv-d">레벨 모름 · 대진 편성 시 중간 레벨로 계산</span>':`${stars(v)}<span class="lv-n">${v.toFixed(1)}</span><span class="lv-d">${LEVEL_DESC[v]}</span>`}</button>`).join('')}</div></div>`;
 }
 function paintLv(el){const v=el.querySelector('input').value;const n=v===''?null:Number(v);el.querySelector('.lv-btn').innerHTML=(n===null?'<span class="lv-unk">모름</span><span class="lv-d">레벨 모름</span>':`${stars(n)}<span class="lv-n">${n.toFixed(1)}</span><span class="lv-d">${LEVEL_DESC[n]||''}</span>`)+'<span class="lv-caret" aria-hidden="true">▾</span>';el.querySelectorAll('.lv-pop button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.v===v)))}
-function closeLv(){if(typeof releaseRoom==='function')releaseRoom();document.querySelectorAll('.lv-pop').forEach(p=>{p.hidden=true;p.previousElementSibling&&p.previousElementSibling.setAttribute('aria-expanded','false')})}
-document.addEventListener('click',e=>{if(!e.target.closest('.lvsel'))closeLv()},true);
+function closeLv(){if(typeof releaseRoom==='function')releaseRoom();document.querySelectorAll('.lv-pop').forEach(p=>{p.hidden=true;const w=p._wrap;if(w){delete p._wrap;if(w.isConnected){w.appendChild(p);w.querySelector('.dbtn').setAttribute('aria-expanded','false')}else p.remove();return}p.previousElementSibling&&p.previousElementSibling.setAttribute('aria-expanded','false')})}
+document.addEventListener('click',e=>{if(!e.target.closest('.lvsel,.calpop'))closeLv()},true);
 /* ---------- wheel picker (bottom sheet, scroll-snap columns) ---------- */
 const WH=44;
 function openWheel(title,cols,onDone,onChange){
@@ -124,15 +124,17 @@ document.addEventListener('input',e=>{
 const fmtCal=(s,short)=>s?(short?fmtD(s):fmtFull(s)):'';
 function calField(val,{name='',id='',extra='',cell=false,required=false,ph='날짜 선택'}={}){
   return `<div class="lvsel dfield${cell?' dcell':''}"${required?' data-required="1"':''} data-short="${cell?1:''}"><input type="hidden"${name?` name="${name}"`:''}${id?` id="${id}"`:''} ${extra} value="${h(val||'')}"><button type="button" class="${cell?'cell':'in'} pickbtn dbtn${val?'':' ph'}" data-act="cal-open" aria-haspopup="dialog">${val?fmtCal(val,cell):ph}<span class="lv-caret" aria-hidden="true">▾</span></button><div class="lv-pop calpop" hidden></div></div>`}
-function calHtml(pop){const wrap=pop.closest('.dfield');const val=wrap.querySelector('input').value;const [y,m]=pop.dataset.ym.split('-').map(Number);
+const calWrap=el=>{const p=el.closest('.calpop');return (p&&p._wrap)||el.closest('.dfield')};
+function calHtml(pop){const wrap=calWrap(pop);const val=wrap.querySelector('input').value;const [y,m]=pop.dataset.ym.split('-').map(Number);
   const first=new Date(y,m-1,1),days=new Date(y,m,0).getDate(),td=ymd(today0());let cells=WD.map((w,i)=>`<span class="${i===0?'sun':i===6?'sat':''}">${w}</span>`).join('');
   for(let i=0;i<first.getDay();i++)cells+='<span></span>';
   for(let d=1;d<=days;d++){const ds=`${y}-${pad(m)}-${pad(d)}`;const wd=new Date(y,m-1,d).getDay();cells+=`<button type="button" data-act="cal-pick" data-v="${ds}" class="${wd===0?'sun':wd===6?'sat':''}${ds===td?' today':''}${ds===val?' sel':''}">${d}</button>`}
   return `<div class="cal-h"><button type="button" data-act="cal-nav" data-v="-1" aria-label="이전 달">‹</button><b>${y}년 ${m}월</b><button type="button" data-act="cal-nav" data-v="1" aria-label="다음 달">›</button></div><div class="cal-g">${cells}</div><div class="cal-f"><button type="button" data-act="cal-pick" data-v="${td}">오늘</button>${wrap.dataset.required?'':'<button type="button" data-act="cal-pick" data-v="">지우기</button>'}</div>`}
-ACT['cal-open']=t=>{const wrap=t.closest('.dfield');const pop=wrap.querySelector('.calpop');const open=pop.hidden;closeLv();if(!open)return;
+ACT['cal-open']=t=>{const wrap=t.closest('.dfield');const pop=wrap.querySelector('.calpop')||[...document.querySelectorAll('body>.calpop')].find(p=>p._wrap===wrap);const open=pop.hidden;closeLv();if(!open)return;
+  if(wrap.classList.contains('dcell')){pop._wrap=wrap;document.body.appendChild(pop)}/* table cells clip popups: show it at page level */
   const v=wrap.querySelector('input').value||ymd(today0());pop.dataset.ym=v.slice(0,7);pop.innerHTML=calHtml(pop);pop.hidden=false;t.setAttribute('aria-expanded','true');placePop(t,pop)};
 ACT['cal-nav']=t=>{const pop=t.closest('.calpop');let [y,m]=pop.dataset.ym.split('-').map(Number);m+=+t.dataset.v;if(m<1){m=12;y--}if(m>12){m=1;y++}pop.dataset.ym=`${y}-${pad(m)}`;pop.innerHTML=calHtml(pop)};
-ACT['cal-pick']=t=>{const wrap=t.closest('.dfield');const inp=wrap.querySelector('input');const btn=wrap.querySelector('.dbtn');const v=t.dataset.v;
+ACT['cal-pick']=t=>{const wrap=calWrap(t);const inp=wrap.querySelector('input');const btn=wrap.querySelector('.dbtn');const v=t.dataset.v;
   inp.value=v;btn.classList.toggle('ph',!v);btn.innerHTML=(v?fmtCal(v,!!wrap.dataset.short):'날짜 선택')+'<span class="lv-caret" aria-hidden="true">▾</span>';closeLv();
   inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}))};
 function wheelText(v,kind){if(!v)return '';const [y,m,d]=v.split('-').map(Number);return kind==='ym'?`${y}년 ${m}월`:`${y}.${pad(m)}.${pad(d)}`}
@@ -172,14 +174,14 @@ function roomBelow(btn,box){const vv=window.visualViewport;const vb=(vv?vv.offse
 function makeRoom(btn,need){const box=scrollBoxOf(btn);let below=roomBelow(btn,box);if(below>=need)return below;
   const d=need-below;
   if(box){const max=box.scrollHeight-box.clientHeight-box.scrollTop;if(max<d){box.dataset.padx=box.dataset.padx||box.style.paddingBottom||'';box.style.paddingBottom=(parseFloat(getComputedStyle(box).paddingBottom)+d-max+8)+'px'}box.scrollTop+=d}
-  else window.scrollBy(0,d);
+  else{const b=document.body,max=document.documentElement.scrollHeight-innerHeight-scrollY;if(max<d){b.dataset.padx=b.dataset.padx||b.style.paddingBottom||'';b.style.paddingBottom=(parseFloat(getComputedStyle(b).paddingBottom)+d-max+8)+'px'}window.scrollBy(0,d)}
   return roomBelow(btn,box)}
-function placePop(btn,pop){pop.style.maxHeight='none';const cal=pop.classList.contains('calpop');const cap=cal?460:360;const want=Math.min(pop.scrollHeight,cap);
+function placePop(btn,pop){pop.style.maxHeight='none';const cal=pop.classList.contains('calpop');const cap=cal?460:360;const want=Math.min(pop.scrollHeight+2,cap);/* +border */
   const below=makeRoom(btn,cal?want:Math.min(want,POP_MIN));/* a calendar is shown whole */const r=btn.getBoundingClientRect();
   const w=Math.min(Math.max(r.width,240),innerWidth-16);const left=Math.max(8,Math.min(r.left,innerWidth-w-8));
   Object.assign(pop.style,{position:'fixed',left:left+'px',right:'auto',width:w+'px',minWidth:'0',maxHeight:Math.max(120,Math.min(cap,below))+'px',zIndex:'45',top:(r.bottom+4)+'px'})}
 function releaseRoom(){document.querySelectorAll('[data-padx]').forEach(b=>{b.style.paddingBottom=b.dataset.padx;delete b.dataset.padx})}
-function placeOpenPop(e){const p=document.querySelector('.lv-pop:not([hidden])');if(!p||(e&&e.target&&e.target.nodeType===1&&p.contains(e.target)))return;const b=p.previousElementSibling;if(b&&b.offsetParent)placePop(b,p);else closeLv()}
+function placeOpenPop(e){const p=document.querySelector('.lv-pop:not([hidden])');if(!p||(e&&e.target&&e.target.nodeType===1&&p.contains(e.target)))return;const b=p._wrap?p._wrap.querySelector('.dbtn'):p.previousElementSibling;if(b&&b.offsetParent)placePop(b,p);else closeLv()}
 document.addEventListener('scroll',placeOpenPop,true);window.addEventListener('resize',()=>placeOpenPop());if(window.visualViewport)visualViewport.addEventListener('resize',()=>placeOpenPop());
 ACT['area-open']=t=>{const wrap=t.closest('.areaf');const pop=wrap.querySelector('.lv-pop');const open=pop.hidden;closeLv();pop.hidden=!open;t.setAttribute('aria-expanded',String(open));if(open){placePop(t,pop);const s=pop.querySelector('[aria-selected="true"]');if(s)pop.scrollTop=s.offsetTop-pop.clientHeight/2+s.offsetHeight/2}};
 ACT['area-pick']=t=>{const wrap=t.closest('.areaf');const btn=wrap.querySelector('.pickbtn');const inp=wrap.querySelector('input');const v=t.dataset.v;closeLv();
