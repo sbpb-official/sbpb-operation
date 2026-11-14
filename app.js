@@ -772,7 +772,7 @@ function openPicker(r,slot){
   const cur=getSlot(r,slot);const toBench=slot[0]==='r';
   const title=cur?`${r+1}타임 · ${dn(draft.players[cur]?.name)} 님 자리 변경`:`${r+1}타임 빈자리 채우기`;
   const filt=[['','전체'],['M','남'],['F','여'],['G','게스트']];
-  $('#modal-root').innerHTML=`<div class="ov" data-act="ov-close"><div class="modal" role="dialog" aria-modal="true" aria-label="${h(title)}"><div class="m-head"><h2>${h(title)}</h2><button type="button" class="modal-x" data-act="close-modal" aria-label="닫기">×</button></div>
+  $('#modal-root').innerHTML=`<div class="ov" data-act="ov-close"><div class="modal pick" role="dialog" aria-modal="true" aria-label="${h(title)}"><div class="m-head"><h2>${h(title)}</h2><button type="button" class="modal-x" data-act="close-modal" aria-label="닫기">×</button></div>
   <p class="small muted" style="margin:-6px 0 12px">${toBench?'경기 중인 인원 선택 시 서로 자리 교체':'벤치 인원은 바로 투입, 다른 코트 경기 중인 인원은 서로 자리 교체'}</p>
   <div class="pk-tools"><input class="in" id="pk-q" placeholder="이름 검색" autocomplete="off"><div class="pk-filters">${filt.map(([v,l])=>`<button class="btn sm ${v===''?'pri':''}" data-act="pk-f" data-v="${v}">${l}</button>`).join('')}</div></div>
   <div class="pk-list" id="pk-list">${pickListHtml()}</div>
