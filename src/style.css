@@ -699,6 +699,7 @@ body.ro [data-act="renew-open"]{display:none!important}
 
 /* every modal: one fixed size on every page; content scrolls inside */
 .ov .modal{height:min(100%,720px);max-height:100%}
+.ov .modal.sm{height:auto}   /* 정기모임 취소: 내용만큼 작게 */
 /* 자리 변경(선택) 창: 목록만 세로 스크롤 */
 .modal.pick{overflow:hidden;display:flex;flex-direction:column}
 .modal.pick .pk-list{flex:1;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain}
