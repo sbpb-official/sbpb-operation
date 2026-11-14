@@ -1220,6 +1220,7 @@ function courtForm(c={}){
   <div class="f"><span>실내 · 실외 (중복 선택 가능)</span><div class="iopick"><label><input type="checkbox" name="indoor"${c.indoor?' checked':''}><span>실내</span></label><label><input type="checkbox" name="outdoor"${c.outdoor?' checked':''}><span>실외</span></label></div></div>
   <div class="grid2"><label class="f">구분<select class="in" name="kind">${KINDS.map(([k,l])=>`<option value="${k}"${kindOf(c)===k?' selected':''}>${l}</option>`).join('')}</select></label>
   <label class="f">예약 링크<input class="in" type="url" name="url" value="${h(c.url)}" placeholder="https://..."></label></div>
+  <label class="check"><input type="checkbox" name="smash"${isSmash(c)?' checked':''}> 스매시 앱으로 예약 (목록 맨 아래에 표시)</label>
   <div><div class="small muted" style="font-weight:600;margin-bottom:4px">일반 예약 오픈</div>${ruleFields('g_',c.genRule)}</div>
   <label class="check"><input type="checkbox" name="resident"${c.resident?' checked':''}> 관내 주민 우선 예약 있음</label>
   <div><div class="small muted" style="font-weight:600;margin-bottom:4px">주민 우선 예약 오픈 (해당 시)</div>${ruleFields('r_',c.resRule)}</div>
@@ -1227,7 +1228,7 @@ function courtForm(c={}){
   <label class="f">예약 대상 기간 / 메모<textarea class="in" name="memo" placeholder="예: 다음 달 이용분 오픈, 1인 월 2회 제한, 추첨제">${h(c.memo)}</textarea></label>
   <datalist id="areas-c">${SEOUL.concat(NEAR).map(a=>`<option value="${a}">`).join('')}</datalist>`;
 }
-const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:(fd.map||'').trim(),courts:fd.courts.trim(),surface:(fd.surface||'').trim(),indoor:!!fd.indoor,outdoor:!!fd.outdoor,fee:fd.fee.trim(),url:fd.url.trim(),platform:old.platform||'etc',kind:fd.kind||'public',genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:fd.memo.trim()});
+const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:(fd.map||'').trim(),courts:fd.courts.trim(),surface:(fd.surface||'').trim(),indoor:!!fd.indoor,outdoor:!!fd.outdoor,fee:fd.fee.trim(),url:fd.url.trim(),platform:old.platform||'etc',kind:fd.kind||'public',smash:!!fd.smash,genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:fd.memo.trim()});
 ACT['c-new']=()=>openModal('코트 추가',courtForm(),fd=>put('courts',uid(),{...courtFromFd(fd),createdAt:Date.now()}));
 ACT['c-edit']=t=>{const c=S.courts.find(x=>x.id===t.dataset.id);if(!c)return;openModal('코트 수정',courtForm(c),fd=>put('courts',c.id,courtFromFd(fd,c)),`<button type="button" class="btn danger" data-act="c-del" data-id="${c.id}">삭제</button>`)};
 ACT['c-del']=t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 삭제';return}del('courts',t.dataset.id);closeModal()};
@@ -1239,6 +1240,7 @@ const PLATFORMS=[
   {k:'smash',url:''},
   {k:'etc',url:''}];
 const KINDS=[['public','공공 코트'],['private','사설 코트']];
+const isSmash=c=>c.smash!==undefined?!!c.smash:(c.platform==='smash'&&!c.url&&!/엠무브|mmove/i.test(c.name||''));
 const kindOf=c=>c.kind||(c.platform==='smash'||c.platform==='naver'?'private':'public');
 const platOf=c=>PLATFORMS.find(p=>p.k===c.platform)||PLATFORMS[PLATFORMS.length-1];
 const mapUrl=q=>'https://map.naver.com/p/search/'+encodeURIComponent(q);
@@ -1249,7 +1251,7 @@ let courtArea='';
 function viewCourts(){
   const ops=openings(45);
   const areas=[...new Set(S.courts.map(c=>c.district).filter(Boolean))].sort();
-  const list=S.courts.filter(c=>!courtArea||c.district===courtArea).map(c=>({c,n:[c.resident?nextOpen(c.resRule):null,nextOpen(c.genRule)].filter(Boolean).sort((a,b)=>a-b)[0]})).sort((a,b)=>{const k=o=>o.n?+o.n:(o.c.genRule&&o.c.genRule.type==='rolling'?9e15:Infinity);return k(a)-k(b)||(a.c.name||'').localeCompare(b.c.name||'')});
+  const list=S.courts.filter(c=>!courtArea||c.district===courtArea).map(c=>({c,n:[c.resident?nextOpen(c.resRule):null,nextOpen(c.genRule)].filter(Boolean).sort((a,b)=>a-b)[0]})).sort((a,b)=>{const k=o=>o.n?+o.n:(o.c.genRule&&o.c.genRule.type==='rolling'?9e15:Infinity);return (isSmash(a.c)-isSmash(b.c))||k(a)-k(b)||(a.c.name||'').localeCompare(b.c.name||'','ko')});
   const tl=ops.length?`<div class="timeline">${ops.slice(0,12).map(o=>`<div class="tl ${o.kind}"><div class="dday">${ddayLabel(ymd(o.date))}</div><div style="font-weight:600">${h(o.court.name)}</div><div class="small muted">${o.date.getMonth()+1}/${o.date.getDate()} (${WD[o.date.getDay()]}) ${pad(o.date.getHours())}:${pad(o.date.getMinutes())}</div><div style="margin-top:4px">${o.kind==='res'?`<span class="chip warn">주민 우선 · ${priorityMembers(o.court).length}명 가능</span>`:'<span class="chip court">일반 오픈</span>'}</div></div>`).join('')}</div>`:'';
   const card=({c})=>{
     const g=nextOpen(c.genRule),r=c.resident?nextOpen(c.resRule):null;
@@ -1260,7 +1262,7 @@ function viewCourts(){
         return `<div class="open-box roll"><div class="l">${l}</div><div class="big">이용일 <b>${n}일 전</b>${rule.time?` <b>${h(rule.time)}</b>`:''}</div><div class="d">지금 <b>${fd(upto)}</b> 이용분까지 예약 가능</div><div class="d">다음 오픈 ${opened?'내일':'오늘'} ${h(rule.time||'')} → ${fd(nxUse)} 이용분</div></div>`}
       if(!d)return `<div class="open-box"><div class="l">${l}</div><div class="big">미정</div><div class="d">${h(ruleText(rule))}</div></div>`;
       const dd=diffDays(ymd(d));return `<div class="open-box${dd<=1?' soon':''}"><div class="l">${l}</div><div class="big"><span class="dday">${ddayLabel(ymd(d))}</span><b>${fd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}</b></div><div class="d">${h(ruleText(rule))}</div></div>`};
-    return `<article class="ccard"><div class="hd"><div><h3>${h(c.name)}</h3><div class="small muted">${h([c.district,c.courts,c.surface,[c.indoor&&'실내',c.outdoor&&'실외'].filter(Boolean).join('·')].filter(Boolean).join(' · '))}</div>${addrLink(c.address,c.name,c.map)}</div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
+    return `<article class="ccard"><div class="hd"><div><h3>${h(c.name)}</h3>${isSmash(c)?'<span class="chip" style="margin:2px 0 4px;display:inline-block">스매시 앱 예약</span>':''}<div class="small muted">${h([c.district,c.courts,c.surface,[c.indoor&&'실내',c.outdoor&&'실외'].filter(Boolean).join('·')].filter(Boolean).join(' · '))}</div>${addrLink(c.address,c.name,c.map)}</div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
     ${c.genRule&&c.genRule.type?`<div class="opens">${c.resident?ob('주민 우선 오픈',r,c.resRule):''}${ob('일반 오픈',g,c.genRule)}</div>`:''}
     <dl class="kv"><dt>요금</dt><dd>${c.fee?h(c.fee):'-'}</dd>${c.memo?`<dt>메모</dt><dd style="white-space:pre-wrap">${h(c.memo)}</dd>`:''}</dl>
     ${c.resident?`<div class="prio"><div class="l">우선 예약 가능 회원 · ${h(c.area||c.district)}${c.workers?' 거주·직장':' 거주'} 기준 ${pm.length}명</div><div class="chips">${pm.length?pm.map(({m,why})=>`<span class="chip ${why==='거주'?'court':''}">${h(m.name)}${why==='직장'?' (직장)':''}</span>`).join(''):'<span class="small muted">해당 지역 회원 없음</span>'}</div></div>`:''}
