@@ -809,8 +809,9 @@ const STAFF = 'staff@sbpb-official.github.io';   // shared operator login: the s
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 let fs;
-try { fs = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
-catch (e) { fs = initializeFirestore(fbApp, {}); }
+// ignoreUndefinedProperties: an empty optional field must never make a save fail
+try { fs = initializeFirestore(fbApp, { ignoreUndefinedProperties: true, localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
+catch (e) { fs = initializeFirestore(fbApp, { ignoreUndefinedProperties: true }); }
 
 getRedirectResult(auth).catch(() => {});
 let currentUser = null;
@@ -906,7 +907,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=636bada7c1';
+const CUR_APP = 'app.js?v=eba4053028';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -934,7 +935,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=636bada7c1';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=eba4053028';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();

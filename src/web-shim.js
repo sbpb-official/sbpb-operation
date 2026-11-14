@@ -20,8 +20,9 @@ const STAFF = 'staff@sbpb-official.github.io';   // shared operator login: the s
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 let fs;
-try { fs = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
-catch (e) { fs = initializeFirestore(fbApp, {}); }
+// ignoreUndefinedProperties: an empty optional field must never make a save fail
+try { fs = initializeFirestore(fbApp, { ignoreUndefinedProperties: true, localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
+catch (e) { fs = initializeFirestore(fbApp, { ignoreUndefinedProperties: true }); }
 
 getRedirectResult(auth).catch(() => {});
 let currentUser = null;

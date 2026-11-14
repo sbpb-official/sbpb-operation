@@ -159,7 +159,7 @@ const loaded=new Set();
 const names={};
 function loadLocal(){const d=lsGet('sbpb-local',null);if(d)COLS.forEach(c=>S[c]=d[c]||[])}
 function saveLocal(){const o={};COLS.forEach(c=>o[c]=S[c]);lsSet('sbpb-local',o)}
-function errMsg(e){const c=e&&e.code;return c==='quota_exceeded'?'저장 공간 부족. 오래된 항목 삭제 후 재시도 필요':c==='invalid_argument'?'저장 권한 없음. 아티팩트 소유자에게 편집 권한 요청 필요':'저장 실패. 잠시 후 재시도 필요'}
+function errMsg(e){const c=e&&e.code;if(WEB){const why=String(c||e&&e.message||'').replace(/^firestore\//,'');return why==='permission-denied'?'저장 권한 없음. 로그아웃 후 다시 로그인 필요 ('+why+')':why==='unavailable'?'인터넷 연결 확인 필요 ('+why+')':'저장 실패 ('+(why||'원인 미상')+')'}return c==='quota_exceeded'?'저장 공간 부족. 오래된 항목 삭제 후 재시도 필요':c==='invalid_argument'?'저장 권한 없음. 아티팩트 소유자에게 편집 권한 요청 필요':'저장 실패. 잠시 후 재시도 필요'}
 async function put(col,id,data){
   if(RO){toast('보기 전용 화면에서는 수정 불가');throw new Error('read-only')}
   const body={...data,updatedAt:Date.now()};delete body.id;
