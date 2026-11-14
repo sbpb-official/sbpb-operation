@@ -1508,7 +1508,7 @@ setInterval(()=>{if(!document.body.classList.contains('locked')&&!authed())lock(
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!document.body.classList.contains('locked')&&!authed())lock()});
 /* web app: password gate → signs in to the shared operator account on Firebase (checked by the server) */
 function showWebGate(msg){document.body.classList.add('locked');$('#gate').hidden=false;
-  const p=$('#gate-form > p');if(p)p.textContent='한 번 입력하면 이 기기에서 계속 유지';
+  const p=$('#gate-form > p');if(p)p.hidden=true;
   $('#gate-err').textContent=msg||'';$('#gate-pw').value='';setTimeout(()=>$('#gate-pw').focus(),50)}
 // sign-in lasts for the day it was made: a new date asks for the password again
 const loginDay=()=>{try{return localStorage.getItem('sbpb-login-day')||''}catch(e){return ''}};
