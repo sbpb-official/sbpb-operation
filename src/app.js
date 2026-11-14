@@ -266,10 +266,11 @@ async function runMigrations(){
   const F4='mig-court-addr';
   const F5='mig-court-boramae-mmove';
   const F6='mig-court-boramae-addr';
-  const F7='mig-court-ts-link';                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
+  const F7='mig-court-ts-link';
+  const F8='mig-court-gyenam';                       // 2026-11-14: 계남테니스장 (구로구) 추가                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
   const TS_MEMO='예약 링크는 네이버 지도 · 9호선 둔촌오륜역 1번 출구 도보 약 860m\n대관료 (개장 당시): 평일 야간·주말 주간 35,000원 · 주말 야간 40,000원\n※ 현재 요금·예약 오픈 방식은 네이버 지도 업체 정보로 확인 필요';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
   const has=id=>S.dues.find(d=>d.id===id);
-  if(has(F)&&has(F2)&&has(F3)&&has(F4)&&has(F5)&&has(F6)&&has(F7))return;
+  if(has(F)&&has(F2)&&has(F3)&&has(F4)&&has(F5)&&has(F6)&&has(F7)&&has(F8))return;
   migBusy=true;
   try{if(!has(F)){const targets=S.members.filter(m=>isCur(m)&&!m.sample);
     for(const m of targets)if(m.joined!=='2026-01-01')await put('members',m.id,{...m,joined:'2026-01-01'});
@@ -311,7 +312,14 @@ async function runMigrations(){
     for(const c of S.courts){const isTS=/^\s*TS\b|TS\s*SPORT|TS\s*스포츠|TS\s*테니스/i.test(c.name||'');
       const next={...c,fee:clean(c.fee),memo:clean(c.memo)};if(isTS){if(!next.url)next.url=TS;if(!next.map)next.map=TS;if(!next.address)next.address='경기 하남시 서하남로 9-16'}
       if(JSON.stringify(next)!==JSON.stringify(c)){await put('courts',c.id,next);n++}}
-    await put('dues',F7,{done:true,count:n,at:Date.now()})}}
+    await put('dues',F7,{done:true,count:n,at:Date.now()})}
+  if(!has(F8)){const dup=S.courts.some(c=>/계남/.test(c.name||''));
+    if(!dup)await put('courts','c-gyenam',{name:'계남테니스장',district:'구로구',address:'서울 구로구 고척동 산6-1 (계남근린공원)',map:mapUrl('계남테니스장'),courts:'',surface:'',indoor:true,outdoor:true,
+      fee:'실내 평일 30,000원 · 주말·공휴일 39,000원 / 실외 평일 10,000원 · 주말·공휴일 13,000원 · 실외 야간 조명 1시간 3,000원',url:'',platform:'seoul',kind:'public',
+      genRule:{type:'monthly',day:'25',time:'07:00'},resident:false,resRule:{},area:'',workers:false,
+      memo:'서울시 공공서비스예약 · 다음 달 일일 대관 매월 25일 07:00부터 신청\n1인·1팀 최대 1코트 2시간 · 당일 신청 불가 · 공휴일 휴관\n문의 구로구시설관리공단 02-2611-9007\n※ 요금 단위(1회 2시간 추정)·면 수·바닥은 예약 페이지로 확인 필요',createdAt:Date.now()});
+    await put('dues',F8,{done:true,skipped:dup,at:Date.now()});
+    if(!dup)toast('코트 추가 완료 · 계남테니스장')}}
   catch(e){}
   migBusy=false;
 }
