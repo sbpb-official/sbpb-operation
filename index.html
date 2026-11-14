@@ -718,8 +718,10 @@ body.ro [data-act="renew-open"]{display:none!important}
 .xwrap .tbl.bk-tbl{min-width:0}.bk-tbl th,.bk-tbl td{padding:7px 8px!important}
 @media (max-width:640px){.bank-kpi{grid-template-columns:1fr 1fr}.bk-grid2{grid-template-columns:minmax(0,1fr);gap:14px}}
 
-/* 자리 변경(선택) 창: 높이 고정, 목록만 세로 스크롤 */
-.modal.pick{height:min(100%,760px);overflow:hidden;display:flex;flex-direction:column}
+/* every modal: one fixed size on every page; content scrolls inside */
+.ov .modal{height:min(100%,720px);max-height:100%}
+/* 자리 변경(선택) 창: 목록만 세로 스크롤 */
+.modal.pick{overflow:hidden;display:flex;flex-direction:column}
 .modal.pick .pk-list{flex:1;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain}
 .modal.pick .m-head{position:static}
 
@@ -922,7 +924,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=2862547367';
+const CUR_APP = 'app.js?v=7a212d52b0';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -950,7 +952,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=2862547367';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=7a212d52b0';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();

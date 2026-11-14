@@ -75,7 +75,7 @@ function levelSelect(name,val,allowUnknown){
   return `<div class="lvsel"><input type="hidden" name="${name}" value="${val===null||val===undefined?'':val}"><button type="button" class="in lv-btn" data-act="lv-open" aria-haspopup="listbox" aria-expanded="false"></button><div class="lv-pop" role="listbox" hidden>${opts.map(v=>`<button type="button" role="option" data-act="lv-pick" data-v="${v===null?'':v}">${v===null?'<span class="lv-unk">모름</span><span class="lv-d">레벨 모름 · 대진 편성 시 중간 레벨로 계산</span>':`${stars(v)}<span class="lv-n">${v.toFixed(1)}</span><span class="lv-d">${LEVEL_DESC[v]}</span>`}</button>`).join('')}</div></div>`;
 }
 function paintLv(el){const v=el.querySelector('input').value;const n=v===''?null:Number(v);el.querySelector('.lv-btn').innerHTML=(n===null?'<span class="lv-unk">모름</span><span class="lv-d">레벨 모름</span>':`${stars(n)}<span class="lv-n">${n.toFixed(1)}</span><span class="lv-d">${LEVEL_DESC[n]||''}</span>`)+'<span class="lv-caret" aria-hidden="true">▾</span>';el.querySelectorAll('.lv-pop button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.v===v)))}
-function closeLv(){document.querySelectorAll('.lv-pop').forEach(p=>{p.hidden=true;p.previousElementSibling&&p.previousElementSibling.setAttribute('aria-expanded','false')})}
+function closeLv(){if(typeof releaseRoom==='function')releaseRoom();document.querySelectorAll('.lv-pop').forEach(p=>{p.hidden=true;p.previousElementSibling&&p.previousElementSibling.setAttribute('aria-expanded','false')})}
 document.addEventListener('click',e=>{if(!e.target.closest('.lvsel'))closeLv()},true);
 /* ---------- wheel picker (bottom sheet, scroll-snap columns) ---------- */
 const WH=44;
@@ -126,13 +126,21 @@ function areaField(name,val,ph){
   return `<div class="areaf lvsel" data-area="${name}" data-ph="${h(ph)}"><button type="button" class="in pickbtn${val?'':' ph'}" data-act="area-open" aria-haspopup="listbox" aria-expanded="false"${known?'':' hidden'}>${h(val||ph)}<span class="lv-caret" aria-hidden="true">▾</span></button><div class="lv-pop" role="listbox" hidden>${opt('','선택 안 함')}<div class="lv-grp">서울</div>${SEOUL.map(a=>opt(a,a)).join('')}<div class="lv-grp">경기</div>${NEAR.map(a=>opt(a,a)).join('')}<div class="lv-grp">목록에 없으면</div><button type="button" role="option" data-act="area-pick" data-v="__custom">직접 입력</button></div><input class="in" type="text" name="${name}" value="${h(val)}" placeholder="예: 김포시"${known?' hidden':''}></div>`;
 }
 // dropdown lists (level, area): float over the form at the button, always fully on screen with their own scroll
-function placePop(btn,pop){const r=btn.getBoundingClientRect();const vv=window.visualViewport;const vh=vv?vv.height:innerHeight,vt=vv?vv.offsetTop:0;
+// all custom dropdowns: open DOWNWARD from the pressed control, list scrolls inside.
+// if there is not enough room below, the form (or page) scrolls up first to make room.
+const POP_MIN=240;
+function scrollBoxOf(el){return el.closest('.m-body')||el.closest('.modal')||null}
+function roomBelow(btn,box){const vv=window.visualViewport;const vb=(vv?vv.offsetTop+vv.height:innerHeight);const lo=Math.min(vb,box?box.getBoundingClientRect().bottom:vb);return lo-btn.getBoundingClientRect().bottom-8}
+function makeRoom(btn,need){const box=scrollBoxOf(btn);let below=roomBelow(btn,box);if(below>=need)return below;
+  const d=need-below;
+  if(box){const max=box.scrollHeight-box.clientHeight-box.scrollTop;if(max<d){box.dataset.padx=box.dataset.padx||box.style.paddingBottom||'';box.style.paddingBottom=(parseFloat(getComputedStyle(box).paddingBottom)+d-max+8)+'px'}box.scrollTop+=d}
+  else window.scrollBy(0,d);
+  return roomBelow(btn,box)}
+function placePop(btn,pop){pop.style.maxHeight='none';const want=Math.min(pop.scrollHeight,360);
+  const below=makeRoom(btn,Math.min(want,POP_MIN));const r=btn.getBoundingClientRect();
   const w=Math.min(Math.max(r.width,240),innerWidth-16);const left=Math.max(8,Math.min(r.left,innerWidth-w-8));
-  // stay inside the visible form area (between the title bar and the save bar), not just the screen
-  const box=btn.closest('.m-body');const br=box?box.getBoundingClientRect():null;const lo=Math.min(vt+vh,br?br.bottom:vt+vh),hi=Math.max(vt,br?br.top:vt);
-  const below=lo-r.bottom-8,above=r.top-hi-8;pop.style.maxHeight='none';const want=Math.min(pop.scrollHeight,360);
-  const up=below<Math.min(want,220)&&above>below;const mh=Math.max(120,Math.min(360,up?above:below));
-  Object.assign(pop.style,{position:'fixed',left:left+'px',right:'auto',width:w+'px',minWidth:'0',maxHeight:mh+'px',zIndex:'45',top:(up?Math.max(hi+4,r.top-Math.min(want,mh)-4):r.bottom+4)+'px'})}
+  Object.assign(pop.style,{position:'fixed',left:left+'px',right:'auto',width:w+'px',minWidth:'0',maxHeight:Math.max(120,Math.min(360,below))+'px',zIndex:'45',top:(r.bottom+4)+'px'})}
+function releaseRoom(){document.querySelectorAll('[data-padx]').forEach(b=>{b.style.paddingBottom=b.dataset.padx;delete b.dataset.padx})}
 function placeOpenPop(e){const p=document.querySelector('.lv-pop:not([hidden])');if(!p||(e&&e.target&&e.target.nodeType===1&&p.contains(e.target)))return;const b=p.previousElementSibling;if(b&&b.offsetParent)placePop(b,p);else closeLv()}
 document.addEventListener('scroll',placeOpenPop,true);window.addEventListener('resize',()=>placeOpenPop());if(window.visualViewport)visualViewport.addEventListener('resize',()=>placeOpenPop());
 ACT['area-open']=t=>{const wrap=t.closest('.areaf');const pop=wrap.querySelector('.lv-pop');const open=pop.hidden;closeLv();pop.hidden=!open;t.setAttribute('aria-expanded',String(open));if(open){placePop(t,pop);const s=pop.querySelector('[aria-selected="true"]');if(s)pop.scrollTop=s.offsetTop-pop.clientHeight/2+s.offsetHeight/2}};
@@ -1369,10 +1377,9 @@ ACT['cp-open']=t=>{const was=$('#cellpop');if(was&&was.dataset.for===t.id){close
   p._ctx={id,k};document.body.appendChild(p);
   placeCellPop();t.setAttribute('aria-expanded','true')};
 function placeCellPop(){const p=$('#cellpop');if(!p)return;const t=document.getElementById(p.dataset.for);if(!t){closeCellPop();return}
-  const r=t.getBoundingClientRect();const w=Math.max(r.width,190);const left=Math.max(8,Math.min(r.left,innerWidth-w-8));
-  const below=innerHeight-r.bottom-12,above=r.top-12;const want=Math.min(p.scrollHeight,320);
-  const up=below<Math.min(want,200)&&above>below;const mh=Math.max(140,Math.min(320,up?above:below));
-  p.style.width=w+'px';p.style.left=left+'px';p.style.maxHeight=mh+'px';p.style.top=(up?Math.max(8,r.top-Math.min(want,mh)-4):r.bottom+4)+'px'}
+  p.style.maxHeight='none';const want=Math.min(p.scrollHeight,320);const below=makeRoom(t,Math.min(want,POP_MIN));const r=t.getBoundingClientRect();
+  const w=Math.max(r.width,190);const left=Math.max(8,Math.min(r.left,innerWidth-w-8));
+  p.style.width=w+'px';p.style.left=left+'px';p.style.maxHeight=Math.max(120,Math.min(320,below))+'px';p.style.top=(r.bottom+4)+'px'}
 ACT['cp-pick']=t=>{const p=$('#cellpop');if(!p)return;const {id,k}=p._ctx;let v=t.dataset.custom?($('#cp-txt').value||'').trim():t.dataset.v;closeCellPop();setLed(id,k,v)};
 document.addEventListener('keydown',e=>{if(e.target.id==='cp-txt'&&e.key==='Enter'){e.preventDefault();const b=$('#cellpop [data-custom]');b&&b.click()}if(e.key==='Escape')closeCellPop()});
 document.addEventListener('click',e=>{if($('#cellpop')&&!e.target.closest('#cellpop')&&!e.target.closest('[data-act="cp-open"]'))closeCellPop()},true);
