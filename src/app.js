@@ -12,8 +12,8 @@ document.body.insertAdjacentHTML('afterbegin',SHELL);
 const WEB=!!window.SBPB_WEB;
 // show what broke instead of a blank page (send a screenshot of this box)
 function showFatal(msg){try{const v=document.getElementById('view');const box=`<div class="banner" style="border-color:var(--bad);white-space:pre-wrap;word-break:break-all"><b>화면 오류</b> · 이 화면을 캡처해서 보내 주세요<br>${String(msg).replace(/[<>&]/g,'')}<br><button class="btn sm" onclick="location.reload()">새로고침</button></div>`;if(v&&!v.querySelector('.fatal')){v.insertAdjacentHTML('afterbegin','<div class="fatal">'+box+'</div>')}}catch(e){}}
-window.addEventListener('error',e=>showFatal((e.message||'오류')+(e.filename?' @'+e.filename.split('/').pop()+':'+e.lineno:'')));
-window.addEventListener('unhandledrejection',e=>showFatal('비동기 오류: '+((e.reason&&(e.reason.message||e.reason.code))||e.reason)));   // standalone web app (Firebase) — window.SBPB_WEB is set by index.html
+// only errors from this app's own code (browsers hide other sites' script errors as "Script error.")
+window.addEventListener('error',e=>{if(!e.filename||!/\/app\.js/.test(e.filename))return;showFatal((e.message||'오류')+' @app.js:'+e.lineno)});   // standalone web app (Firebase) — window.SBPB_WEB is set by index.html
 let PUB={};try{PUB=window.SBPB_PUB||JSON.parse(document.getElementById('sbpb-pub').textContent||'{}')}catch(e){PUB={}}
 // publish the encrypted public snapshot: web → Firestore doc, artifact → republish the page
 async function savePub(pub){if(WEB){await window.SBPB_WEB.savePub(pub);PUB=pub;setConn();render();return}return art.publish(buildPage(pub))}
