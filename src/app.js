@@ -460,7 +460,7 @@ function viewHome(){
   }else mo=`<div class="empty"><b>등록된 회원 없음</b>회원 등록 시 성별·레벨·구력·거주지 분포 표시<div class="row"><a class="btn sm" href="#members">회원 관리</a></div></div>`;
   const nr=nextRegNow(),nrs=regStat(nr),nrx=nrs&&nrs.status==='취소',dd=diffDays(nr);const nrEv=nrx&&nrs.reason==='행사 대체'?S.events.find(e=>e.date===nr&&e.status!=='취소'):null;
   return `<div class="page-head dash-head"><div class="dh-main"><div class="dh-today"><span>${t.getFullYear()}년 ${t.getMonth()+1}월 ${t.getDate()}일 ${WD[t.getDay()]}요일</span><b class="num" id="clock">${clockText()}</b></div>
-    ${nrEv?`<div class="dh-next rep t-${h(nrEv.type||'기타')}" data-act="ev-open" data-id="${nrEv.id}" role="button" tabindex="0"><span class="dh-l">다음 모임 · 행사 대체</span><div class="dh-v"><b>${fmtD(nr)}</b><span>${h(nrEv.title)}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${h(nrEv.place||'')}${nrEv.place?' · ':''}정기모임 대신 행사 진행</span></div>`:`<div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div>`}</div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}${WEB&&mode==='db'?`<button class="btn ghost" data-act="web-logout">로그아웃</button>`:''}${mode==='db'?`<button class="btn" data-act="backup-open">데이터 백업</button>`:''}${mode==='db'&&art?`<button class="btn" data-act="pub-open">공개본 갱신${pendingCount()?` (${pendingCount()})`:''}</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextReg()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>
+    ${nrEv?`<div class="dh-next rep t-${h(nrEv.type||'기타')}" data-act="ev-open" data-id="${nrEv.id}" role="button" tabindex="0"><span class="dh-l">다음 모임 · 행사 대체</span><div class="dh-v"><b>${fmtD(nr)}</b><span>${h(nrEv.title)}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${h(nrEv.place||'')}${nrEv.place?' · ':''}정기모임 대신 행사 진행</span></div>`:`<div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div>`}</div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}${WEB&&mode==='db'?`<button class="btn ghost" data-act="web-logout">로그아웃</button>`:''}${mode==='db'?`<button class="btn" data-act="backup-open">데이터 백업</button>`:''}${mode==='db'&&art?`<button class="btn" data-act="pub-open">공개본 갱신${pendingCount()?` (${pendingCount()})`:''}</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextRegNow()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>
   ${kp}<div class="dash">${cal}<div class="side">
   <section class="panel"><div class="panel-h"><h2>다가오는 행사</h2><a href="#events">전체 보기</a></div><div class="list">${upHtml}</div></section>
   ${(()=>{const ts=S.events.filter(e=>e.type==='개인대회'&&e.date);if(!ts.length)return '';const up2=ts.filter(e=>diffDays(e.date)>=0).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);const past=ts.filter(e=>diffDays(e.date)<0&&e.result&&e.result!=='대기').sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
@@ -646,12 +646,12 @@ const MODE_DESC={balance:'인원 구성에 따른 경기 종류 혼합, 팀 레�
 const PREF={M:'남복 우선',F:'여복 우선',X:'혼복 우선','':'자유'};
 const TYPE_BG={'남복':'#DCE8F5','여복':'#FBDDD0','혼복':'#E1EED8'};
 const defCourts=()=>[{name:'코트 1',pref:'M'},{name:'코트 2',pref:'F'},{name:'코트 3',pref:''}];
-let cfg=lsGet('sbpb-drawcfg3',null)||{title:REG.title,date:nextReg(),place:REG.place,start:REG.gameStart,end:REG.end,mins:30,courtList:defCourts(),mode:'balance',picked:[]};
+let cfg=lsGet('sbpb-drawcfg3',null)||{title:REG.title,date:nextRegNow(),place:REG.place,start:REG.gameStart,end:REG.end,mins:30,courtList:defCourts(),mode:'balance',picked:[]};
 if(!Array.isArray(cfg.courtList)||!cfg.courtList.length)cfg.courtList=defCourts();
 const toMin=t=>{const [a,b]=(t||'00:00').split(':').map(Number);return a*60+b};
 const fromMin=t=>`${pad(Math.floor(t/60)%24)}:${pad(t%60)}`;
 function roundsOf(c){const n=Math.floor((toMin(c.end||'12:00')-toMin(c.start))/(Number(c.mins)||30));return Math.max(1,Math.min(20,n||1))}
-if(!cfg.date||diffDays(cfg.date)<0)cfg.date=nextReg();
+if(!cfg.date||diffDays(cfg.date)<0||(cfg.date===nextReg()&&cfg.date!==nextRegNow()))cfg.date=nextRegNow();
 let draft=lsGet('sbpb-draft3',null);
 if(draft&&draft.cfg&&diffDays(draft.cfg.date)<0)draft=null; // {id,cfg,players,rounds:[{matches:[{a:[k,k],b:[k,k]}|null per court],rest:[k]}],status}
 let sel=null,plq='',plf='',imgArm=0;
@@ -958,7 +958,7 @@ document.addEventListener('change',e=>{
   if(t.dataset.cfg==='mode'||t.dataset.cfg==='start'||t.dataset.cfg==='end'||t.dataset.cfg==='mins')render();
 });
 ACT['court-n']=t=>{const v=+t.dataset.v;if(v>0&&cfg.courtList.length<6)cfg.courtList.push({name:`코트 ${cfg.courtList.length+1}`,pref:''});if(v<0&&cfg.courtList.length>1)cfg.courtList.pop();saveCfg();render()};
-ACT['reg-defaults']=()=>{Object.assign(cfg,{title:REG.title,place:REG.place,start:REG.gameStart,end:REG.end,mins:30,courtList:defCourts(),date:cfg.date&&diffDays(cfg.date)>=0&&parseYmd(cfg.date).getDay()===REG.weekday?cfg.date:nextReg()});saveCfg();render()};
+ACT['reg-defaults']=()=>{Object.assign(cfg,{title:REG.title,place:REG.place,start:REG.gameStart,end:REG.end,mins:30,courtList:defCourts(),date:cfg.date&&diffDays(cfg.date)>=0&&parseYmd(cfg.date).getDay()===REG.weekday&&cfg.date>=nextRegNow()?cfg.date:nextRegNow()});saveCfg();render()};
 ACT['reg-draw']=t=>{closeDayPop();Object.assign(cfg,{title:REG.title,place:REG.place,start:REG.gameStart,end:REG.end,date:t.dataset.d});saveCfg();location.hash='#draw'};
 ACT['pick-all']=()=>{cfg.picked=[...new Set([...cfg.picked,...activeMembers().map(m=>m.id)])];saveCfg();render()};
 ACT['pick-none']=()=>{cfg.picked=[];saveCfg();render()};
@@ -1174,9 +1174,11 @@ const PLATFORMS=[
   {k:'seoul',name:'서울시 공공서비스예약',url:'https://yeyak.seoul.go.kr/web/search/selectPageListDetailSearchImg.do?code=T100&dCode=T108',login:'서울시 통합계정 로그인'},
   {k:'olympic',name:'올림픽공원 테니스장 예약',url:'https://www.ksponco.or.kr/online/tennis/index.do',login:''},
   {k:'naver',name:'네이버 예약',url:'https://booking.naver.com',login:'네이버 계정 로그인'},
-  {k:'smash',name:'사설 코트 (고비용)',url:'',login:'스매시 앱에서 예약 (엠무브는 엠무브 사이트) · 게스트 매칭도 스매시 앱'},
+  {k:'smash',name:'사설 코트 (고비용)',url:'',login:'스매시 앱에서 예약 (엠무브는 엠무브 사이트) · 게스트 매칭도 스매시 앱',links:[{l:'엠무브 예약',u:'https://mmove.co.kr/bbs/page.php?hid=m02_01'}]},
   {k:'etc',name:'기타',url:'',login:''}];
 const platOf=c=>PLATFORMS.find(p=>p.k===c.platform)||PLATFORMS[PLATFORMS.length-1];
+const MMOVE='https://mmove.co.kr/bbs/page.php?hid=m02_01';
+const courtUrl=c=>c.url||(/엠무브|mmove/i.test(c.name||'')?MMOVE:platOf(c).url);
 let courtArea='';
 function viewCourts(){
   const ops=openings(45);
@@ -1191,10 +1193,10 @@ function viewCourts(){
     ${c.genRule&&c.genRule.type?`<div class="opens">${c.resident?ob('주민 우선 오픈',r,c.resRule):''}${ob('일반 오픈',g,c.genRule)}</div>`:''}
     <dl class="kv">${c.fee?`<dt>요금</dt><dd>${h(c.fee)}</dd>`:''}${c.memo?`<dt>메모</dt><dd style="white-space:pre-wrap">${h(c.memo)}</dd>`:''}</dl>
     ${c.resident?`<div class="prio"><div class="l">우선 예약 가능 회원 · ${h(c.area||c.district)}${c.workers?' 거주·직장':' 거주'} 기준 ${pm.length}명</div><div class="chips">${pm.length?pm.map(({m,why})=>`<span class="chip ${why==='거주'?'court':''}">${h(m.name)}${why==='직장'?' (직장)':''}</span>`).join(''):'<span class="small muted">해당 지역 회원 없음</span>'}</div></div>`:''}
-    ${(c.url||platOf(c).url)?`<a class="btn pri" href="${h(c.url||platOf(c).url)}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">예약 페이지 열기 ↗</a>`:''}
+    ${courtUrl(c)?`<a class="btn pri" href="${h(courtUrl(c))}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">예약 페이지 열기 ↗</a>`:''}
     </article>`};
   const cards=PLATFORMS.map(p=>{const items=list.filter(({c})=>platOf(c).k===p.k);if(!items.length)return '';
-    return `<section class="plat"><div class="plat-h"><div><h3>${h(p.name)} <span class="num muted" style="font-size:13px">${items.length}</span></h3>${p.login?`<div class="small muted">${h(p.login)}</div>`:''}</div>${p.url?`<a class="btn sm" href="${h(p.url)}" target="_blank" rel="noopener">예약 사이트 ↗</a>`:''}</div><div class="cards">${items.map(card).join('')}</div></section>`}).join('');
+    return `<section class="plat"><div class="plat-h"><div><h3>${h(p.name)} <span class="num muted" style="font-size:13px">${items.length}</span></h3>${p.login?`<div class="small muted">${h(p.login)}</div>`:''}</div><div class="row">${p.url?`<a class="btn sm" href="${h(p.url)}" target="_blank" rel="noopener">예약 사이트 ↗</a>`:''}${(p.links||[]).map(x=>`<a class="btn sm" href="${h(x.u)}" target="_blank" rel="noopener">${h(x.l)} ↗</a>`).join('')}</div></div><div class="cards">${items.map(card).join('')}</div></section>`}).join('');
   // area coverage: which districts have members
   const memAreas={};activeMembers().forEach(m=>{if(m.district)memAreas[m.district]=(memAreas[m.district]||0)+1});
   return `<div class="page-head"><div><h1>코트</h1><p>정기대관 코트 사용 현황 및 추가 코트 예약 관리</p></div></div>
