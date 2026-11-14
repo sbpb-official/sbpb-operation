@@ -196,12 +196,26 @@ async function boot(){
     db.collection(col).onSnapshot(snap=>{
       S[col]=snap.docs.map(d=>({id:d.id,...d.data()}));
       loaded.add(col);
-      if(!snap.metadata.fromCache&&loaded.size===COLS.length){clearTimeout(timer);if(slow){slow=false}}
+      if(!snap.metadata.fromCache&&loaded.size===COLS.length){clearTimeout(timer);if(slow){slow=false}runMigrations()}
       if(col==='notes')resolveNames(S.notes.map(n=>n.authorId));
       setConn();render();
     },err=>{loaded.add(col);toast('데이터 불러오기 실패: '+col);render()});
   });
   render();
+}
+// one-time data fixes, run once by the first operator who loads the data (a flag doc prevents re-runs)
+let migBusy=false;
+async function runMigrations(){
+  if(migBusy||RO||!db)return;
+  const F='mig-joined-2026';                         // 2026-11-14: 현 회원 22명 가입일을 2026-01-01로 일괄 적용 (덮어쓰기)
+  if(S.dues.find(d=>d.id===F))return;
+  migBusy=true;
+  try{const targets=S.members.filter(m=>isCur(m)&&!m.sample);
+    for(const m of targets)if(m.joined!=='2026-01-01')await put('members',m.id,{...m,joined:'2026-01-01'});
+    await put('dues',F,{done:true,count:targets.length,at:Date.now()});
+    toast(`가입일 일괄 적용 완료 (${targets.length}명 · 2026.01.01)`)}
+  catch(e){}
+  migBusy=false;
 }
 async function getSnapKey(){if(snapKey)return snapKey;const s=lsGet('sbpb-k',null);if(s&&PUB.snap&&s.salt===PUB.snap.salt){try{snapKey=await importKey(s.k);return snapKey}catch(e){}}return null}
 async function enterRO(){
