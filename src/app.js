@@ -1221,7 +1221,7 @@ let courtArea='';
 function viewCourts(){
   const ops=openings(45);
   const areas=[...new Set(S.courts.map(c=>c.district).filter(Boolean))].sort();
-  const list=S.courts.filter(c=>!courtArea||c.district===courtArea).map(c=>({c,n:[c.resident?nextOpen(c.resRule):null,nextOpen(c.genRule)].filter(Boolean).sort((a,b)=>a-b)[0]})).sort((a,b)=>(a.n||Infinity)-(b.n||Infinity));
+  const list=S.courts.filter(c=>!courtArea||c.district===courtArea).map(c=>({c,n:[c.resident?nextOpen(c.resRule):null,nextOpen(c.genRule)].filter(Boolean).sort((a,b)=>a-b)[0]})).sort((a,b)=>{const k=o=>o.n?+o.n:(o.c.genRule&&o.c.genRule.type==='rolling'?9e15:Infinity);return k(a)-k(b)||(a.c.name||'').localeCompare(b.c.name||'')});
   const tl=ops.length?`<div class="timeline">${ops.slice(0,12).map(o=>`<div class="tl ${o.kind}"><div class="dday">${ddayLabel(ymd(o.date))}</div><div style="font-weight:600">${h(o.court.name)}</div><div class="small muted">${o.date.getMonth()+1}/${o.date.getDate()} (${WD[o.date.getDay()]}) ${pad(o.date.getHours())}:${pad(o.date.getMinutes())}</div><div style="margin-top:4px">${o.kind==='res'?`<span class="chip warn">주민 우선 · ${priorityMembers(o.court).length}명 가능</span>`:'<span class="chip court">일반 오픈</span>'}</div></div>`).join('')}</div>`:'';
   const card=({c})=>{
     const g=nextOpen(c.genRule),r=c.resident?nextOpen(c.resRule):null;
@@ -1238,8 +1238,7 @@ function viewCourts(){
     ${c.resident?`<div class="prio"><div class="l">우선 예약 가능 회원 · ${h(c.area||c.district)}${c.workers?' 거주·직장':' 거주'} 기준 ${pm.length}명</div><div class="chips">${pm.length?pm.map(({m,why})=>`<span class="chip ${why==='거주'?'court':''}">${h(m.name)}${why==='직장'?' (직장)':''}</span>`).join(''):'<span class="small muted">해당 지역 회원 없음</span>'}</div></div>`:''}
     ${courtUrl(c)?`<a class="btn pri" href="${h(courtUrl(c))}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">예약 페이지 열기 ↗</a>`:''}
     </article>`};
-  const cards=PLATFORMS.map(p=>{const items=list.filter(({c})=>platOf(c).k===p.k);if(!items.length)return '';
-    return `<section class="plat"><div class="plat-h"><div><h3>${h(p.name)} <span class="num muted" style="font-size:13px">${items.length}</span></h3>${p.login?`<div class="small muted">${h(p.login)}</div>`:''}</div><div class="row">${p.url?`<a class="btn sm" href="${h(p.url)}" target="_blank" rel="noopener">예약 사이트 ↗</a>`:''}${(p.links||[]).map(x=>`<a class="btn sm" href="${h(x.u)}" target="_blank" rel="noopener">${h(x.l)} ↗</a>`).join('')}</div></div><div class="cards">${items.map(card).join('')}</div></section>`}).join('');
+  const cards=`<div class="cards">${list.map(card).join('')}</div>`;
   // area coverage: which districts have members
   const memAreas={};activeMembers().forEach(m=>{if(m.district)memAreas[m.district]=(memAreas[m.district]||0)+1});
   return `<div class="page-head"><div><h1>코트</h1><p>정기대관 코트 사용 현황 및 추가 코트 예약 관리</p></div></div>
