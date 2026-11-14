@@ -400,7 +400,7 @@ function viewHome(){
   <section class="panel"><div class="panel-h"><h2>다가오는 행사</h2><a href="#events">전체 보기</a></div><div class="list">${upHtml}</div></section>
   ${(()=>{const ts=S.events.filter(e=>e.type==='개인대회'&&e.date);if(!ts.length)return '';const up2=ts.filter(e=>diffDays(e.date)>=0).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);const past=ts.filter(e=>diffDays(e.date)<0&&e.result&&e.result!=='대기').sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
     const li=e=>`<div class="li click" data-act="ev-open" data-id="${e.id}"><div class="grow"><div class="ttl">${h((e.entrants||[]).map(nameOf).join(', ')||'출전 멤버 미입력')}</div><div class="sub">${fmtD(e.date)} · ${h(e.title)}${e.division?' · '+h(e.division):''}${(e.cheer||[]).length?` · 응원 ${(e.cheer||[]).length}명`:''}</div></div>${diffDays(e.date)>=0?`<span class="dday">${ddayLabel(e.date)}</span>`:`<span class="result ${resultCls(e.result)}" style="font-size:12px">${h(e.result)}</span>`}</div>`;
-    return `<section class="panel"><div class="panel-h"><h2>멤버 대회 소식</h2><a href="#events" data-act="ev-filter" data-v="개인대회">전체 보기</a></div><div class="list">${up2.map(li).join('')}${past.map(li).join('')}</div></section>`})()}
+    return `<section class="panel"><div class="panel-h"><h2>멤버 대회 소식</h2><a href="#events" data-act="ev-filter" data-v="all">전체 보기</a></div><div class="list">${up2.map(li).join('')}${past.map(li).join('')}</div></section>`})()}
   <section class="panel"><div class="panel-h"><h2>예약 오픈 임박</h2><a href="#courts">코트 보기</a></div><div class="list">${opHtml}</div></section>
   <section class="panel"><div class="panel-h"><h2>회원 개요</h2><a href="#members">회원 보기</a></div>${mo}</section>
   </div></div>`;
@@ -1022,6 +1022,7 @@ ACT['cheer']=async t=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;con
 const nameOf=id=>memberById(id)?.name||'(삭제된 회원)';
 ACT['ev-filter']=t=>{evFilter=t.dataset.v;evPastMore=false;render()};
 ACT['ev-past-more']=()=>{evPastMore=true;render()};
+ACT['ev-past-less']=()=>{evPastMore=false;render();const b=$('.ev-more');b&&b.scrollIntoView({block:'center'})};
 ACT['note-color']=t=>{noteColor=t.dataset.c;document.querySelectorAll('.sw').forEach(s=>s.setAttribute('aria-pressed',s.dataset.c===noteColor))};
 ACT['note-add']=async()=>{const ta=$('#note-text');const txt=ta.value.trim();if(!txt){ta.focus();return}const id=uid();try{await put('notes',id,{eventId:evSel,text:txt,color:noteColor,authorId:myId||null,createdAt:Date.now(),rot:(Math.random()*3-1.5).toFixed(1)});ta.value='';lsSet('sbpb-notedraft','')}catch(e){}};
 ACT['note-del']=t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='삭제?';setTimeout(()=>{t.dataset.confirm='';t.textContent='×'},2500);return}del('notes',t.dataset.id)};
@@ -1037,11 +1038,11 @@ function viewEvents(){
   const list=(showUp?up:[]).concat(showPast?pastShown:[]);
   if(!evSel||!S.events.find(e=>e.id===evSel))evSel=(list[0]||sorted[0]||{}).id||null;
   const ev=S.events.find(e=>e.id===evSel);
-  const filters=[['all','전체'],['upcoming','예정'],['past','지난 이벤트'],...EV_TYPES.map(t=>[t,t==='개인대회'?'개인 대회':t])];
+  const filters=[['all','전체'],['upcoming','예정'],['past','지난 이벤트']];
   const left=`<section class="panel evlist"><div class="row" style="margin-bottom:10px">${filters.map(([v,l])=>`<button class="btn sm ${evFilter===v?'pri':'ghost'}" data-act="ev-filter" data-v="${v}">${l}</button>`).join('')}</div>
    <div class="list">${(()=>{const row=e=>{const d=parseYmd(e.date);const nc=S.notes.filter(n=>n.eventId===e.id).length;return `<div class="li click t-${h(e.type)}${e.id===evSel?' on':''}" data-act="ev-open" data-id="${e.id}"><div class="datebox"><b>${d?d.getDate():'?'}</b><span>${d?(d.getMonth()+1)+'월':''}</span></div><div class="grow"><div class="ttl">${h(e.title)}</div><div class="sub"><span class="chip ttag">${e.type==='개인대회'?'개인 대회':h(e.type)}</span> ${e.type==='개인대회'?`${h((e.entrants||[]).map(nameOf).join(', '))}${e.result&&e.result!=='대기'?` · <b>${h(e.result)}</b>`:''}`:h(e.status||'')}${nc?` · 메모 ${nc}`:''}</div></div>${e.date&&diffDays(e.date)>=0?`<span class="dday small">${ddayLabel(e.date)}</span>`:''}</div>`};const sec=(l,n)=>`<div class="ev-sec">${l} <span class="num">${n}</span></div>`;
      let o='';if(showUp){if(secs)o+=sec('예정',up.length);o+=up.map(row).join('')||(secs?'<div class="muted small ev-none">예정된 행사 없음</div>':'')}
-     if(showPast){if(secs)o+=sec('지난 이벤트',past.length);o+=pastShown.map(row).join('');if(secs&&past.length>PAST_N&&!evPastMore)o+=`<button class="btn sm ghost ev-more" data-act="ev-past-more">지난 이벤트 ${past.length-PAST_N}건 더 보기</button>`;if(secs&&!past.length)o+='<div class="muted small ev-none">지난 행사 없음</div>'}
+     if(showPast){if(secs)o+=sec('지난 이벤트',past.length);o+=pastShown.map(row).join('');if(secs&&past.length>PAST_N)o+=evPastMore?`<button class="btn sm ghost ev-more" data-act="ev-past-less">지난 이벤트 접기</button>`:`<button class="btn sm ghost ev-more" data-act="ev-past-more">지난 이벤트 ${past.length-PAST_N}건 더 보기</button>`;if(secs&&!past.length)o+='<div class="muted small ev-none">지난 행사 없음</div>'}
      return o||'<div class="muted small" style="padding:8px">해당 행사 없음</div>'})()}</div></section>`;
   let right;
   if(!ev)right=`<div class="empty" style="padding:60px 16px"><b>등록된 행사 없음</b>행사별 회의 내용과 할 일을 스티커 메모로 기록 가능<div class="row"><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>`;
