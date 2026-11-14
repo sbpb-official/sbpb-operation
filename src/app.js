@@ -762,7 +762,7 @@ function pickCandidates(){
     if(toBench&&!(s&&s[0]==='m'))return;
     people.push({k,name:p.name,gender:p.gender,level:p.level,guest:p.guest,st,cls,ord:s&&s[0]==='r'?0:s?1:2});
   });
-  if(!toBench)rosterAll().forEach(p=>{if(seen.has(p.key)||p.key===cur)return;people.push({k:p.key,name:p.name,nick:p.nick,gender:p.gender,level:p.lvUnknown?null:p.level,guest:p.guest,st:p.guest?'게스트 · 미참석':'미참석',cls:'out',ord:3})});
+  // 이번 대진표 참석자만 후보로 표시 (미참석 회원·게스트는 제외)
   const q=pickF.q.trim();
   return people.filter(x=>(!q||x.name.includes(q)||(x.nick||'').includes(q))&&(!pickF.g||(pickF.g==='G'?x.guest:x.gender===pickF.g))).sort((a,b)=>a.ord-b.ord||a.name.localeCompare(b.name));
 }
