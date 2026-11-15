@@ -269,10 +269,11 @@ async function runMigrations(){
   const F6='mig-court-boramae-addr';
   const F7='mig-court-ts-link';
   const F8='mig-court-gyenam';
-  const F9='mig-court-ts-naver';                     // 2026-11-14: TS는 네이버 링크 예약 (스매시 아님) · 메모의 '○○에서 예약' 안내 문구 제거                       // 2026-11-14: 계남테니스장 (구로구) 추가                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
+  const F9='mig-court-ts-naver';
+  const F10='mig-court-yongma';                      // 2026-11-15: 용마폭포공원 테니스장 (중랑구) 추가                     // 2026-11-14: TS는 네이버 링크 예약 (스매시 아님) · 메모의 '○○에서 예약' 안내 문구 제거                       // 2026-11-14: 계남테니스장 (구로구) 추가                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
   const TS_MEMO='예약 링크는 네이버 지도 · 9호선 둔촌오륜역 1번 출구 도보 약 860m\n대관료 (개장 당시): 평일 야간·주말 주간 35,000원 · 주말 야간 40,000원\n※ 현재 요금·예약 오픈 방식은 네이버 지도 업체 정보로 확인 필요';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
   const has=id=>S.dues.find(d=>d.id===id);
-  if(has(F)&&has(F2)&&has(F3)&&has(F4)&&has(F5)&&has(F6)&&has(F7)&&has(F8)&&has(F9))return;
+  if(has(F)&&has(F2)&&has(F3)&&has(F4)&&has(F5)&&has(F6)&&has(F7)&&has(F8)&&has(F9)&&has(F10))return;
   migBusy=true;
   try{if(!has(F)){const targets=S.members.filter(m=>isCur(m)&&!m.sample);
     for(const m of targets)if(m.joined!=='2026-01-01')await put('members',m.id,{...m,joined:'2026-01-01'});
@@ -327,7 +328,14 @@ async function runMigrations(){
       const next={...c,memo:drop(c.memo)};if(/고비용/.test(next.fee||''))next.fee=String(next.fee).replace(/\(?\s*고비용\s*\)?/g,'').trim();
       if(isTS){next.smash=false;next.kind='private';if(!next.url)next.url='https://naver.me/xKy8BCdY';if(!next.map)next.map=next.url;if(!next.address)next.address='경기 하남시 서하남로 9-16'}
       if(JSON.stringify(next)!==JSON.stringify(c)){await put('courts',c.id,next);n++}}
-    await put('dues',F9,{done:true,count:n,at:Date.now()});if(n)toast(`코트 정보 정리 완료 (${n}곳)`)}}
+    await put('dues',F9,{done:true,count:n,at:Date.now()});if(n)toast(`코트 정보 정리 완료 (${n}곳)`)}
+  if(!has(F10)){const dup=S.courts.some(c=>/용마폭포/.test(c.name||''));
+    if(!dup)await put('courts','c-yongma',{name:'용마폭포공원 테니스장',district:'중랑구',address:'서울 중랑구 용마산로 250-12',map:'',courts:'3면',surface:'인조잔디',indoor:false,outdoor:true,
+      fee:'2시간 주간 평일 8,000원 · 주말·공휴일 10,400원',url:'https://www.jungnangimc.or.kr/html/01100100',platform:'etc',kind:'public',smash:false,
+      genRule:{},resident:false,resRule:{},area:'',workers:false,
+      memo:'중랑구시설관리공단 대관신청 · 운영 06:00~22:00 (야간 조명)\n경로(65세 이상) 30%, 청소년·장애인·국가유공자 50% 감면\n주차 10분당 200원 · 문의 02-437-2949\n※ 예약 오픈일은 공단 대관신청 안내로 확인 필요',createdAt:Date.now()});
+    await put('dues',F10,{done:true,skipped:dup,at:Date.now()});
+    if(!dup)toast('코트 추가 완료 · 용마폭포공원 테니스장')}}
   catch(e){}
   migBusy=false;
 }
