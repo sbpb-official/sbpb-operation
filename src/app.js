@@ -104,6 +104,8 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    화면·기능이 바뀌는 배포마다 맨 위에 항목 추가 (id는 겹치지 않게, 날짜순).
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
+  {id:'2026-11-17c',v:'1.8',date:'2026-11-17',items:[
+    {k:'news',t:'업데이트 안내: 접속 때 바뀐 내용 전체를 창에 표시 → 버전과 바뀐 항목 수만 짧게 안내, 상세 내역은 설정 › 업데이트 기록 (상세 보기 버튼)'}]},
   {id:'2026-11-17b',v:'1.7',date:'2026-11-17',items:[
     {k:'history',t:'업데이트 기록: v1.0(11.14)부터 기록 → 최초 요청(Claude 아티팩트 시기)부터 전체 기록, 실제 배포 날짜 기준으로 정리'}]},
   {id:'2026-11-16e',alias:['2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.6',date:'2026-11-17',items:[
@@ -194,8 +196,12 @@ function maybeShowNews(){if(RO||!NEWS.length)return;const seen=lsGet(NEWS_KEY,nu
   let list;if(!seen){const cut=new Date();cut.setDate(cut.getDate()-14);list=NEWS.filter(n=>parseYmd(n.date)>=cut)}else{const i=NEWS.findIndex(n=>n.id===seen||(n.alias||[]).includes(seen));list=i<0?NEWS.slice():NEWS.slice(0,i)}
   if(!list.length){lsSet(NEWS_KEY,NEWS[0].id);return}
   if($('#modal-root').innerHTML){setTimeout(maybeShowNews,4000);return}
-  openNews(list,'업데이트');lsSet(NEWS_KEY,NEWS[0].id)/* 확인이든 × 든 한 번 보면 끝 */}
-ACT['news-open']=()=>{location.hash='#settings'};
+  /* 내용이 많아져 접속 때는 짧은 안내만: 상세는 설정 › 업데이트 기록 */
+  const n=list.reduce((s,x)=>s+x.items.length,0),vs=list.map(x=>x.v).filter(Boolean);
+  openModal('업데이트',`<div class="upd-note"><b class="upd-v">v${h(NEWS[0].v)}</b><p>${vs.length>1?`v${h(vs[vs.length-1])}부터 v${h(vs[0])}까지 `:''}${n}개 항목 변경</p><p class="muted">상세 내역은 설정 › 업데이트 기록에서 확인</p></div>`,()=>{},`<button type="button" class="btn" data-act="news-open">상세 보기</button>`,'sm');
+  const f=$('#mform');if(f){f.querySelectorAll('.acts button:not([type=submit]):not([data-act=news-open])').forEach(b=>b.hidden=true);const s=f.querySelector('button[type=submit]');if(s)s.textContent='확인'}
+  lsSet(NEWS_KEY,NEWS[0].id)/* 확인이든 × 든 한 번 보면 끝 */}
+ACT['news-open']=()=>{closeModal();location.hash='#settings'};
 const APP_V=()=>NEWS.length?'v'+NEWS[0].v:'';
 function closeLv(){if(typeof releaseRoom==='function')releaseRoom();document.querySelectorAll('.lv-pop').forEach(p=>{p.hidden=true;const w=p._wrap;if(w){delete p._wrap;if(w.isConnected){w.appendChild(p);w.querySelector('.dbtn').setAttribute('aria-expanded','false')}else p.remove();return}p.previousElementSibling&&p.previousElementSibling.setAttribute('aria-expanded','false')})}
 document.addEventListener('click',e=>{if(!e.target.closest('.lvsel,.calpop'))closeLv()},true);
