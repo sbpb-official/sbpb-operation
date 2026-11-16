@@ -380,7 +380,8 @@ a.addr{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:1
 .mcard.dim{opacity:.6}
 .mcard .top1{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .mcard .meta{font-size:12px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
-.cf-chips{max-height:none}
+.cf-chips,.px-chips{max-height:none}
+.cf-add.px-add{width:auto;padding:0 12px;font-size:13px}
 .cf-add{width:36px;height:30px;border-radius:999px;border:1.5px dashed var(--court);background:transparent;color:var(--court);font-size:18px;font-weight:700;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .cfx{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;background:var(--court);color:var(--on-court);border:1px solid var(--court)}
 .cfx i{font-style:normal;font-size:10px;font-weight:700;opacity:.85;border:1px solid currentColor;border-radius:4px;padding:0 4px;height:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
@@ -1014,7 +1015,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=e024f05905';
+const CUR_APP = 'app.js?v=67259af363';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1042,7 +1043,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=e024f05905';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=67259af363';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
