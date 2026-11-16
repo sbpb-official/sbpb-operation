@@ -100,6 +100,42 @@ ACT['me-done']=()=>{const ov=$('#memoed');if(!ov)return;const v=ov.querySelector
 /* price and count fields: tapping again selects the whole number, so typing replaces it */
 document.addEventListener('focusin',e=>{const t=e.target;if(!t.dataset||!(t.dataset.comma||t.dataset.selall))return;t._selAt=Date.now();setTimeout(()=>{try{t.setSelectionRange(0,t.value.length)}catch(_){t.select()}},30)});
 document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.dataset.comma||t.dataset.selall)&&t._selAt&&Date.now()-t._selAt<500){e.preventDefault();try{t.setSelectionRange(0,t.value.length)}catch(_){}}},true);
+/* ---------- 업데이트 내역 ----------
+   화면·기능이 바뀌는 배포마다 맨 위에 항목 추가 (id는 겹치지 않게, 날짜순).
+   기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '새로 바뀐 점'으로 보여 줌 */
+const NEWS=[
+  {id:'2026-11-16c',date:'2026-11-16',items:[
+    '업데이트 안내: 앱이 바뀌면 다음 접속 때 "새로 바뀐 점" 창으로 안내. 지난 내역은 대시보드 › 업데이트 내역']},
+  {id:'2026-11-16b',date:'2026-11-16',items:[
+    '운영진 임기 연도별 관리: 회원 수정 › 운영진 체크 후 임기 연도 선택. 내년 운영진은 명단에 흐린 배지로 표시 (8월부터 다음 해 선택 가능)',
+    '개인대회 외부 파트너: 등록된 게스트 선택 또는 새 이름 추가. 이벤트 목록·멤버 대회 소식에 이름 옆 G 표시',
+    '행사 확정 인원: 예상 인원 아래 확정 멤버 체크, + 로 게스트 추가',
+    '게스트 수정 창: 전 회원 기록 초기화 기능',
+    '정산 › 월 회비: 면제 버튼 제거 (납부 · 미납만)',
+    '날짜 박스: 월 · 날짜 · 요일 순 표시 (토요일 파랑, 일요일 빨강)',
+    '대진표: 같은 이름을 다시 누르면 메뉴 닫힘',
+    '달력: 월 이동 버튼 개선, 좌우로 밀어 월 이동']},
+  {id:'2026-11-15',date:'2026-11-15',items:[
+    '코트: 공공 코트 · 사설 코트 구분, 예약 오픈이 가까운 순 정렬, 오픈 일정 크게 표시',
+    '코트: 주소 누르면 네이버 지도 연결, 구 · 바닥 · 실내외 배지',
+    '코트 수정: 면 수 · 요금 숫자 입력(1시간당 / 2시간당), 바닥 · 실내외 버튼 선택, 메모는 큰 창에서 편집',
+    '코트 추가: 아차산배수지 · 보라매 · 계남 · 용마폭포 · 중랑구립 · 면목구립 · 이문 · TS · 엠무브']},
+  {id:'2026-11-14',date:'2026-11-14',items:[
+    '대시보드: 정기모임 종료 시각 이후 다음 모임 표시, 행사 대체 시 해당 행사 표시',
+    '대진표: 정기모임 종료 후 다음 주 날짜로 준비',
+    '날짜 입력: 일정은 달력(요일 표시), 생년월일 · 가입일 등은 휠',
+    '시각 입력: 시 · 10분 단위 휠']}
+];
+const NEWS_KEY='sbpb-news-seen';
+function newsHtml(list){const g=[];list.forEach(n=>{const last=g[g.length-1];if(last&&last.date===n.date)last.items.push(...n.items);else g.push({date:n.date,items:[...n.items]})});return g.map(n=>`<div class="news-day"><div class="news-d">${fmtFull(n.date)}</div><ul>${n.items.map(x=>`<li>${h(x)}</li>`).join('')}</ul></div>`).join('')}
+function openNews(list,title){openModal(title,list.length?newsHtml(list):'<p class="muted">업데이트 내역 없음</p>',()=>{lsSet(NEWS_KEY,NEWS[0].id)},'','news');
+  const f=$('#mform');if(!f)return;f.querySelectorAll('.acts button:not([type=submit])').forEach(b=>b.hidden=true);const s=f.querySelector('button[type=submit]');if(s)s.textContent='확인'}
+function maybeShowNews(){if(RO||!NEWS.length)return;const seen=lsGet(NEWS_KEY,null);
+  let list;if(!seen){const cut=new Date();cut.setDate(cut.getDate()-14);list=NEWS.filter(n=>parseYmd(n.date)>=cut)}else{const i=NEWS.findIndex(n=>n.id===seen);list=i<0?NEWS.slice():NEWS.slice(0,i)}
+  if(!list.length){lsSet(NEWS_KEY,NEWS[0].id);return}
+  if($('#modal-root').innerHTML){setTimeout(maybeShowNews,4000);return}
+  openNews(list,'새로 바뀐 점');lsSet(NEWS_KEY,NEWS[0].id)/* 확인이든 × 든 한 번 보면 끝 */}
+ACT['news-open']=()=>openNews(NEWS,'업데이트 내역');
 function closeLv(){if(typeof releaseRoom==='function')releaseRoom();document.querySelectorAll('.lv-pop').forEach(p=>{p.hidden=true;const w=p._wrap;if(w){delete p._wrap;if(w.isConnected){w.appendChild(p);w.querySelector('.dbtn').setAttribute('aria-expanded','false')}else p.remove();return}p.previousElementSibling&&p.previousElementSibling.setAttribute('aria-expanded','false')})}
 document.addEventListener('click',e=>{if(!e.target.closest('.lvsel,.calpop'))closeLv()},true);
 /* a popup inside a <label> must not re-trigger the label's button (it reset the calendar to the selected month) */
@@ -269,7 +305,7 @@ async function boot(){
   if(u){try{canWrite=await u.can('data.write')}catch(e){}try{myId=await u.id()}catch(e){}}
   c.use('downloads').then(x=>{dl=x});
   if(!d||canWrite===false){clearTimeout(timer);await enterRO();if(WEB&&window.SBPB_WEB.user())toast('운영진 권한 없는 계정. 운영진 계정에 이메일 등록 필요');return}
-  db=d;mode='db';setConn();
+  db=d;mode='db';setConn();setTimeout(maybeShowNews,1800);
   c.use('artifact').then(x=>{art=x;setConn();render()});
   const fresh=new Set();let migRan=false;
   COLS.forEach(col=>{
@@ -605,7 +641,7 @@ function viewHome(){
   }else mo=`<div class="empty"><b>등록된 회원 없음</b>회원 등록 시 성별·레벨·구력·거주지 분포 표시<div class="row"><a class="btn sm" href="#members">회원 관리</a></div></div>`;
   const nr=nextRegNow(),nrs=regStat(nr),nrx=nrs&&nrs.status==='취소',dd=diffDays(nr);const nrEv=nrx&&nrs.reason==='행사 대체'?S.events.find(e=>e.date===nr&&e.status!=='취소'):null;
   return `<div class="page-head dash-head"><div class="dh-main"><div class="dh-today"><span>${t.getFullYear()}년 ${t.getMonth()+1}월 ${t.getDate()}일 ${WD[t.getDay()]}요일</span><b class="num" id="clock">${clockText()}</b></div>
-    ${nrEv?`<div class="dh-next rep t-${h(nrEv.type||'기타')}" data-act="ev-open" data-id="${nrEv.id}" role="button" tabindex="0"><span class="dh-l">다음 모임 · 행사 대체</span><div class="dh-v"><b>${fmtD(nr)}</b><span>${h(nrEv.title)}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${h(nrEv.place||'')}${nrEv.place?' · ':''}정기모임 대신 행사 진행</span></div>`:`<div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div>`}</div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}${WEB&&mode==='db'?`<button class="btn ghost" data-act="web-logout">로그아웃</button>`:''}${mode==='db'?`<button class="btn" data-act="backup-open">데이터 백업</button>`:''}${mode==='db'&&art?`<button class="btn" data-act="pub-open">공개본 갱신${pendingCount()?` (${pendingCount()})`:''}</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextRegNow()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>
+    ${nrEv?`<div class="dh-next rep t-${h(nrEv.type||'기타')}" data-act="ev-open" data-id="${nrEv.id}" role="button" tabindex="0"><span class="dh-l">다음 모임 · 행사 대체</span><div class="dh-v"><b>${fmtD(nr)}</b><span>${h(nrEv.title)}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${h(nrEv.place||'')}${nrEv.place?' · ':''}정기모임 대신 행사 진행</span></div>`:`<div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div>`}</div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}${WEB&&mode==='db'?`<button class="btn ghost" data-act="web-logout">로그아웃</button>`:''}${mode==='db'?`<button class="btn" data-act="backup-open">데이터 백업</button><button class="btn ghost" data-act="news-open">업데이트 내역</button>`:''}${mode==='db'&&art?`<button class="btn" data-act="pub-open">공개본 갱신${pendingCount()?` (${pendingCount()})`:''}</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextRegNow()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>
   ${kp}<div class="dash">${cal}<div class="side">
   <section class="panel"><div class="panel-h"><h2>다가오는 행사</h2><a href="#events">전체 보기</a></div><div class="list">${upHtml}</div></section>
   ${(()=>{const ts=S.events.filter(e=>e.type==='개인대회'&&e.date);if(!ts.length)return '';const up2=ts.filter(e=>diffDays(e.date)>=0).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);const past=ts.filter(e=>diffDays(e.date)<0&&e.result&&e.result!=='대기').sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
