@@ -771,6 +771,9 @@ details[open]>summary .led-tg i{transform:rotate(180deg)}
 .iopick input:checked+span{background:color-mix(in srgb,var(--court) 14%,var(--surface));border-color:var(--court);color:var(--court);font-weight:700}
 .iopick input:focus-visible+span{outline:2px solid var(--court);outline-offset:2px}
 
+.bd-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.bd-date{font-size:15px;font-weight:700;color:var(--t-bd);font-variant-numeric:tabular-nums}
+
 /* modal */
 .ov{position:fixed;left:0;right:0;top:0;bottom:0;height:auto;   /* full screen, not the area above the keyboard: the keyboard covers the modal instead of shrinking it */
   background:rgba(10,16,24,.5);z-index:20;display:flex;align-items:center;justify-content:center;overflow:hidden;overflow:clip;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
