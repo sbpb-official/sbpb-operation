@@ -727,6 +727,11 @@ async function memberToGuest(m,y){
 }
 ACT['m-to-guest']=async t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 전환';return}
   const m=memberById(t.dataset.id);if(!m)return;try{await memberToGuest(m)}catch(e){return}closeModal();toast(`${m.name} 님 게스트 전환 완료. 등록 연도 기록 유지`);render()};
+ACT['g-clear-member']=async t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 초기화';return}
+  const g=S.guests.find(x=>x.id===t.dataset.id);if(!g)return;const old=g.memberId&&memberById(g.memberId);
+  try{const ng={...g};delete ng.memberId;delete ng.id;await put('guests',g.id,ng);
+    if(old&&old.status==='게스트')await del('members',old.id)}catch(e){return}
+  closeModal();toast(`${g.name} 님 전 회원 기록 초기화 완료`);render()};
 ACT['g-to-member']=async t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 등록';return}
   const g=S.guests.find(x=>x.id===t.dataset.id);if(!g)return;const Y=new Date().getFullYear();const old=g.memberId&&memberById(g.memberId);let mid;
   try{
@@ -1132,7 +1137,7 @@ function guestForm(g={},ctx=''){
   <div class="grid2"><label class="f">구력 (선택)<input class="in" name="career" value="${h(g.career)}" placeholder="예: 2년"></label><label class="f">연락 경로 (선택)<input class="in" name="contact" value="${h(g.contact)}" placeholder="예: 오픈채팅, 지인"></label></div>
   <label class="f">메모<textarea class="in" name="memo" placeholder="정회원 가입 의사, 특이사항 등">${h(g.memo)}</textarea></label>
   ${ctx==='members'?'':`<label class="check"><input type="checkbox" name="attend"${g.id?'':' checked'}> 이번 대진표 참석자에 포함</label>`}
-  ${g.id?`<div class="convbox"><div><b>정회원 등록</b><span>${g.memberId&&memberById(g.memberId)?'전 회원 기록 복원 후 올해 등록 추가':'회원 명단으로 이동, 올해 등록으로 기록'}</span></div><button type="button" class="btn pri" data-act="g-to-member" data-id="${g.id}">정회원 등록</button></div>`:''}`;
+  ${g.id?`<div class="convbox"><div><b>정회원 등록</b><span>${g.memberId&&memberById(g.memberId)?'전 회원 기록 복원 후 올해 등록 추가':'회원 명단으로 이동, 올해 등록으로 기록'}</span></div><button type="button" class="btn pri" data-act="g-to-member" data-id="${g.id}">정회원 등록</button></div>${g.memberId?`<div class="convbox"><div><b>전 회원 기록 초기화</b><span>'전 회원' 표시와 예전 회원 기록(등록 연도 등) 삭제. 처음부터 게스트였던 것으로 처리</span></div><button type="button" class="btn danger" data-act="g-clear-member" data-id="${g.id}">초기화</button></div>`:''}`:''}`;
 }
 const guestFromFd=(fd,old={})=>({...old,name:fd.name.trim(),nick:(fd.nick||'').trim(),gender:fd.gender,level:fd.level===''?null:Number(fd.level),inviter:fd.inviter,career:fd.career.trim(),contact:fd.contact.trim(),memo:fd.memo.trim()});
 ACT['guest-new']=t=>{const fill=t.dataset.fill&&pickCtx?{...pickCtx}:null;openModal('게스트 등록',guestForm({},t.dataset.ctx||''),async fd=>{const id=uid();await put('guests',id,{...guestFromFd(fd),createdAt:Date.now(),visits:0});if(fd.attend&&!cfg.picked.includes(id)){cfg.picked.push(id);saveCfg()}
