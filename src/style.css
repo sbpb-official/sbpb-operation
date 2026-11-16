@@ -360,7 +360,7 @@ a.addr{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:1
 .cf-chips{max-height:none}
 .cf-add{width:36px;height:30px;border-radius:999px;border:1.5px dashed var(--court);background:transparent;color:var(--court);font-size:18px;font-weight:700;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .cfx{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;background:var(--court);color:var(--on-court);border:1px solid var(--court)}
-.cfx i{font-style:normal;font-size:10px;font-weight:700;opacity:.8;border:1px solid currentColor;border-radius:4px;padding:0 3px}
+.cfx i{font-style:normal;font-size:10px;font-weight:700;opacity:.85;border:1px solid currentColor;border-radius:4px;padding:0 4px;height:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
 .cfx button{all:unset;cursor:pointer;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;line-height:1}
 .cfx-box{height:min(70vh,560px)}
 .cfx-new{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
@@ -369,7 +369,8 @@ a.addr{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:1
 .cfx-list{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 8px 8px}
 .cfx-list button{all:unset;box-sizing:border-box;display:block;width:100%;padding:11px 10px;border-radius:8px;cursor:pointer;color:var(--ink);font-size:14px}
 .cfx-list button:hover{background:var(--surface-2)}
-.conf-line span.ex i{font-style:normal;font-size:10px;color:var(--muted);margin-left:3px}
+.conf-line span.ex{display:inline-flex;align-items:center;gap:3px}
+.conf-line span.ex i{font-style:normal;font-size:9px;font-weight:700;color:var(--muted);border:1px solid currentColor;border-radius:4px;width:14px;height:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
 .conf-line{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:8px;font-size:12px}
 .conf-line b{color:var(--court);margin-right:2px}
 .conf-line span{border:1px solid color-mix(in srgb,var(--court) 40%,var(--line));background:color-mix(in srgb,var(--court) 10%,var(--surface));color:var(--ink);border-radius:999px;padding:2px 9px}
