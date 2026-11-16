@@ -1479,7 +1479,7 @@ function viewMoney(){
   const Y=monY,M=monM;const cfg=duesCfg();const fee=Number(cfg.fee)||0;const ppl=duesPeople(Y);
   // ----- dues: month -----
   const cnt={paid:0,none:0,free:0,na:0};ppl.forEach(m=>cnt[dueState(m,Y,M)]++);
-  const segBtns=(m,s)=>RO?`<span class="due-st ${s}">${s==='paid'?'납부':s==='free'?'면제':'미납'}</span>`:`<div class="seg due-seg">${[['paid','납부'],['none','미납'],['free','면제']].map(([v,l])=>`<button class="${s===v?'on '+v:''}" data-act="due-set" data-id="${m.id}" data-y="${Y}" data-m="${M}" data-v="${v==='none'?'':v}" aria-pressed="${s===v}">${l}</button>`).join('')}</div>`;
+  const segBtns=(m,s)=>RO?`<span class="due-st ${s}">${s==='paid'?'납부':s==='free'?'면제':'미납'}</span>`:`<div class="seg due-seg">${[['paid','납부'],['none','미납']].concat(s==='free'?[['free','면제']]:[]).map(([v,l])=>`<button class="${s===v?'on '+v:''}" data-act="due-set" data-id="${m.id}" data-y="${Y}" data-m="${M}" data-v="${v==='none'?'':v}" aria-pressed="${s===v}">${l}</button>`).join('')}</div>`;
   const rows=ppl.map(m=>{const s=dueState(m,Y,M);return `<div class="due-row${isCur(m)?'':' dim'}"><div class="grow"><b>${h(m.name)}</b>${ST(m)!=='활동'?' '+stChip(m):''}</div>${s==='na'?'<span class="muted small">회비 시작 전</span>':segBtns(m,s)}</div>`}).join('')||'<div class="muted small" style="padding:12px 0">대상 회원 없음</div>';
   // ----- dues: year grid -----
   let yTot=0;
@@ -1524,7 +1524,7 @@ ACT['mon-step']=t=>{let m=monM+(+t.dataset.v);if(m<1){m=12;monY--}if(m>12){m=1;m
 ACT['due-set']=async t=>{const {id,y,m,v}=t.dataset;const did=`${y}-${id}`;const cur=S.dues.find(d=>d.id===did);const mm={...((cur&&cur.m)||{})};if(v)mm[m]=v;else delete mm[m];
   t.closest('.seg').querySelectorAll('button').forEach(b=>{const on=b===t;b.className=on?'on '+(b.dataset.v||'none'):'';b.setAttribute('aria-pressed',String(on))});
   try{await put('dues',did,{year:+y,memberId:id,m:mm})}catch(e){render()}};
-ACT['due-cfg']=()=>{const c=duesCfg();openModal('회비 설정',`<div class="grid2"><label class="f">월 회비 (원)<input class="in" inputmode="numeric" data-comma="1" name="fee" value="${h(Number(c.fee||0).toLocaleString('ko-KR'))}" required></label><label class="f">회비 시작 월${wheelField(c.start,'start','ym','회비 시작 월')}</label></div><p class="small muted" style="margin:0">시작 월 이전은 납부 대상에서 제외. 휴면·개인 사정 등은 회원별 '면제'로 처리</p>`,fd=>put('dues','cfg',{fee:numOf(fd.fee),start:fd.start||''}))};
+ACT['due-cfg']=()=>{const c=duesCfg();openModal('회비 설정',`<div class="grid2"><label class="f">월 회비 (원)<input class="in" inputmode="numeric" data-comma="1" name="fee" value="${h(Number(c.fee||0).toLocaleString('ko-KR'))}" required></label><label class="f">회비 시작 월${wheelField(c.start,'start','ym','회비 시작 월')}</label></div><p class="small muted" style="margin:0">시작 월 이전은 납부 대상에서 제외</p>`,fd=>put('dues','cfg',{fee:numOf(fd.fee),start:fd.start||''}))};
 function dueText(){const Y=monY,M=monM;const fee=Number(duesCfg().fee)||0;const un=duesPeople(Y).filter(m=>isCur(m)&&dueState(m,Y,M)==='none');
   return `[SBPB ${M}월 회비 안내]\n${M}월 회비 ${won(fee)} 미납 확인 부탁드립니다 🙏\n${un.map(m=>m.name).join(', ')}`}
 document.addEventListener('toggle',e=>{if(e.target.id==='due-pv')lsSet('sbpb-due-pv',e.target.open);if(e.target.id==='due-yr')lsSet('sbpb-due-yr',e.target.open)},true);
