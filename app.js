@@ -273,10 +273,11 @@ async function runMigrations(){
   const F10='mig-court-yongma';
   const F11='mig-court-yongma-info';
   const F12='mig-court-jungnang';
-  const F13='mig-court-myeonmok';                    // 2026-11-15: 면목구립테니스장 추가 (공단 이용안내 기준)                    // 2026-11-15: 중랑구립테니스장 추가 (예약 링크·순위는 용마와 같은 공단 규정)                 // 2026-11-15: 용마 테니스장 공단 이용안내 반영 (요금·예약 순위·예약 사이트)                      // 2026-11-15: 용마폭포공원 테니스장 (중랑구) 추가                     // 2026-11-14: TS는 네이버 링크 예약 (스매시 아님) · 메모의 '○○에서 예약' 안내 문구 제거                       // 2026-11-14: 계남테니스장 (구로구) 추가                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
+  const F13='mig-court-myeonmok';
+  const F14='mig-court-imun';                        // 2026-11-16: 이문체육문화센터 테니스장 (동대문구) 추가                    // 2026-11-15: 면목구립테니스장 추가 (공단 이용안내 기준)                    // 2026-11-15: 중랑구립테니스장 추가 (예약 링크·순위는 용마와 같은 공단 규정)                 // 2026-11-15: 용마 테니스장 공단 이용안내 반영 (요금·예약 순위·예약 사이트)                      // 2026-11-15: 용마폭포공원 테니스장 (중랑구) 추가                     // 2026-11-14: TS는 네이버 링크 예약 (스매시 아님) · 메모의 '○○에서 예약' 안내 문구 제거                       // 2026-11-14: 계남테니스장 (구로구) 추가                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
   const TS_MEMO='예약 링크는 네이버 지도 · 9호선 둔촌오륜역 1번 출구 도보 약 860m\n대관료 (개장 당시): 평일 야간·주말 주간 35,000원 · 주말 야간 40,000원\n※ 현재 요금·예약 오픈 방식은 네이버 지도 업체 정보로 확인 필요';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
   const has=id=>S.dues.find(d=>d.id===id);
-  if(has(F)&&has(F2)&&has(F3)&&has(F4)&&has(F5)&&has(F6)&&has(F7)&&has(F8)&&has(F9)&&has(F10)&&has(F11)&&has(F12)&&has(F13))return;
+  if(has(F)&&has(F2)&&has(F3)&&has(F4)&&has(F5)&&has(F6)&&has(F7)&&has(F8)&&has(F9)&&has(F10)&&has(F11)&&has(F12)&&has(F13)&&has(F14))return;
   migBusy=true;
   try{if(!has(F)){const targets=S.members.filter(m=>isCur(m)&&!m.sample);
     for(const m of targets)if(m.joined!=='2026-01-01')await put('members',m.id,{...m,joined:'2026-01-01'});
@@ -362,7 +363,14 @@ async function runMigrations(){
       genRule:{type:'weekly',weekday:3,time:'00:00'},resident:true,area:'중랑구',workers:false,resRule:{type:'weekly',weekday:1,time:'09:00'},
       memo:'2주 후 1주(월~일) 이용분 사전예약 · 온라인 결제만 (현장결제 불가) · 팀 2~4명\n예약 우선순위 (매주)\n· 1순위 월요일 09:00~18:00: 팀원 3명 이상 중랑구민\n· 2순위 화요일 09:00~18:00: 팀원 2명 이상 중랑구민\n· 3순위 수요일~일요일: 누구나 (24시간)\n예약 제한: 평일 제한 없음 · 주말 1일 1회(2시간) · 1주 2회(4시간) · 취소된 빈자리는 누구나 실시간 신청\n운영 2시간 단위 (10분 휴장 포함): 4~9월 1부 07:00 ~ 6부 18:50 · 10~3월 1부 08:00 ~ 5부 17:00 · 일출·일몰에 따라 탄력 운영\n휴장: 신정·설·추석 당일, 12월 1일 (공단 창립기념일), 우천·폭설·행사 시\n할인: 중랑구민 10% · 경로 30% · 장애인·기초수급·국가유공자 50% · 다자녀 (코트당 이용자 50% 이상 대상일 때 최저 할인율) · 할인 신분증 지참\n취소: 이용 1일 전까지 (당일 불가) · 7일 전 카드취소 · 6~4일 전 5% · 3~1일 전 10% 공제 환불 · 이용월 취소 2회당 1개월 이용 제한\n※ 주소·면 수·바닥 확인 필요',createdAt:Date.now()});
     await put('dues',F13,{done:true,skipped:dup,at:Date.now()});
-    if(!dup)toast('코트 추가 완료 · 면목구립테니스장')}}
+    if(!dup)toast('코트 추가 완료 · 면목구립테니스장')}
+  if(!has(F14)){const dup=S.courts.some(c=>/이문/.test(c.name||''));
+    if(!dup)await put('courts','c-imun',{name:'이문체육문화센터 테니스장',district:'동대문구',address:'서울 동대문구 이문동 189',map:'',courts:'',surface:'',indoor:false,outdoor:false,
+      fee:'',url:'https://www.dfmc.kr:8443/course/sports/fmcs/14',platform:'etc',kind:'public',smash:false,
+      genRule:{type:'monthly',day:'20',time:'09:00'},resident:true,area:'동대문구',workers:false,resRule:{type:'monthly',day:'19',time:'09:00'},
+      memo:'다음 달 대관 신청: 매월 19일 09:00 동대문구민 한정 · 20일 09:00 누구나 · 말일까지\n대관 시간: 화·수 12:00~15:00 · 주말 09:00~18:00 (계절·기상·센터 사정에 따라 변경 가능)\n1시간 단위 신청 · 인터넷 예약 후 카드결제 (승인 후 3시간 안에 미결제 시 자동 취소)',createdAt:Date.now()});
+    await put('dues',F14,{done:true,skipped:dup,at:Date.now()});
+    if(!dup)toast('코트 추가 완료 · 이문체육문화센터 테니스장')}}
   catch(e){}
   migBusy=false;
 }
