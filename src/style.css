@@ -293,6 +293,7 @@ table.tbl.mt{table-layout:fixed;min-width:980px}
 .datebox{width:46px;text-align:center;flex:none;border-radius:8px;border:1px solid var(--line);background:var(--surface);padding:5px 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .datebox b{display:block;font-family:var(--f-display);font-size:18px;line-height:1.1;font-variant-numeric:tabular-nums}
 .datebox span{display:block;font-size:10px;line-height:1.2;color:var(--muted)}
+.datebox .db-w{font-weight:700;color:var(--ink)}.datebox .db-w.sat{color:var(--t-ex)}.datebox .db-w.sun{color:var(--bad)}
 .evhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:14px}
 .evhead h2{font-size:22px}
 .meta-row{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-top:6px}
