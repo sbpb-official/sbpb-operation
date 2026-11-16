@@ -43,7 +43,7 @@ const fmtD=s=>{const d=parseYmd(s);return d?`${d.getMonth()+1}.${d.getDate()} ($
 const fmtFull=s=>{const d=parseYmd(s);return d?`${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} (${WD[d.getDay()]})`:''};
 const diffDays=s=>Math.round((parseYmd(s)-today0())/864e5);
 /* square date box: month (small, grey) · day (large) · weekday (Sat blue, Sun red) */
-const dateBox=ds=>{const d=ds?parseYmd(ds):null;if(!d||isNaN(d))return '<div class="datebox"><b>?</b></div>';const w=d.getDay();return `<div class="datebox"><span class="db-m">${d.getMonth()+1}월</span><b>${d.getDate()}</b><span class="db-w${w===0?' sun':w===6?' sat':''}">${WD[w]}</span></div>`};
+const dateBox=ds=>{const d=ds?parseYmd(ds):null;if(!d||isNaN(d))return '<div class="datebox"><b>?</b></div>';const w=d.getDay();return `<div class="datebox"><span class="db-m">${d.getMonth()+1}월</span><b>${d.getDate()}</b><span class="db-w${w===0?' sun':w===6?' sat':''}">${WD[w]}요일</span></div>`};
 /* 운영진: 연도별 임기 (staffYears {연도: 직책}). 화면 표시는 올해 기준, 내년만 정해진 경우 흐린 배지 */
 const curY=()=>new Date().getFullYear();
 const staffMap=m=>(m&&m.staffYears)||{};
@@ -104,30 +104,35 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    화면·기능이 바뀌는 배포마다 맨 위에 항목 추가 (id는 겹치지 않게, 날짜순).
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '새로 바뀐 점'으로 보여 줌 */
 const NEWS=[
+  {id:'2026-11-16d',date:'2026-11-16',items:[
+    {k:'datebox',t:'날짜 박스: 날짜 · 월만 표시 → 월 · 날짜 · 요일 순 표시 (요일은 "토요일"처럼 전체 표기, 토요일은 차분한 파랑 · 일요일은 차분한 빨강)'},
+    {k:'birthday',t:'대시보드 30일 내 생일: 날짜 · 나이 줄 따로 표시 → 이름 옆에 날짜(요일) 크게 표시, 나이 줄 삭제'},
+    {k:'result',t:'대회 결과: 모든 결과에 배지 모양(앞에 빈 공간) → 우승 · 입상만 색 배지, 그 외(8강 · 예선 등)는 글자만'},
+    {k:'inviter',t:'게스트 목록: 전 회원 게스트는 초대한 회원 대신 "전 회원"만 표시 → "전 회원" 표시와 초대한 회원 함께 표시'}]},
   {id:'2026-11-16c',date:'2026-11-16',items:[
-    '업데이트 안내: 앱이 바뀌면 다음 접속 때 "새로 바뀐 점" 창으로 안내. 지난 내역은 대시보드 › 업데이트 내역']},
+    {k:'news',t:'업데이트 안내: 없음 → 앱이 바뀌면 다음 접속 때 "새로 바뀐 점" 창으로 안내, 지난 내역은 대시보드 › 업데이트 내역'}]},
   {id:'2026-11-16b',date:'2026-11-16',items:[
-    '운영진 임기 연도별 관리: 회원 수정 › 운영진 체크 후 임기 연도 선택. 내년 운영진은 명단에 흐린 배지로 표시 (8월부터 다음 해 선택 가능)',
-    '개인대회 외부 파트너: 등록된 게스트 선택 또는 새 이름 추가. 이벤트 목록·멤버 대회 소식에 이름 옆 G 표시',
-    '행사 확정 인원: 예상 인원 아래 확정 멤버 체크, + 로 게스트 추가',
-    '게스트 수정 창: 전 회원 기록 초기화 기능',
-    '정산 › 월 회비: 면제 버튼 제거 (납부 · 미납만)',
-    '날짜 박스: 월 · 날짜 · 요일 순 표시 (토요일 파랑, 일요일 빨강)',
-    '대진표: 같은 이름을 다시 누르면 메뉴 닫힘',
-    '달력: 월 이동 버튼 개선, 좌우로 밀어 월 이동']},
+    {k:'staff',t:'운영진: 체크 하나로 즉시 바뀜(연도 구분 없음) → 회원 수정 › 운영진 체크 후 임기 연도 선택, 지난 임기 기록 보존, 내년 운영진은 명단에 흐린 배지 (8월부터 다음 해 선택 가능)'},
+    {k:'partner',t:'개인대회 외부 파트너: 글자로 직접 입력 → 등록된 게스트 선택 또는 새 이름 추가, 이벤트 목록 · 멤버 대회 소식에도 이름 옆 G 표시'},
+    {k:'confirmed',t:'행사 확정 인원: 없음 → 예상 인원 아래 확정 멤버 체크, + 로 게스트 추가'},
+    {k:'guestreset',t:'게스트 전 회원 표시: 지울 방법 없음 → 게스트 수정 창에서 전 회원 기록 초기화'},
+    {k:'dues',t:'정산 › 월 회비: 납부 · 미납 · 면제 → 납부 · 미납 (이미 면제로 표시된 달만 면제 버튼 유지)'},
+    {k:'datebox',t:'날짜 박스: 날짜 · 월만 표시 → 월 · 날짜 · 요일 순 표시'},
+    {k:'bracketmenu',t:'대진표 이름 메뉴: 바깥을 눌러야 닫힘 → 같은 이름을 다시 눌러도 닫힘'},
+    {k:'calendar',t:'달력: 작은 화살표, 아이폰에서 월 이동 시 닫히는 문제 → 큰 이전 · 다음 버튼, 좌우로 밀어 월 이동'}]},
   {id:'2026-11-15',date:'2026-11-15',items:[
-    '코트: 공공 코트 · 사설 코트 구분, 예약 오픈이 가까운 순 정렬, 오픈 일정 크게 표시',
-    '코트: 주소 누르면 네이버 지도 연결, 구 · 바닥 · 실내외 배지',
-    '코트 수정: 면 수 · 요금 숫자 입력(1시간당 / 2시간당), 바닥 · 실내외 버튼 선택, 메모는 큰 창에서 편집',
-    '코트 추가: 아차산배수지 · 보라매 · 계남 · 용마폭포 · 중랑구립 · 면목구립 · 이문 · TS · 엠무브']},
+    {k:'courtlist',t:'코트 목록: 예약처별 묶음 → 공공 코트 · 사설 코트 구분, 예약 오픈이 가까운 순 정렬(스매시 앱 코트는 맨 아래), 예약 오픈 일정 크게 표시'},
+    {k:'courtcard',t:'코트 카드: 회색 글자 한 줄 → 구 · 바닥 · 실내외 색 배지, 주소 누르면 네이버 지도 연결'},
+    {k:'courtform',t:'코트 수정: 면 수 · 요금 · 바닥 자유 입력 → 면 수 · 요금 숫자 입력(1시간당 / 2시간당), 바닥 · 실내외 버튼 선택, 메모는 큰 창에서 편집'},
+    {k:'courtadd',t:'코트 추가: 아차산배수지 · 보라매 · 계남 · 용마폭포 · 중랑구립 · 면목구립 · 이문 · TS · 엠무브'}]},
   {id:'2026-11-14',date:'2026-11-14',items:[
-    '대시보드: 정기모임 종료 시각 이후 다음 모임 표시, 행사 대체 시 해당 행사 표시',
-    '대진표: 정기모임 종료 후 다음 주 날짜로 준비',
-    '날짜 입력: 일정은 달력(요일 표시), 생년월일 · 가입일 등은 휠',
-    '시각 입력: 시 · 10분 단위 휠']}
+    {k:'dashnext',t:'대시보드 다음 정기모임: 당일 내내 오늘 모임 표시 → 종료 시각 이후 다음 모임 표시, 행사 대체 시 해당 행사 표시'},
+    {k:'drawdate',t:'대진표 날짜: 당일 내내 오늘 날짜 → 정기모임 종료 후 다음 주 날짜로 준비'},
+    {k:'dateinput',t:'날짜 입력: 기본 날짜 칸 → 일정은 달력(요일 표시), 생년월일 · 가입일 등은 휠'},
+    {k:'timeinput',t:'시각 입력: 기본 시각 칸 → 시 · 10분 단위 휠'}]}
 ];
 const NEWS_KEY='sbpb-news-seen';
-function newsHtml(list){const g=[];list.forEach(n=>{const last=g[g.length-1];if(last&&last.date===n.date)last.items.push(...n.items);else g.push({date:n.date,items:[...n.items]})});return g.map(n=>`<div class="news-day"><div class="news-d">${fmtFull(n.date)}</div><ul>${n.items.map(x=>`<li>${h(x)}</li>`).join('')}</ul></div>`).join('')}
+function newsHtml(list){const g=[],seenK=new Set();list.forEach(n=>{const its=n.items.filter(it=>{const k=it.k||it;if(seenK.has(k))return false;seenK.add(k);return true}).map(it=>it.t||it);if(!its.length)return;const last=g[g.length-1];if(last&&last.date===n.date)last.items.push(...its);else g.push({date:n.date,items:its})});return g.map(n=>`<div class="news-day"><div class="news-d">${fmtFull(n.date)}</div><ul>${n.items.map(x=>`<li>${h(x)}</li>`).join('')}</ul></div>`).join('')}
 function openNews(list,title){openModal(title,list.length?newsHtml(list):'<p class="muted">업데이트 내역 없음</p>',()=>{lsSet(NEWS_KEY,NEWS[0].id)},'','news');
   const f=$('#mform');if(!f)return;f.querySelectorAll('.acts button:not([type=submit])').forEach(b=>b.hidden=true);const s=f.querySelector('button[type=submit]');if(s)s.textContent='확인'}
 function maybeShowNews(){if(RO||!NEWS.length)return;const seen=lsGet(NEWS_KEY,null);

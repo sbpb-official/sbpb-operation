@@ -3,7 +3,7 @@
   --bg:#F2F2F0; --surface:#FAFAF9; --surface-2:#EAEAE7; --ink:#252826; --muted:#6B6F6C; --line:#DDDDD9;
   --court:#1D5A3B; --court-soft:#E6E8E5; --on-court:#F7F7F4; --ball:#C9D94F; --ball-ink:#1E2A06;
   --ok:#2B8A3E; --warn:#B86E00; --bad:#C92A2A;
-  --t-reg:#1D5A3B; --t-tour:#F76707; --t-ex:#1C7ED6; --t-mt:#7048E8; --t-etc:#868E96; --t-ind:#0CA678; --t-bd:#E64980; --star:#F59F00; --male:#6F93C0; --female:#D7939B; --bar:#8CB79A; --sf-grass:#2F9E44; --sf-hard:#1971C2; --sf-clay:#D9480F;
+  --t-reg:#1D5A3B; --t-tour:#F76707; --t-ex:#1C7ED6; --t-mt:#7048E8; --t-etc:#868E96; --t-ind:#0CA678; --t-bd:#E64980; --star:#F59F00; --male:#6F93C0; --female:#D7939B; --bar:#8CB79A; --sf-grass:#2F9E44; --sf-hard:#1971C2; --sf-clay:#D9480F; --sat-soft:#4F77A3; --sun-soft:#B9645E;
   --logic-bg:#F1F7EE; --logic-line:#D5E6CD;
   --n-yellow:#FFE68C; --n-pink:#FFC6D3; --n-sky:#C3E3FF; --n-green:#D4EFB0; --note-ink:#2B2A26;
   --brand:#094027; --brand-2:#0F4E31; --brand-ink:#F6F1DF; --brand-muted:#A9C2B0;
@@ -17,7 +17,7 @@
   --bg:#1B1D1C; --surface:#232625; --surface-2:#2C2F2E; --ink:#E4E6E3; --muted:#9A9E9B; --line:#373B39;
   --court:#86C49D; --court-soft:#303332; --on-court:#161817; --ball:#D3E35E; --ball-ink:#1E2A06;
   --ok:#69C47C; --warn:#E6A53C; --bad:#F06C6C;
-  --t-reg:#86C49D; --t-tour:#FF922B; --t-ex:#4DABF7; --t-mt:#9775FA; --t-etc:#ADB5BD; --t-ind:#38D9A9; --t-bd:#F783AC; --star:#FFC53D; --male:#94B4DC; --female:#E8AAB1; --bar:#7FAE8E; --sf-grass:#69DB7C; --sf-hard:#74C0FC; --sf-clay:#FF8A4C;
+  --t-reg:#86C49D; --t-tour:#FF922B; --t-ex:#4DABF7; --t-mt:#9775FA; --t-etc:#ADB5BD; --t-ind:#38D9A9; --t-bd:#F783AC; --star:#FFC53D; --male:#94B4DC; --female:#E8AAB1; --bar:#7FAE8E; --sf-grass:#69DB7C; --sf-hard:#74C0FC; --sf-clay:#FF8A4C; --sat-soft:#8BA9CB; --sun-soft:#CF8F89;
   --logic-bg:#1D2A22; --logic-line:#2D4636;
   color-scheme:dark;
 }}
@@ -25,7 +25,7 @@
   --bg:#1B1D1C; --surface:#232625; --surface-2:#2C2F2E; --ink:#E4E6E3; --muted:#9A9E9B; --line:#373B39;
   --court:#86C49D; --court-soft:#303332; --on-court:#161817; --ball:#D3E35E; --ball-ink:#1E2A06;
   --ok:#69C47C; --warn:#E6A53C; --bad:#F06C6C;
-  --t-reg:#86C49D; --t-tour:#FF922B; --t-ex:#4DABF7; --t-mt:#9775FA; --t-etc:#ADB5BD; --t-ind:#38D9A9; --t-bd:#F783AC; --star:#FFC53D; --male:#94B4DC; --female:#E8AAB1; --bar:#7FAE8E; --sf-grass:#69DB7C; --sf-hard:#74C0FC; --sf-clay:#FF8A4C;
+  --t-reg:#86C49D; --t-tour:#FF922B; --t-ex:#4DABF7; --t-mt:#9775FA; --t-etc:#ADB5BD; --t-ind:#38D9A9; --t-bd:#F783AC; --star:#FFC53D; --male:#94B4DC; --female:#E8AAB1; --bar:#7FAE8E; --sf-grass:#69DB7C; --sf-hard:#74C0FC; --sf-clay:#FF8A4C; --sat-soft:#8BA9CB; --sun-soft:#CF8F89;
   --logic-bg:#1D2A22; --logic-line:#2D4636;
   color-scheme:dark;
 }
@@ -293,7 +293,7 @@ table.tbl.mt{table-layout:fixed;min-width:980px}
 .datebox{width:46px;text-align:center;flex:none;border-radius:8px;border:1px solid var(--line);background:var(--surface);padding:5px 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .datebox b{display:block;font-family:var(--f-display);font-size:18px;line-height:1.1;font-variant-numeric:tabular-nums}
 .datebox span{display:block;font-size:10px;line-height:1.2;color:var(--muted)}
-.datebox .db-w{font-weight:700;color:var(--ink)}.datebox .db-w.sat{color:var(--t-ex)}.datebox .db-w.sun{color:var(--bad)}
+.datebox .db-w{font-weight:600;color:var(--ink);white-space:nowrap}.datebox .db-w.sat{color:var(--sat-soft)}.datebox .db-w.sun{color:var(--sun-soft)}
 .evhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:14px}
 .evhead h2{font-size:22px}
 .meta-row{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-top:6px}
