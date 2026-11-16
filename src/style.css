@@ -748,6 +748,10 @@ body.ro [data-act="renew-open"]{display:none!important}
 details:not([open])>summary .tg-c,details[open]>summary .tg-o{display:none}
 details[open]>summary .led-tg i{transform:rotate(180deg)}
 
+.sfx{position:relative;display:flex;align-items:center}
+.sfx .in{flex:1;padding-right:34px;text-align:right}
+.sfx i{position:absolute;right:12px;font-style:normal;color:var(--muted);font-weight:600;pointer-events:none}
+.feerow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:6px}
 .iopick{display:flex;gap:8px}
 .iopick label{cursor:pointer}
 .iopick input{position:absolute;opacity:0;pointer-events:none}

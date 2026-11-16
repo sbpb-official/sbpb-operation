@@ -77,9 +77,9 @@ function levelSelect(name,val,allowUnknown){
 }
 function paintLv(el){const v=el.querySelector('input').value;const n=v===''?null:Number(v);el.querySelector('.lv-btn').innerHTML=(n===null?'<span class="lv-unk">모름</span><span class="lv-d">레벨 모름</span>':`${stars(n)}<span class="lv-n">${n.toFixed(1)}</span><span class="lv-d">${LEVEL_DESC[n]||''}</span>`)+'<span class="lv-caret" aria-hidden="true">▾</span>';el.querySelectorAll('.lv-pop button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.v===v)))}
 /* simple custom dropdown (one choice from a short list) */
-function optSel(name,val,opts,ph='선택'){const list=[...opts];if(val&&!list.includes(val))list.push(val);
-  return `<div class="lvsel optsel"><input type="hidden" name="${name}" value="${h(val||'')}"><button type="button" class="in pickbtn lv-btn${val?'':' ph'}" data-act="lv-open" data-ph="${h(ph)}" aria-haspopup="listbox" aria-expanded="false">${h(val||ph)}<span class="lv-caret" aria-hidden="true">▾</span></button><div class="lv-pop" role="listbox" hidden>${['',...list].map(v=>`<button type="button" role="option" data-act="opt-pick" data-v="${h(v)}" aria-selected="${String(v===(val||''))}">${v?h(v):'선택 안 함'}</button>`).join('')}</div></div>`}
-ACT['opt-pick']=t=>{const el=t.closest('.optsel');const v=t.dataset.v;el.querySelector('input').value=v;const b=el.querySelector('.lv-btn');b.classList.toggle('ph',!v);b.innerHTML=h(v||b.dataset.ph)+'<span class="lv-caret" aria-hidden="true">▾</span>';el.querySelectorAll('.lv-pop button').forEach(x=>x.setAttribute('aria-selected',String(x===t)));closeLv()};
+function optSel(name,val,opts,ph='선택',{label=v=>v,none=true}={}){const list=[...opts];if(val&&!list.includes(val))list.push(val);
+  return `<div class="lvsel optsel"><input type="hidden" name="${name}" value="${h(val||'')}"><button type="button" class="in pickbtn lv-btn${val?'':' ph'}" data-act="lv-open" data-ph="${h(ph)}" aria-haspopup="listbox" aria-expanded="false">${h(val?label(val):ph)}<span class="lv-caret" aria-hidden="true">▾</span></button><div class="lv-pop" role="listbox" hidden>${(none?['',...list]:list).map(v=>`<button type="button" role="option" data-act="opt-pick" data-v="${h(v)}" data-l="${h(v?label(v):'')}" aria-selected="${String(v===(val||''))}">${v?h(label(v)):'선택 안 함'}</button>`).join('')}</div></div>`}
+ACT['opt-pick']=t=>{const el=t.closest('.optsel');const v=t.dataset.v;el.querySelector('input').value=v;const b=el.querySelector('.lv-btn');b.classList.toggle('ph',!v);b.innerHTML=h(v?(t.dataset.l||v):b.dataset.ph)+'<span class="lv-caret" aria-hidden="true">▾</span>';el.querySelectorAll('.lv-pop button').forEach(x=>x.setAttribute('aria-selected',String(x===t)));closeLv()};
 function closeLv(){if(typeof releaseRoom==='function')releaseRoom();document.querySelectorAll('.lv-pop').forEach(p=>{p.hidden=true;const w=p._wrap;if(w){delete p._wrap;if(w.isConnected){w.appendChild(p);w.querySelector('.dbtn').setAttribute('aria-expanded','false')}else p.remove();return}p.previousElementSibling&&p.previousElementSibling.setAttribute('aria-expanded','false')})}
 document.addEventListener('click',e=>{if(!e.target.closest('.lvsel,.calpop'))closeLv()},true);
 /* ---------- wheel picker (bottom sheet, scroll-snap columns) ---------- */
@@ -274,10 +274,11 @@ async function runMigrations(){
   const F11='mig-court-yongma-info';
   const F12='mig-court-jungnang';
   const F13='mig-court-myeonmok';
-  const F14='mig-court-imun';                        // 2026-11-16: 이문체육문화센터 테니스장 (동대문구) 추가                    // 2026-11-15: 면목구립테니스장 추가 (공단 이용안내 기준)                    // 2026-11-15: 중랑구립테니스장 추가 (예약 링크·순위는 용마와 같은 공단 규정)                 // 2026-11-15: 용마 테니스장 공단 이용안내 반영 (요금·예약 순위·예약 사이트)                      // 2026-11-15: 용마폭포공원 테니스장 (중랑구) 추가                     // 2026-11-14: TS는 네이버 링크 예약 (스매시 아님) · 메모의 '○○에서 예약' 안내 문구 제거                       // 2026-11-14: 계남테니스장 (구로구) 추가                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
+  const F14='mig-court-imun';
+  const F15='mig-court-fee-num';                     // 2026-11-16: 요금을 숫자+단위로 (단위가 분명한 코트만) · 상세 요금은 메모로 · 이문 요금표 반영                        // 2026-11-16: 이문체육문화센터 테니스장 (동대문구) 추가                    // 2026-11-15: 면목구립테니스장 추가 (공단 이용안내 기준)                    // 2026-11-15: 중랑구립테니스장 추가 (예약 링크·순위는 용마와 같은 공단 규정)                 // 2026-11-15: 용마 테니스장 공단 이용안내 반영 (요금·예약 순위·예약 사이트)                      // 2026-11-15: 용마폭포공원 테니스장 (중랑구) 추가                     // 2026-11-14: TS는 네이버 링크 예약 (스매시 아님) · 메모의 '○○에서 예약' 안내 문구 제거                       // 2026-11-14: 계남테니스장 (구로구) 추가                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
   const TS_MEMO='예약 링크는 네이버 지도 · 9호선 둔촌오륜역 1번 출구 도보 약 860m\n대관료 (개장 당시): 평일 야간·주말 주간 35,000원 · 주말 야간 40,000원\n※ 현재 요금·예약 오픈 방식은 네이버 지도 업체 정보로 확인 필요';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
   const has=id=>S.dues.find(d=>d.id===id);
-  if(has(F)&&has(F2)&&has(F3)&&has(F4)&&has(F5)&&has(F6)&&has(F7)&&has(F8)&&has(F9)&&has(F10)&&has(F11)&&has(F12)&&has(F13)&&has(F14))return;
+  if(has(F)&&has(F2)&&has(F3)&&has(F4)&&has(F5)&&has(F6)&&has(F7)&&has(F8)&&has(F9)&&has(F10)&&has(F11)&&has(F12)&&has(F13)&&has(F14)&&has(F15))return;
   migBusy=true;
   try{if(!has(F)){const targets=S.members.filter(m=>isCur(m)&&!m.sample);
     for(const m of targets)if(m.joined!=='2026-01-01')await put('members',m.id,{...m,joined:'2026-01-01'});
@@ -370,7 +371,14 @@ async function runMigrations(){
       genRule:{type:'monthly',day:'20',time:'09:00'},resident:true,area:'동대문구',workers:false,resRule:{type:'monthly',day:'19',time:'09:00'},
       memo:'다음 달 대관 신청: 매월 19일 09:00 동대문구민 한정 · 20일 09:00 누구나 · 말일까지\n대관 시간: 화·수 12:00~15:00 · 주말 09:00~18:00 (계절·기상·센터 사정에 따라 변경 가능)\n1시간 단위 신청 · 인터넷 예약 후 카드결제 (승인 후 3시간 안에 미결제 시 자동 취소)',createdAt:Date.now()});
     await put('dues',F14,{done:true,skipped:dup,at:Date.now()});
-    if(!dup)toast('코트 추가 완료 · 이문체육문화센터 테니스장')}}
+    if(!dup)toast('코트 추가 완료 · 이문체육문화센터 테니스장')}
+  if(!has(F15)){let n=0;const conv=[[/이문/,4500,'1시간'],[/용마폭포|용마\s*테니스/,5000,'1시간'],[/중랑\s*구립/,5000,'1시간'],[/면목/,10000,'2시간'],[/아차산/,8000,'1시간'],[/^\s*TS\b|TS\s*SPORT|TS\s*스포츠|TS\s*테니스/i,35000,'1시간']];
+    for(const c of S.courts){if(c.feeN)continue;const hit=conv.find(([re])=>re.test(c.name||''));if(!hit)continue;
+      let memo=c.memo||'';
+      if(/이문/.test(c.name||''))memo=memo.split('\n').filter(l=>!/^대관 시간/.test(l)).concat(['요금·시간: 화·수 12:00~15:00 시간당 4,500원 · 일 09:00~12:00, 12:00~15:00 시간당 9,500원','매월 넷째 일요일 정기 휴관 · 계절·기상 여건에 따라 운영시간 변경 가능']).join('\n');
+      else if(c.fee)memo=['요금 상세: '+c.fee,memo].filter(Boolean).join('\n');
+      await put('courts',c.id,{...c,feeN:hit[1],feeUnit:hit[2],fee:'',memo});n++}
+    await put('dues',F15,{done:true,count:n,at:Date.now()})}}
   catch(e){}
   migBusy=false;
 }
@@ -1267,7 +1275,8 @@ function courtForm(c={}){
   return `<div class="grid2"><label class="f">코트 이름<input class="in" name="name" required value="${h(c.name)}" placeholder="예: OO공원 테니스장"></label><label class="f">위치 (구·시)<input class="in" name="district" list="areas-c" value="${h(c.district)}" placeholder="예: 송파구"></label></div>
   <label class="f">주소 (선택 시 네이버 지도 연결)<input class="in" name="address" value="${h(c.address)}" placeholder="예: 서울 광진구 천호대로 731"></label>
   <label class="f">네이버 지도 링크 (선택 · 비우면 주소로 검색)<input class="in" type="url" name="map" value="${h(c.map)}" placeholder="https://naver.me/..."></label>
-  <div class="grid2"><label class="f">면 수<input class="in" name="courts" value="${h(c.courts)}" placeholder="4면"></label><label class="f">요금<input class="in" name="fee" value="${h(c.fee)}" placeholder="시간당 약 5천원"></label></div>
+  <div class="grid2"><label class="f">면 수<span class="sfx"><input class="in" inputmode="numeric" name="courts" value="${h(courtsN(c.courts)||'')}" placeholder="4"><i>면</i></span></label>
+  <div class="f"><span>요금</span><div class="feerow"><span class="sfx"><input class="in" inputmode="numeric" data-comma="1" name="feeN" value="${c.feeN?Number(c.feeN).toLocaleString('ko-KR'):''}" placeholder="5,000"><i>원</i></span>${optSel('feeUnit',c.feeUnit||'1시간',['1시간','2시간'],'1시간',{label:v=>v+'당',none:false})}</div>${c.fee&&!c.feeN?`<span class="small muted" style="font-weight:500">기존 입력: ${h(c.fee)}</span>`:''}</div></div>
   <div class="f"><span>바닥 (중복 선택 가능)</span><div class="iopick">${(()=>{const cur=surfList(c.surface);return [...new Set([...SURFACES,...cur])].map(s=>`<label><input type="checkbox" name="surf_${h(s)}"${cur.includes(s)?' checked':''}><span>${h(s)}</span></label>`).join('')})()}</div></div>
   <div class="f"><span>실내 · 실외 (중복 선택 가능)</span><div class="iopick"><label><input type="checkbox" name="indoor"${c.indoor?' checked':''}><span>실내</span></label><label><input type="checkbox" name="outdoor"${c.outdoor?' checked':''}><span>실외</span></label></div></div>
   <div class="grid2"><label class="f">구분<select class="in" name="kind">${KINDS.map(([k,l])=>`<option value="${k}"${kindOf(c)===k?' selected':''}>${l}</option>`).join('')}</select></label>
@@ -1280,7 +1289,7 @@ function courtForm(c={}){
   <label class="f">예약 대상 기간 / 메모<textarea class="in" name="memo" placeholder="예: 다음 달 이용분 오픈, 1인 월 2회 제한, 추첨제">${h(c.memo)}</textarea></label>
   <datalist id="areas-c">${SEOUL.concat(NEAR).map(a=>`<option value="${a}">`).join('')}</datalist>`;
 }
-const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:(fd.map||'').trim(),courts:fd.courts.trim(),surface:Object.keys(fd).filter(k=>k.startsWith('surf_')&&fd[k]===true).map(k=>k.slice(5)).join('·'),indoor:!!fd.indoor,outdoor:!!fd.outdoor,fee:fd.fee.trim(),url:fd.url.trim(),platform:old.platform||'etc',kind:fd.kind||'public',smash:!!fd.smash,genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:fd.memo.trim()});
+const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:(fd.map||'').trim(),courts:courtsN(fd.courts)?courtsN(fd.courts)+'면':'',surface:Object.keys(fd).filter(k=>k.startsWith('surf_')&&fd[k]===true).map(k=>k.slice(5)).join('·'),indoor:!!fd.indoor,outdoor:!!fd.outdoor,feeN:numOf(fd.feeN)||0,feeUnit:fd.feeUnit||'1시간',fee:numOf(fd.feeN)?'':(old.fee||''),url:fd.url.trim(),platform:old.platform||'etc',kind:fd.kind||'public',smash:!!fd.smash,genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:(numOf(fd.feeN)&&old.fee&&!fd.memo.includes(old.fee)?['요금 상세: '+old.fee,fd.memo.trim()].filter(Boolean).join('\n'):fd.memo.trim())});
 ACT['c-new']=()=>openModal('코트 추가',courtForm(),fd=>put('courts',uid(),{...courtFromFd(fd),createdAt:Date.now()}));
 ACT['c-edit']=t=>{const c=S.courts.find(x=>x.id===t.dataset.id);if(!c)return;openModal('코트 수정',courtForm(c),fd=>put('courts',c.id,courtFromFd(fd,c)),`<button type="button" class="btn danger" data-act="c-del" data-id="${c.id}">삭제</button>`)};
 ACT['c-del']=t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 삭제';return}del('courts',t.dataset.id);closeModal()};
@@ -1292,6 +1301,8 @@ const PLATFORMS=[
   {k:'smash',url:''},
   {k:'etc',url:''}];
 const KINDS=[['public','공공 코트'],['private','사설 코트']];
+const courtsN=v=>{const m=String(v||'').match(/\d+/);return m?+m[0]:0};
+const feeText=c=>c.feeN?`${c.feeUnit||'1시간'}당 ${Number(c.feeN).toLocaleString('ko-KR')}원`:(c.fee||'');
 const SURFACES=['하드','클레이','인조잔디'];
 const surfList=s=>String(s||'').split(/\s*[·,\/]\s*/).map(x=>x.trim()).filter(Boolean);
 const isSmash=c=>c.smash!==undefined?!!c.smash:(c.platform==='smash'&&!c.url&&!/엠무브|mmove/i.test(c.name||''));
@@ -1318,7 +1329,7 @@ function viewCourts(){
       const dd=diffDays(ymd(d));return `<div class="open-box${dd<=1?' soon':''}"><div class="l">${l}</div><div class="big"><span class="dday">${ddayLabel(ymd(d))}</span><b>${fd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}</b></div><div class="d">${h(ruleText(rule))}</div></div>`};
     return `<article class="ccard"><div class="hd"><div><h3>${h(c.name)}</h3><div class="cbadges">${c.district?`<span class="cb cb-area">${h(c.district)}</span>`:''}${surfList(c.surface).map(s=>`<span class="cb ${({'인조잔디':'cb-grass','하드':'cb-hard','클레이':'cb-clay'})[s]||'cb-etc'}">${h(s)}</span>`).join('')}${c.indoor?'<span class="cb cb-io">실내</span>':''}${c.outdoor?'<span class="cb cb-io">실외</span>':''}${c.courts?`<span class="cb-n">${h(c.courts)}</span>`:''}${isSmash(c)?'<span class="cb cb-etc">스매시 앱 예약</span>':''}</div>${addrLink(c.address,c.name,c.map)}</div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
     ${c.genRule&&c.genRule.type?`<div class="opens">${c.resident?ob('주민 우선 오픈',r,c.resRule):''}${ob('일반 오픈',g,c.genRule)}</div>`:''}
-    <dl class="kv"><dt>요금</dt><dd>${c.fee?h(c.fee):'-'}</dd>${c.memo?`<dt>메모</dt><dd style="white-space:pre-wrap">${h(c.memo)}</dd>`:''}</dl>
+    <dl class="kv"><dt>요금</dt><dd>${feeText(c)?h(feeText(c)):'-'}</dd>${c.memo?`<dt>메모</dt><dd style="white-space:pre-wrap">${h(c.memo)}</dd>`:''}</dl>
     ${c.resident?`<div class="prio"><div class="l">우선 예약 가능 회원 · ${h(c.area||c.district)}${c.workers?' 거주·직장':' 거주'} 기준 ${pm.length}명</div><div class="chips">${pm.length?pm.map(({m,why})=>`<span class="chip ${why==='거주'?'court':''}">${h(m.name)}${why==='직장'?' (직장)':''}</span>`).join(''):'<span class="small muted">해당 지역 회원 없음</span>'}</div></div>`:''}
     ${courtUrl(c)?`<a class="btn pri" href="${h(courtUrl(c))}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">예약 페이지 열기 ↗</a>`:''}
     </article>`};
@@ -1622,7 +1633,7 @@ ACT['bk-xlsx']=async t=>{
     '대진표':S.brackets.slice().sort((x,y)=>(x.cfg?.date||'').localeCompare(y.cfg?.date||'')).map(b=>({'날짜':b.cfg?.date||'','제목':b.cfg?.title||'','상태':b.status,'참석 인원':Object.keys(b.players||{}).length,'타임 수':(b.rounds||[]).length,'참석자':Object.values(b.players||{}).map(p=>dn(p.name)+(p.guest?'(G)':'')).join(', ')})),
     '회비':S.dues.filter(d=>d.id!=='cfg'&&d.memberId).sort((x,y)=>(x.year-y.year)||(memberById(x.memberId)?.name||'').localeCompare(memberById(y.memberId)?.name||'')).map(d=>{const o={'연도':d.year,'이름':memberById(d.memberId)?.name||'(삭제된 회원)'};for(let i=1;i<=12;i++){const v=(d.m||{})[i];o[i+'월']=v==='paid'?'O':v==='free'?'면제':''}o['납부 횟수']=Object.values(d.m||{}).filter(v=>v==='paid').length;return o}),
     '행사 정산':S.ledger.slice().sort((x,y)=>(x.date||'').localeCompare(y.date||'')).map(x=>({'날짜':x.date||'','행사':x.eventId?(S.events.find(e=>e.id===x.eventId)?.title||'(삭제된 행사)'):'행사 외 일반','구분':x.kind==='in'?'수입':'지출','분류':x.cat||'','내용':x.item||'','금액':Number(x.amount)||0,'결제·담당':x.payer||'','메모':x.memo||''})),
-    '코트':S.courts.map(c=>({'이름':c.name,'지역':c.district||'','주소':c.address||'','예약 링크':c.url||'','일반 오픈':ruleText(c.genRule),'주민 우선':yn(c.resident),'주민 오픈':c.resident?ruleText(c.resRule):'','요금':c.fee||'','메모':c.memo||''})),
+    '코트':S.courts.map(c=>({'이름':c.name,'지역':c.district||'','주소':c.address||'','예약 링크':c.url||'','일반 오픈':ruleText(c.genRule),'주민 우선':yn(c.resident),'주민 오픈':c.resident?ruleText(c.resRule):'','요금':feeText(c),'메모':c.memo||''})),
   };
   const r=rentalInfo();if(S.rentals.length)sheets['정기대관']=[{'코트':r.name,'주소':r.address||'','면 수':r.courts,'회당 대관료':r.fee,'계약 시작':r.from||'','계약 종료':r.to||'','담당·연락처':r.contact||'','메모':r.memo||''}];
   const wb=X.utils.book_new();
