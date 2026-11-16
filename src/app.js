@@ -913,6 +913,7 @@ function nm(r,slot){
 let menuCtx=null;
 function closeMenu(){const m=$('#slotmenu');if(m)m.remove();menuCtx=null;document.querySelectorAll('.nm.on').forEach(x=>x.classList.remove('on'))}
 function openMenu(t){
+  if(menuCtx&&menuCtx.r===+t.dataset.r&&menuCtx.slot===t.dataset.slot){closeMenu();return}/* same name again: close */
   closeMenu();
   if(draft.status==='확정'){toast('확정 해제 후 수정 가능');return}
   const r=+t.dataset.r,slot=t.dataset.slot;const k=getSlot(r,slot);
