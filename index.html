@@ -378,6 +378,19 @@ a.addr{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:1
 .mcard.dim{opacity:.6}
 .mcard .top1{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .mcard .meta{font-size:12px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.cf-chips{max-height:none}
+.cf-add{width:36px;height:30px;border-radius:999px;border:1.5px dashed var(--court);background:transparent;color:var(--court);font-size:18px;font-weight:700;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.cfx{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;background:var(--court);color:var(--on-court);border:1px solid var(--court)}
+.cfx i{font-style:normal;font-size:10px;font-weight:700;opacity:.8;border:1px solid currentColor;border-radius:4px;padding:0 3px}
+.cfx button{all:unset;cursor:pointer;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;line-height:1}
+.cfx-box{height:min(70vh,560px)}
+.cfx-new{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.cfx-new .in{flex:1;color:var(--ink)}
+.cfx-sec{padding:10px 16px 4px;font-size:12px;font-weight:700;color:var(--muted)}
+.cfx-list{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 8px 8px}
+.cfx-list button{all:unset;box-sizing:border-box;display:block;width:100%;padding:11px 10px;border-radius:8px;cursor:pointer;color:var(--ink);font-size:14px}
+.cfx-list button:hover{background:var(--surface-2)}
+.conf-line span.ex i{font-style:normal;font-size:10px;color:var(--muted);margin-left:3px}
 .conf-line{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:8px;font-size:12px}
 .conf-line b{color:var(--court);margin-right:2px}
 .conf-line span{border:1px solid color-mix(in srgb,var(--court) 40%,var(--line));background:color-mix(in srgb,var(--court) 10%,var(--surface));color:var(--ink);border-radius:999px;padding:2px 9px}
@@ -994,7 +1007,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=f926cc7def';
+const CUR_APP = 'app.js?v=63a7382152';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1022,7 +1035,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=f926cc7def';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=63a7382152';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
