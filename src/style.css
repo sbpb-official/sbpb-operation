@@ -353,6 +353,7 @@ a.addr{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:1
 
 /* staff badge, member cards (phone), tournament */
 .chip.staff{background:var(--brand);color:var(--brand-ink)}
+.chip.staff.next{opacity:.45}/* 내년 운영진 (임기 전) */
 .mcards{display:none;flex-direction:column;gap:8px}
 .mcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:4px;cursor:pointer}
 .mcard.dim{opacity:.6}

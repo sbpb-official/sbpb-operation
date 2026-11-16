@@ -374,6 +374,7 @@ a.addr{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:1
 
 /* staff badge, member cards (phone), tournament */
 .chip.staff{background:var(--brand);color:var(--brand-ink)}
+.chip.staff.next{opacity:.45}/* 내년 운영진 (임기 전) */
 .mcards{display:none;flex-direction:column;gap:8px}
 .mcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:4px;cursor:pointer}
 .mcard.dim{opacity:.6}
@@ -1013,7 +1014,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=0642ac4ed6';
+const CUR_APP = 'app.js?v=2c3b513732';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1041,7 +1042,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=0642ac4ed6';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=2c3b513732';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
