@@ -311,9 +311,9 @@ table.tbl.mt{table-layout:fixed;min-width:980px}
 .ev-none{padding:6px 8px 10px}
 .ev-more{width:100%;margin-top:4px}
 .evlist .li:hover{background:var(--surface-2)}
-.datebox{width:46px;text-align:center;flex:none;border-radius:8px;border:1px solid var(--line);background:var(--surface);padding:3px 0}
+.datebox{width:46px;text-align:center;flex:none;border-radius:8px;border:1px solid var(--line);background:var(--surface);padding:5px 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .datebox b{display:block;font-family:var(--f-display);font-size:18px;line-height:1.1;font-variant-numeric:tabular-nums}
-.datebox span{font-size:10px;color:var(--muted)}
+.datebox span{display:block;font-size:10px;line-height:1.2;color:var(--muted)}
 .evhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:14px}
 .evhead h2{font-size:22px}
 .meta-row{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-top:6px}
@@ -810,7 +810,7 @@ details[open]>summary .led-tg i{transform:rotate(180deg)}
 .bd-date{font-size:15px;font-weight:700;color:var(--t-bd);font-variant-numeric:tabular-nums}
 
 /* chip followed by text in list rows: keep breathing room */
-.li .sub .chip{margin:0 6px 0 2px}
+.li .sub .chip{margin:0 8px 0 0}
 
 /* modal */
 .ov{position:fixed;left:0;right:0;top:0;bottom:0;height:auto;   /* full screen, not the area above the keyboard: the keyboard covers the modal instead of shrinking it */
