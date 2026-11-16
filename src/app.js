@@ -102,16 +102,19 @@ document.addEventListener('focusin',e=>{const t=e.target;if(!t.dataset||!(t.data
 document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.dataset.comma||t.dataset.selall)&&t._selAt&&Date.now()-t._selAt<500){e.preventDefault();try{t.setSelectionRange(0,t.value.length)}catch(_){}}},true);
 /* ---------- 업데이트 내역 ----------
    화면·기능이 바뀌는 배포마다 맨 위에 항목 추가 (id는 겹치지 않게, 날짜순).
-   기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '새로 바뀐 점'으로 보여 줌 */
+   기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
-  {id:'2026-11-16d',date:'2026-11-16',items:[
+  {id:'2026-11-16e',v:'1.5',date:'2026-11-16',items:[
+    {k:'settings',t:'설정 탭: 없음(로그아웃 · 데이터 백업 · 업데이트 내역 버튼은 대시보드에 있음) → 정산 다음에 설정 탭, 현재 버전 · 업데이트 기록(버전별) · 데이터 백업 · 로그아웃을 이곳으로 이동'},
+    {k:'news',t:'업데이트 안내: 없음 → 앱이 바뀌면 다음 접속 때 "업데이트" 창으로 안내 (버전 번호와 함께), 지난 기록은 설정 › 업데이트 기록'}]},
+  {id:'2026-11-16d',v:'1.4',date:'2026-11-16',items:[
     {k:'datebox',t:'날짜 박스: 날짜 · 월만 표시 → 월 · 날짜 · 요일 순 표시 (요일은 "토요일"처럼 전체 표기, 토요일은 차분한 파랑 · 일요일은 차분한 빨강)'},
     {k:'birthday',t:'대시보드 30일 내 생일: 날짜 · 나이 줄 따로 표시 → 이름 옆에 날짜(요일) 크게 표시, 나이 줄 삭제'},
     {k:'result',t:'대회 결과: 모든 결과에 배지 모양(앞에 빈 공간) → 우승 · 입상만 색 배지, 그 외(8강 · 예선 등)는 글자만'},
     {k:'inviter',t:'게스트 목록: 전 회원 게스트는 초대한 회원 대신 "전 회원"만 표시 → "전 회원" 표시와 초대한 회원 함께 표시'}]},
-  {id:'2026-11-16c',date:'2026-11-16',items:[
+  {id:'2026-11-16c',v:'1.3',date:'2026-11-16',items:[
     {k:'news',t:'업데이트 안내: 없음 → 앱이 바뀌면 다음 접속 때 "새로 바뀐 점" 창으로 안내, 지난 내역은 대시보드 › 업데이트 내역'}]},
-  {id:'2026-11-16b',date:'2026-11-16',items:[
+  {id:'2026-11-16b',v:'1.2',date:'2026-11-16',items:[
     {k:'staff',t:'운영진: 체크 하나로 즉시 바뀜(연도 구분 없음) → 회원 수정 › 운영진 체크 후 임기 연도 선택, 지난 임기 기록 보존, 내년 운영진은 명단에 흐린 배지 (8월부터 다음 해 선택 가능)'},
     {k:'partner',t:'개인대회 외부 파트너: 글자로 직접 입력 → 등록된 게스트 선택 또는 새 이름 추가, 이벤트 목록 · 멤버 대회 소식에도 이름 옆 G 표시'},
     {k:'confirmed',t:'행사 확정 인원: 없음 → 예상 인원 아래 확정 멤버 체크, + 로 게스트 추가'},
@@ -120,27 +123,28 @@ const NEWS=[
     {k:'datebox',t:'날짜 박스: 날짜 · 월만 표시 → 월 · 날짜 · 요일 순 표시'},
     {k:'bracketmenu',t:'대진표 이름 메뉴: 바깥을 눌러야 닫힘 → 같은 이름을 다시 눌러도 닫힘'},
     {k:'calendar',t:'달력: 작은 화살표, 아이폰에서 월 이동 시 닫히는 문제 → 큰 이전 · 다음 버튼, 좌우로 밀어 월 이동'}]},
-  {id:'2026-11-15',date:'2026-11-15',items:[
+  {id:'2026-11-15',v:'1.1',date:'2026-11-15',items:[
     {k:'courtlist',t:'코트 목록: 예약처별 묶음 → 공공 코트 · 사설 코트 구분, 예약 오픈이 가까운 순 정렬(스매시 앱 코트는 맨 아래), 예약 오픈 일정 크게 표시'},
     {k:'courtcard',t:'코트 카드: 회색 글자 한 줄 → 구 · 바닥 · 실내외 색 배지, 주소 누르면 네이버 지도 연결'},
     {k:'courtform',t:'코트 수정: 면 수 · 요금 · 바닥 자유 입력 → 면 수 · 요금 숫자 입력(1시간당 / 2시간당), 바닥 · 실내외 버튼 선택, 메모는 큰 창에서 편집'},
     {k:'courtadd',t:'코트 추가: 아차산배수지 · 보라매 · 계남 · 용마폭포 · 중랑구립 · 면목구립 · 이문 · TS · 엠무브'}]},
-  {id:'2026-11-14',date:'2026-11-14',items:[
+  {id:'2026-11-14',v:'1.0',date:'2026-11-14',items:[
     {k:'dashnext',t:'대시보드 다음 정기모임: 당일 내내 오늘 모임 표시 → 종료 시각 이후 다음 모임 표시, 행사 대체 시 해당 행사 표시'},
     {k:'drawdate',t:'대진표 날짜: 당일 내내 오늘 날짜 → 정기모임 종료 후 다음 주 날짜로 준비'},
     {k:'dateinput',t:'날짜 입력: 기본 날짜 칸 → 일정은 달력(요일 표시), 생년월일 · 가입일 등은 휠'},
     {k:'timeinput',t:'시각 입력: 기본 시각 칸 → 시 · 10분 단위 휠'}]}
 ];
 const NEWS_KEY='sbpb-news-seen';
-function newsHtml(list){const g=[],seenK=new Set();list.forEach(n=>{const its=n.items.filter(it=>{const k=it.k||it;if(seenK.has(k))return false;seenK.add(k);return true}).map(it=>it.t||it);if(!its.length)return;const last=g[g.length-1];if(last&&last.date===n.date)last.items.push(...its);else g.push({date:n.date,items:its})});return g.map(n=>`<div class="news-day"><div class="news-d">${fmtFull(n.date)}</div><ul>${n.items.map(x=>`<li>${h(x)}</li>`).join('')}</ul></div>`).join('')}
-function openNews(list,title){openModal(title,list.length?newsHtml(list):'<p class="muted">업데이트 내역 없음</p>',()=>{lsSet(NEWS_KEY,NEWS[0].id)},'','news');
+function newsHtml(list){const g=[],seenK=new Set();list.forEach(n=>{const its=n.items.filter(it=>{const k=it.k||it;if(seenK.has(k))return false;seenK.add(k);return true}).map(it=>it.t||it);if(!its.length){const last=g[g.length-1];if(last&&last.date===n.date&&n.v)last.vs.push(n.v);return}const last=g[g.length-1];if(last&&last.date===n.date){last.items.push(...its);if(n.v)last.vs.push(n.v)}else g.push({date:n.date,items:its,vs:n.v?[n.v]:[]})});return g.map(n=>`<div class="news-day"><div class="news-d">${n.vs.length?`<span class="news-v">${n.vs.length>1?`v${n.vs[n.vs.length-1]} ~ v${n.vs[0]}`:`v${n.vs[0]}`}</span>`:''}${fmtFull(n.date)}</div><ul>${n.items.map(x=>`<li>${h(x)}</li>`).join('')}</ul></div>`).join('')}
+function openNews(list,title){openModal(title,list.length?newsHtml(list):'<p class="muted">업데이트 기록 없음</p>',()=>{lsSet(NEWS_KEY,NEWS[0].id)},'','news');
   const f=$('#mform');if(!f)return;f.querySelectorAll('.acts button:not([type=submit])').forEach(b=>b.hidden=true);const s=f.querySelector('button[type=submit]');if(s)s.textContent='확인'}
 function maybeShowNews(){if(RO||!NEWS.length)return;const seen=lsGet(NEWS_KEY,null);
   let list;if(!seen){const cut=new Date();cut.setDate(cut.getDate()-14);list=NEWS.filter(n=>parseYmd(n.date)>=cut)}else{const i=NEWS.findIndex(n=>n.id===seen);list=i<0?NEWS.slice():NEWS.slice(0,i)}
   if(!list.length){lsSet(NEWS_KEY,NEWS[0].id);return}
   if($('#modal-root').innerHTML){setTimeout(maybeShowNews,4000);return}
-  openNews(list,'새로 바뀐 점');lsSet(NEWS_KEY,NEWS[0].id)/* 확인이든 × 든 한 번 보면 끝 */}
-ACT['news-open']=()=>openNews(NEWS,'업데이트 내역');
+  openNews(list,'업데이트');lsSet(NEWS_KEY,NEWS[0].id)/* 확인이든 × 든 한 번 보면 끝 */}
+ACT['news-open']=()=>{location.hash='#settings'};
+const APP_V=()=>NEWS.length?'v'+NEWS[0].v:'';
 function closeLv(){if(typeof releaseRoom==='function')releaseRoom();document.querySelectorAll('.lv-pop').forEach(p=>{p.hidden=true;const w=p._wrap;if(w){delete p._wrap;if(w.isConnected){w.appendChild(p);w.querySelector('.dbtn').setAttribute('aria-expanded','false')}else p.remove();return}p.previousElementSibling&&p.previousElementSibling.setAttribute('aria-expanded','false')})}
 document.addEventListener('click',e=>{if(!e.target.closest('.lvsel,.calpop'))closeLv()},true);
 /* a popup inside a <label> must not re-trigger the label's button (it reset the calendar to the selected month) */
@@ -646,7 +650,7 @@ function viewHome(){
   }else mo=`<div class="empty"><b>등록된 회원 없음</b>회원 등록 시 성별·레벨·구력·거주지 분포 표시<div class="row"><a class="btn sm" href="#members">회원 관리</a></div></div>`;
   const nr=nextRegNow(),nrs=regStat(nr),nrx=nrs&&nrs.status==='취소',dd=diffDays(nr);const nrEv=nrx&&nrs.reason==='행사 대체'?S.events.find(e=>e.date===nr&&e.status!=='취소'):null;
   return `<div class="page-head dash-head"><div class="dh-main"><div class="dh-today"><span>${t.getFullYear()}년 ${t.getMonth()+1}월 ${t.getDate()}일 ${WD[t.getDay()]}요일</span><b class="num" id="clock">${clockText()}</b></div>
-    ${nrEv?`<div class="dh-next rep t-${h(nrEv.type||'기타')}" data-act="ev-open" data-id="${nrEv.id}" role="button" tabindex="0"><span class="dh-l">다음 모임 · 행사 대체</span><div class="dh-v"><b>${fmtD(nr)}</b><span>${h(nrEv.title)}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${h(nrEv.place||'')}${nrEv.place?' · ':''}정기모임 대신 행사 진행</span></div>`:`<div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div>`}</div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}${WEB&&mode==='db'?`<button class="btn ghost" data-act="web-logout">로그아웃</button>`:''}${mode==='db'?`<button class="btn" data-act="backup-open">데이터 백업</button><button class="btn ghost" data-act="news-open">업데이트 내역</button>`:''}${mode==='db'&&art?`<button class="btn" data-act="pub-open">공개본 갱신${pendingCount()?` (${pendingCount()})`:''}</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextRegNow()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>
+    ${nrEv?`<div class="dh-next rep t-${h(nrEv.type||'기타')}" data-act="ev-open" data-id="${nrEv.id}" role="button" tabindex="0"><span class="dh-l">다음 모임 · 행사 대체</span><div class="dh-v"><b>${fmtD(nr)}</b><span>${h(nrEv.title)}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${h(nrEv.place||'')}${nrEv.place?' · ':''}정기모임 대신 행사 진행</span></div>`:`<div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div>`}</div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextRegNow()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>
   ${kp}<div class="dash">${cal}<div class="side">
   <section class="panel"><div class="panel-h"><h2>다가오는 행사</h2><a href="#events">전체 보기</a></div><div class="list">${upHtml}</div></section>
   ${(()=>{const ts=S.events.filter(e=>e.type==='개인대회'&&e.date);if(!ts.length)return '';const up2=ts.filter(e=>diffDays(e.date)>=0).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);const past=ts.filter(e=>diffDays(e.date)<0&&e.result&&e.result!=='대기').sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
@@ -1686,7 +1690,19 @@ ACT['led-del']=t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='�
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('led-it')){e.preventDefault();e.target.click()}});
 
 /* ---------- boot ---------- */
-const VIEWS={home:viewHome,members:viewMembers,draw:viewDraw,events:viewEvents,courts:viewCourts,money:viewMoney};
+function viewSettings(){
+  const hist=NEWS.map(n=>`<div class="ver"><div class="ver-h"><b>v${h(n.v||'')}</b><span>${fmtFull(n.date)}</span></div><ul>${n.items.map(it=>`<li>${h(it.t||it)}</li>`).join('')}</ul></div>`).join('');
+  return `<div class="page-head"><div><h1>설정</h1><p>앱 정보 · 업데이트 기록 · 데이터 관리</p></div></div>
+  <div class="set-grid">
+  <section class="panel"><div class="panel-h"><h2>앱 정보</h2></div>
+    <div class="set-row"><span>현재 버전</span><b>${h(APP_V())}</b></div>
+    <div class="set-row"><span>마지막 업데이트</span><b>${NEWS.length?fmtFull(NEWS[0].date):'-'}</b></div>
+    ${mode==='db'?`<div class="set-acts"><button class="btn" data-act="backup-open">데이터 백업</button>${art?`<button class="btn" data-act="pub-open">공개본 갱신${pendingCount()?` (${pendingCount()})`:''}</button>`:''}${WEB?`<button class="btn ghost" data-act="web-logout">로그아웃</button>`:''}</div>`:''}
+    ${WEB&&mode==='ro'?`<div class="set-acts"><button class="btn" data-act="web-login">운영진 로그인</button></div>`:''}
+  </section>
+  <section class="panel"><div class="panel-h"><h2>업데이트 기록</h2><span class="small muted">버전별 · 최신 순</span></div><div class="vers">${hist}</div></section>
+  </div>`}
+const VIEWS={home:viewHome,members:viewMembers,draw:viewDraw,events:viewEvents,courts:viewCourts,money:viewMoney,settings:viewSettings};
 const AFTER={};
 let posterZoom='fit';
 function fitPoster(){fitIn($('#stage'))}
