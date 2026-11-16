@@ -104,42 +104,94 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    화면·기능이 바뀌는 배포마다 맨 위에 항목 추가 (id는 겹치지 않게, 날짜순).
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
-  {id:'2026-11-16e',v:'1.5',date:'2026-11-16',items:[
-    {k:'settings',t:'설정 탭: 없음(로그아웃 · 데이터 백업 · 업데이트 내역 버튼은 대시보드에 있음) → 정산 다음에 설정 탭, 현재 버전 · 업데이트 기록(버전별) · 데이터 백업 · 로그아웃을 이곳으로 이동'},
-    {k:'news',t:'업데이트 안내: 없음 → 앱이 바뀌면 다음 접속 때 "업데이트" 창으로 안내 (버전 번호와 함께), 지난 기록은 설정 › 업데이트 기록'}]},
-  {id:'2026-11-16d',v:'1.4',date:'2026-11-16',items:[
-    {k:'datebox',t:'날짜 박스: 날짜 · 월만 표시 → 월 · 날짜 · 요일 순 표시 (요일은 "토요일"처럼 전체 표기, 토요일은 차분한 파랑 · 일요일은 차분한 빨강)'},
-    {k:'birthday',t:'대시보드 30일 내 생일: 날짜 · 나이 줄 따로 표시 → 이름 옆에 날짜(요일) 크게 표시, 나이 줄 삭제'},
-    {k:'result',t:'대회 결과: 모든 결과에 배지 모양(앞에 빈 공간) → 우승 · 입상만 색 배지, 그 외(8강 · 예선 등)는 글자만'},
-    {k:'inviter',t:'게스트 목록: 전 회원 게스트는 초대한 회원 대신 "전 회원"만 표시 → "전 회원" 표시와 초대한 회원 함께 표시'}]},
-  {id:'2026-11-16c',v:'1.3',date:'2026-11-16',items:[
-    {k:'news',t:'업데이트 안내: 없음 → 앱이 바뀌면 다음 접속 때 "새로 바뀐 점" 창으로 안내, 지난 내역은 대시보드 › 업데이트 내역'}]},
-  {id:'2026-11-16b',v:'1.2',date:'2026-11-16',items:[
+  {id:'2026-11-17b',v:'1.7',date:'2026-11-17',items:[
+    {k:'history',t:'업데이트 기록: v1.0(11.14)부터 기록 → 최초 요청(Claude 아티팩트 시기)부터 전체 기록, 실제 배포 날짜 기준으로 정리'}]},
+  {id:'2026-11-16e',alias:['2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.6',date:'2026-11-17',items:[
     {k:'staff',t:'운영진: 체크 하나로 즉시 바뀜(연도 구분 없음) → 회원 수정 › 운영진 체크 후 임기 연도 선택, 지난 임기 기록 보존, 내년 운영진은 명단에 흐린 배지 (8월부터 다음 해 선택 가능)'},
     {k:'partner',t:'개인대회 외부 파트너: 글자로 직접 입력 → 등록된 게스트 선택 또는 새 이름 추가, 이벤트 목록 · 멤버 대회 소식에도 이름 옆 G 표시'},
-    {k:'confirmed',t:'행사 확정 인원: 없음 → 예상 인원 아래 확정 멤버 체크, + 로 게스트 추가'},
-    {k:'guestreset',t:'게스트 전 회원 표시: 지울 방법 없음 → 게스트 수정 창에서 전 회원 기록 초기화'},
+    {k:'datebox',t:'날짜 박스: 날짜 · 월만 표시 → 월 · 날짜 · 요일 순 표시 (요일은 "토요일"처럼 전체 표기, 토요일은 차분한 파랑 · 일요일은 차분한 빨강)'},
+    {k:'settings',t:'설정 탭: 없음(로그아웃 · 데이터 백업 버튼은 대시보드에 있음) → 정산 다음에 설정 탭, 현재 버전 · 업데이트 기록(버전별) · 데이터 백업 · 로그아웃을 이곳으로 이동'},
+    {k:'news',t:'업데이트 안내: 없음 → 앱이 바뀌면 다음 접속 때 "업데이트" 창으로 안내 (버전 번호와 함께), 지난 기록은 설정 › 업데이트 기록'}]},
+  {id:'2026-11-16a',v:'1.5',date:'2026-11-16',items:[
+    {k:'court-imun',t:'코트 추가: 이문체육문화센터 테니스장 (동대문구, 매월 19일 구민 · 20일 일반 오픈)'},
+    {k:'courtform',t:'코트 수정: 면 수 · 요금 · 바닥 자유 입력 → 면 수 · 요금 숫자 입력(1시간당 / 2시간당), 바닥 · 실내외 버튼 선택(중복 가능), 메모는 큰 창에서 편집'},
+    {k:'inputcolor',t:'입력 칸: 직접 입력한 값도 회색 → 입력한 값은 본문 글자색, 단위 · 안내만 회색'},
+    {k:'priceselect',t:'금액 칸: 누른 자리에 숫자가 끼어 들어감 → 누르면 전체 선택되어 새로 입력하면 교체'},
+    {k:'calendar',t:'달력: 작은 화살표, 아이폰에서 월 이동 시 닫히는 문제 → 큰 이전 · 다음 버튼, 좌우로 밀어 월 이동'},
+    {k:'confirmed',t:'행사 확정 인원: 없음 → 예상 인원 아래 확정 멤버 체크, + 로 게스트 추가 (등록된 게스트 또는 새 이름)'},
     {k:'dues',t:'정산 › 월 회비: 납부 · 미납 · 면제 → 납부 · 미납 (이미 면제로 표시된 달만 면제 버튼 유지)'},
-    {k:'datebox',t:'날짜 박스: 날짜 · 월만 표시 → 월 · 날짜 · 요일 순 표시'},
+    {k:'birthday',t:'대시보드 30일 내 생일: 날짜 · 나이 줄 따로 표시 → 이름 옆에 날짜(요일) 크게 표시, 나이 줄 삭제'},
     {k:'bracketmenu',t:'대진표 이름 메뉴: 바깥을 눌러야 닫힘 → 같은 이름을 다시 눌러도 닫힘'},
-    {k:'calendar',t:'달력: 작은 화살표, 아이폰에서 월 이동 시 닫히는 문제 → 큰 이전 · 다음 버튼, 좌우로 밀어 월 이동'}]},
-  {id:'2026-11-15',v:'1.1',date:'2026-11-15',items:[
-    {k:'courtlist',t:'코트 목록: 예약처별 묶음 → 공공 코트 · 사설 코트 구분, 예약 오픈이 가까운 순 정렬(스매시 앱 코트는 맨 아래), 예약 오픈 일정 크게 표시'},
-    {k:'courtcard',t:'코트 카드: 회색 글자 한 줄 → 구 · 바닥 · 실내외 색 배지, 주소 누르면 네이버 지도 연결'},
-    {k:'courtform',t:'코트 수정: 면 수 · 요금 · 바닥 자유 입력 → 면 수 · 요금 숫자 입력(1시간당 / 2시간당), 바닥 · 실내외 버튼 선택, 메모는 큰 창에서 편집'},
-    {k:'courtadd',t:'코트 추가: 아차산배수지 · 보라매 · 계남 · 용마폭포 · 중랑구립 · 면목구립 · 이문 · TS · 엠무브'}]},
-  {id:'2026-11-14',v:'1.0',date:'2026-11-14',items:[
+    {k:'inviter',t:'게스트 목록: 전 회원 게스트는 초대한 회원 대신 "전 회원"만 표시 → "전 회원" 표시와 초대한 회원 함께 표시'},
+    {k:'guestreset',t:'게스트 전 회원 표시: 지울 방법 없음 → 게스트 수정 창에서 전 회원 기록 초기화'},
+    {k:'chipgap',t:'이벤트 목록: 종류 배지와 뒤 글자가 붙어 보임 → 배지 뒤 간격 확보'},
+    {k:'result',t:'대회 결과: 모든 결과에 배지 모양(앞에 빈 공간) → 우승 · 입상만 색 배지, 그 외(8강 · 예선 등)는 글자만'}]},
+  {id:'2026-11-15',alias:['2026-11-14'],v:'1.4',date:'2026-11-15',items:[
+    {k:'court-yongma',t:'코트 추가: 용마폭포공원 테니스장 (공단 이용안내 기준 요금 · 매주 월요일 구민 우선 · 수요일 일반)'},
+    {k:'court-jungnang',t:'코트 추가: 중랑구립테니스장 (용마와 같은 예약 사이트 · 같은 예약 순위)'},
+    {k:'court-myeonmok',t:'코트 추가: 면목구립테니스장 (2주 후 1주 이용분 사전예약 · 2시간 단위)'}]},
+  {id:'2026-11-14c',v:'1.3',date:'2026-11-14',items:[
+    {k:'timeinput',t:'시각 · 회비 시작 월 입력: 기본 입력 칸 → 휠 (시각은 시 · 10분 단위)'},
+    {k:'ledgercal',t:'행사 정산 표 날짜: 달력이 표 안에서 잘림 → 표 밖으로 온전히 표시'},
+    {k:'accordion',t:'접기 · 펼치기 섹션: 제목 글자를 정확히 눌러야 동작 → 제목줄 어디를 눌러도 동작, 펼치기 · 접기 표시 통일, 연간 납부 현황은 기본 접힘'},
     {k:'dashnext',t:'대시보드 다음 정기모임: 당일 내내 오늘 모임 표시 → 종료 시각 이후 다음 모임 표시, 행사 대체 시 해당 행사 표시'},
     {k:'drawdate',t:'대진표 날짜: 당일 내내 오늘 날짜 → 정기모임 종료 후 다음 주 날짜로 준비'},
-    {k:'dateinput',t:'날짜 입력: 기본 날짜 칸 → 일정은 달력(요일 표시), 생년월일 · 가입일 등은 휠'},
-    {k:'timeinput',t:'시각 입력: 기본 시각 칸 → 시 · 10분 단위 휠'}]}
+    {k:'courtlist',t:'코트 목록: 예약처별 묶음 → 공공 코트 · 사설 코트 구분, 예약 오픈이 가까운 순 정렬(스매시 앱 코트는 맨 아래, 같으면 가나다순), 예약 오픈 일정 크게 표시'},
+    {k:'courtcard',t:'코트 카드: 회색 글자 한 줄 → 구 · 바닥 · 실내외 색 배지(잔디 초록 · 하드 파랑 · 클레이 주황), 도로명주소 누르면 네이버 지도 연결'},
+    {k:'courtadd',t:'코트 추가 · 정리: 아차산배수지 · 보라매(이용일 14일 전 09:00) · 계남 · TS · 엠무브 예약 링크와 주소, 요금 모르면 "-" 표시'},
+    {k:'drawsort',t:'대진표 참석자: 등록 순 → 가나다순'}]},
+  {id:'2026-11-14b',v:'1.2',date:'2026-11-14',items:[
+    {k:'evfilter',t:'이벤트 목록: 대회 · 교류전 · MT 등 종류별 필터 → 전체 · 예정 · 지난 이벤트, 예정은 가까운 순 · 지난 이벤트는 최근 3건 후 펼치기 · 접기'},
+    {k:'joined',t:'회원 가입일: 비어 있음 → 현 회원 가입일 2026.01.01 일괄 적용'},
+    {k:'guestpair',t:'대진 생성: 게스트끼리 같은 팀이 될 수 있음 → 게스트끼리 같은 팀 지양 (생성 로직에 "게스트 분산" 추가)'},
+    {k:'swapcand',t:'대진표 자리 변경: 미참석자도 후보, 창 높이가 계속 바뀜 → 참석자만 후보, 창 높이 고정 · 목록만 스크롤'},
+    {k:'modal',t:'입력 창: 창마다 크기 제각각, 키보드가 열리면 창이 줄어듦 → 모든 창 같은 크기(내부 스크롤), 키보드가 창을 덮고 크기 유지 (정기모임 취소 창만 작게)'},
+    {k:'dropdown',t:'선택 목록: 위로 열리거나 저장 버튼 줄에 가림 → 항상 누른 자리 아래로 펼침, 공간이 부족하면 자동으로 내려 줌'},
+    {k:'dateinput',t:'날짜 입력: 기본 날짜 칸 → 일정은 요일이 보이는 달력, 생년월일 · 테니스 시작 연월 · 가입일은 휠'}]},
+  {id:'2026-11-14a',v:'1.1',date:'2026-11-14',items:[
+    {k:'relogin',t:'로그인 유지: 한 번 로그인하면 계속 유지 → 하루 1회 비밀번호 재입력 (날짜가 바뀌면 다시 입력)'},
+    {k:'autoupdate',t:'홈 화면 앱: 예전 화면이 남아 있음 → 새 버전이 있으면 입력 중이 아닐 때 자동 새로고침, 열 때마다 최신 화면'},
+    {k:'cancelreason',t:'정기모임 취소 사유: 인원 부족 포함 → 우천 취소 · 코트 측 취소 · 행사 대체 · 기타 (기존 인원 부족 기록은 기타로 표시)'},
+    {k:'errors',t:'오류 시 빈 화면 · 원인 모를 저장 실패 → 오류 내용 표시, 저장 실패 원인 표시, 빈 값 때문에 저장이 거절되던 문제 해결'},
+    {k:'memo3',t:'이벤트 메모: 전체가 길게 표시 · "줄글" 보기 → 3줄까지 표시 후 말줄임(누르면 전체), 보기 전환 "스티커 · 목록"'},
+    {k:'toast',t:'저장 완료 등 안내 문구: 화면 가장자리 → 화면 중앙'},
+    {k:'cheer',t:'지난 대회 응원단: 전체 회원 버튼 → 응원 간 멤버만 표시 (추가 · 수정은 수정 창에서)'}]},
+  {id:'2026-11-13',v:'1.0',date:'2026-11-13',items:[
+    {k:'webapp',t:'운영 방식: Claude 대화 안의 화면(아티팩트) → 독립 웹사이트(sbpb-official.github.io), 휴대폰 · PC 실시간 연동, 홈 화면에 앱처럼 추가 가능, 운영 비용 0원'},
+    {k:'login',t:'입장: 각자 구글 로그인 → 운영진 공용 비밀번호 하나로 입장 · 편집 (서버에서 확인)'},
+    {k:'migrate',t:'데이터: 아티팩트에 저장된 회원 · 행사 · 메모 · 코트 · 대진표 · 게스트 · 정산 기록 전체를 새 사이트로 이전'}]},
+  {id:'a12',v:'0.12',period:'Claude 아티팩트 시기',date:'',items:[
+    {k:'money',t:'정산 탭: 없음 → 월 회비 납부 체크 · 연간 납부 현황 · 미납 안내 문구 미리보기, 행사 정산(엑셀식 표, 칸에 바로 입력), 모임 통장(이월 잔액 · 수입 지출 비율 · 월별 흐름), 정기대관 분기 정산'}]},
+  {id:'a11',v:'0.11',period:'Claude 아티팩트 시기',date:'',items:[
+    {k:'makeup',t:'정기대관 코트 측 취소: 취소만 기록 → 대체일 지정(나중에 입력 가능), 대체일 사용 시 정상 청구 · 미사용 시 비용 없음'}]},
+  {id:'a10',v:'0.10',period:'Claude 아티팩트 시기',date:'',items:[
+    {k:'years',t:'회원 등록 연도: 없음 → 2026 · 2027 등록 기록, 매년 연장 관리(연장 · 게스트 · 탈퇴), 회원 ↔ 게스트 전환 (탈퇴해도 활동 연도 기록 유지)'}]},
+  {id:'a9',v:'0.9',period:'Claude 아티팩트 시기',date:'',items:[
+    {k:'backup',t:'데이터 백업: 없음 → 엑셀(.xlsx) · 전체 데이터(.json) 저장'},
+    {k:'dashclock',t:'대시보드: 오늘 날짜만 표시 → 실시간 시계, 다음 정기모임 카드 강조(D-day, 취소 시 취소선)'}]},
+  {id:'a8',v:'0.8',period:'Claude 아티팩트 시기',date:'',items:[
+    {k:'mobile',t:'휴대폰 사용성: 입력 창이 화면을 가득 채움 · 버튼이 안 눌림 · 입력 칸 누르면 화면 확대 → 가운데 카드형 창(제목 · 저장 버튼 고정, 내용만 스크롤), 터치 영역 확대, 확대 방지, 본문만 핀치 줌'}]},
+  {id:'a7',v:'0.7',period:'Claude 아티팩트 시기',date:'',items:[
+    {k:'gate',t:'보안: 누구나 열람 → 비밀번호 입장'}]},
+  {id:'a6',v:'0.6',period:'Claude 아티팩트 시기',date:'',items:[
+    {k:'courts0',t:'코트: 없음 → 정기대관 코트 사용 현황 · 취소 기록, 추가 코트 예약처 · 오픈 규칙(매월 특정일 · 말일 · 이용일 N일 전) · 45일 내 오픈 일정'}]},
+  {id:'a5',v:'0.5',period:'Claude 아티팩트 시기',date:'',items:[
+    {k:'calendar0',t:'캘린더: 보기만 가능 → 날짜를 눌러 일정 추가 · 삭제, 정기모임 취소 · 사유 기록'}]},
+  {id:'a4',v:'0.4',period:'Claude 아티팩트 시기',date:'',items:[
+    {k:'events0',t:'이벤트: 없음 → 행사 기록, 스티커 메모(접기 · 펼치기), 개인 대회 출전 기록 · 결과 · 응원단'}]},
+  {id:'a3',v:'0.3',period:'Claude 아티팩트 시기',date:'',items:[
+    {k:'members0',t:'회원: 기본 명단 → 운영진 · 직책 배지, 생년월일 · 나이 · 생일 캘린더, 레벨 선택 목록(게스트는 "모름"), 게스트 명단(닉네임 · 초대 회원)'}]},
+  {id:'a2',v:'0.2',period:'Claude 아티팩트 시기',date:'',items:[
+    {k:'bracket0',t:'대진표: 없음 → 카카오톡 공지 형식(타임 · 코트 · 벤치) 자동 생성 · 이미지 저장, 경기 수 균등 · 레벨 균형 · 파트너 다양화, 이름 눌러 변경'}]},
+  {id:'a1',v:'0.1',period:'Claude 아티팩트 시기',date:'',items:[
+    {k:'start',t:'첫 버전: 없음 → 대시보드(연간 캘린더) · 회원 · 대진표 · 이벤트 · 코트 화면, 로고와 딥그린 키컬러 (정기모임: 매주 토요일 09:00–12:00 서울시립대)'}]}
 ];
 const NEWS_KEY='sbpb-news-seen';
-function newsHtml(list){const g=[],seenK=new Set();list.forEach(n=>{const its=n.items.filter(it=>{const k=it.k||it;if(seenK.has(k))return false;seenK.add(k);return true}).map(it=>it.t||it);if(!its.length){const last=g[g.length-1];if(last&&last.date===n.date&&n.v)last.vs.push(n.v);return}const last=g[g.length-1];if(last&&last.date===n.date){last.items.push(...its);if(n.v)last.vs.push(n.v)}else g.push({date:n.date,items:its,vs:n.v?[n.v]:[]})});return g.map(n=>`<div class="news-day"><div class="news-d">${n.vs.length?`<span class="news-v">${n.vs.length>1?`v${n.vs[n.vs.length-1]} ~ v${n.vs[0]}`:`v${n.vs[0]}`}</span>`:''}${fmtFull(n.date)}</div><ul>${n.items.map(x=>`<li>${h(x)}</li>`).join('')}</ul></div>`).join('')}
+function newsHtml(list){const g=[],seenK=new Set();list.forEach(n=>{const its=n.items.filter(it=>{const k=it.k||it;if(seenK.has(k))return false;seenK.add(k);return true}).map(it=>it.t||it);if(!its.length){const last=g[g.length-1];if(last&&last.date===n.date&&n.v)last.vs.push(n.v);return}const last=g[g.length-1];if(last&&last.date===n.date){last.items.push(...its);if(n.v)last.vs.push(n.v)}else g.push({date:n.date,period:n.period,items:its,vs:n.v?[n.v]:[]})});return g.map(n=>`<div class="news-day"><div class="news-d">${n.vs.length?`<span class="news-v">${n.vs.length>1?`v${n.vs[n.vs.length-1]} ~ v${n.vs[0]}`:`v${n.vs[0]}`}</span>`:''}${n.date?fmtFull(n.date):h(n.period||'')}</div><ul>${n.items.map(x=>`<li>${h(x)}</li>`).join('')}</ul></div>`).join('')}
 function openNews(list,title){openModal(title,list.length?newsHtml(list):'<p class="muted">업데이트 기록 없음</p>',()=>{lsSet(NEWS_KEY,NEWS[0].id)},'','news');
   const f=$('#mform');if(!f)return;f.querySelectorAll('.acts button:not([type=submit])').forEach(b=>b.hidden=true);const s=f.querySelector('button[type=submit]');if(s)s.textContent='확인'}
 function maybeShowNews(){if(RO||!NEWS.length)return;const seen=lsGet(NEWS_KEY,null);
-  let list;if(!seen){const cut=new Date();cut.setDate(cut.getDate()-14);list=NEWS.filter(n=>parseYmd(n.date)>=cut)}else{const i=NEWS.findIndex(n=>n.id===seen);list=i<0?NEWS.slice():NEWS.slice(0,i)}
+  let list;if(!seen){const cut=new Date();cut.setDate(cut.getDate()-14);list=NEWS.filter(n=>parseYmd(n.date)>=cut)}else{const i=NEWS.findIndex(n=>n.id===seen||(n.alias||[]).includes(seen));list=i<0?NEWS.slice():NEWS.slice(0,i)}
   if(!list.length){lsSet(NEWS_KEY,NEWS[0].id);return}
   if($('#modal-root').innerHTML){setTimeout(maybeShowNews,4000);return}
   openNews(list,'업데이트');lsSet(NEWS_KEY,NEWS[0].id)/* 확인이든 × 든 한 번 보면 끝 */}
@@ -1691,7 +1743,7 @@ document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.tar
 
 /* ---------- boot ---------- */
 function viewSettings(){
-  const hist=NEWS.map(n=>`<div class="ver"><div class="ver-h"><b>v${h(n.v||'')}</b><span>${fmtFull(n.date)}</span></div><ul>${n.items.map(it=>`<li>${h(it.t||it)}</li>`).join('')}</ul></div>`).join('');
+  const hist=NEWS.map(n=>`<div class="ver"><div class="ver-h"><b>v${h(n.v||'')}</b><span>${n.date?fmtFull(n.date):h(n.period||'')}</span></div><ul>${n.items.map(it=>`<li>${h(it.t||it)}</li>`).join('')}</ul></div>`).join('');
   return `<div class="page-head"><div><h1>설정</h1><p>앱 정보 · 업데이트 기록 · 데이터 관리</p></div></div>
   <div class="set-grid">
   <section class="panel"><div class="panel-h"><h2>앱 정보</h2></div>
