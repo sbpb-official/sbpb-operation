@@ -80,6 +80,17 @@ function paintLv(el){const v=el.querySelector('input').value;const n=v===''?null
 function optSel(name,val,opts,ph='선택',{label=v=>v,none=true}={}){const list=[...opts];if(val&&!list.includes(val))list.push(val);
   return `<div class="lvsel optsel"><input type="hidden" name="${name}" value="${h(val||'')}"><button type="button" class="in pickbtn lv-btn${val?'':' ph'}" data-act="lv-open" data-ph="${h(ph)}" aria-haspopup="listbox" aria-expanded="false">${h(val?label(val):ph)}<span class="lv-caret" aria-hidden="true">▾</span></button><div class="lv-pop" role="listbox" hidden>${(none?['',...list]:list).map(v=>`<button type="button" role="option" data-act="opt-pick" data-v="${h(v)}" data-l="${h(v?label(v):'')}" aria-selected="${String(v===(val||''))}">${v?h(label(v)):'선택 안 함'}</button>`).join('')}</div></div>`}
 ACT['opt-pick']=t=>{const el=t.closest('.optsel');const v=t.dataset.v;el.querySelector('input').value=v;const b=el.querySelector('.lv-btn');b.classList.toggle('ph',!v);b.innerHTML=h(v?(t.dataset.l||v):b.dataset.ph)+'<span class="lv-caret" aria-hidden="true">▾</span>';el.querySelectorAll('.lv-pop button').forEach(x=>x.setAttribute('aria-selected',String(x===t)));closeLv()};
+/* long memo: preview in the form, edit in a larger window above the modal */
+function bigMemo(name,val,ph,title){return `<div class="bigmemo"><textarea name="${name}" hidden>${h(val||'')}</textarea><button type="button" class="in memo-prev${val?'':' ph'}" data-act="memo-big" data-title="${h(title)}" data-ph="${h(ph)}">${h(val||ph)}</button></div>`}
+ACT['memo-big']=t=>{const ta=t.closest('.bigmemo').querySelector('textarea');closeLv();
+  const ov=document.createElement('div');ov.className='me-ov';ov.id='memoed';
+  ov.innerHTML=`<div class="me-box" role="dialog" aria-modal="true" aria-label="${h(t.dataset.title)}"><div class="me-bar"><button type="button" class="btn ghost" data-act="me-cancel">취소</button><b>${h(t.dataset.title)}</b><button type="button" class="btn pri" data-act="me-done">완료</button></div><textarea class="in me-ta" placeholder="${h(t.dataset.ph)}"></textarea></div>`;
+  ov._ta=ta;ov._btn=t;document.body.appendChild(ov);const e=ov.querySelector('.me-ta');e.value=ta.value;e.focus();e.setSelectionRange(e.value.length,e.value.length);e.scrollTop=e.scrollHeight};
+ACT['me-cancel']=()=>{const ov=$('#memoed');if(ov)ov.remove()};
+ACT['me-done']=()=>{const ov=$('#memoed');if(!ov)return;const v=ov.querySelector('.me-ta').value;ov._ta.value=v;const b=ov._btn;b.textContent=v||b.dataset.ph;b.classList.toggle('ph',!v);ov.remove()};
+/* price and count fields: tapping again selects the whole number, so typing replaces it */
+document.addEventListener('focusin',e=>{const t=e.target;if(!t.dataset||!(t.dataset.comma||t.dataset.selall))return;t._selAt=Date.now();setTimeout(()=>{try{t.setSelectionRange(0,t.value.length)}catch(_){t.select()}},30)});
+document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.dataset.comma||t.dataset.selall)&&t._selAt&&Date.now()-t._selAt<500){e.preventDefault();try{t.setSelectionRange(0,t.value.length)}catch(_){}}},true);
 function closeLv(){if(typeof releaseRoom==='function')releaseRoom();document.querySelectorAll('.lv-pop').forEach(p=>{p.hidden=true;const w=p._wrap;if(w){delete p._wrap;if(w.isConnected){w.appendChild(p);w.querySelector('.dbtn').setAttribute('aria-expanded','false')}else p.remove();return}p.previousElementSibling&&p.previousElementSibling.setAttribute('aria-expanded','false')})}
 document.addEventListener('click',e=>{if(!e.target.closest('.lvsel,.calpop'))closeLv()},true);
 /* ---------- wheel picker (bottom sheet, scroll-snap columns) ---------- */
@@ -473,7 +484,7 @@ function openModal(title,body,onSubmit,extraActs='',cls=''){
 let lockY=0;
 function lockPage(){const r=document.documentElement;if(r.classList.contains('modal-open'))return;lockY=window.scrollY;r.classList.add('modal-open');document.body.style.top=`-${lockY}px`}
 function unlockPage(){const r=document.documentElement;if(!r.classList.contains('modal-open'))return;r.classList.remove('modal-open');document.body.style.top='';window.scrollTo(0,lockY)}
-function closeModal(){$('#modal-root').innerHTML='';modalSubmit=null;unlockPage()}
+function closeModal(){const me=$('#memoed');if(me)me.remove();$('#modal-root').innerHTML='';modalSubmit=null;unlockPage()}
 document.addEventListener('submit',async e=>{
   if(e.target.id==='mform'){e.preventDefault();const f=e.target;if(f.dataset.busy)return;
     const missD=[...f.querySelectorAll('.dfield[data-required]')].find(d=>!d.querySelector('input').value);
@@ -1275,7 +1286,7 @@ function courtForm(c={}){
   return `<div class="grid2"><label class="f">코트 이름<input class="in" name="name" required value="${h(c.name)}" placeholder="예: OO공원 테니스장"></label><label class="f">위치 (구·시)<input class="in" name="district" list="areas-c" value="${h(c.district)}" placeholder="예: 송파구"></label></div>
   <label class="f">주소 (선택 시 네이버 지도 연결)<input class="in" name="address" value="${h(c.address)}" placeholder="예: 서울 광진구 천호대로 731"></label>
   <label class="f">네이버 지도 링크 (선택 · 비우면 주소로 검색)<input class="in" type="url" name="map" value="${h(c.map)}" placeholder="https://naver.me/..."></label>
-  <div class="grid2"><label class="f">면 수<span class="sfx"><input class="in" inputmode="numeric" name="courts" value="${h(courtsN(c.courts)||'')}" placeholder="4"><i>면</i></span></label>
+  <div class="grid2"><label class="f">면 수<span class="sfx"><input class="in" inputmode="numeric" data-selall="1" name="courts" value="${h(courtsN(c.courts)||'')}" placeholder="4"><i>면</i></span></label>
   <div class="f"><span>요금</span><div class="feerow"><span class="sfx"><input class="in" inputmode="numeric" data-comma="1" name="feeN" value="${c.feeN?Number(c.feeN).toLocaleString('ko-KR'):''}" placeholder="5,000"><i>원</i></span>${optSel('feeUnit',c.feeUnit||'1시간',['1시간','2시간'],'1시간',{label:v=>v+'당',none:false})}</div>${c.fee&&!c.feeN?`<span class="small muted" style="font-weight:500">기존 입력: ${h(c.fee)}</span>`:''}</div></div>
   <div class="f"><span>바닥 (중복 선택 가능)</span><div class="iopick">${(()=>{const cur=surfList(c.surface);return [...new Set([...SURFACES,...cur])].map(s=>`<label><input type="checkbox" name="surf_${h(s)}"${cur.includes(s)?' checked':''}><span>${h(s)}</span></label>`).join('')})()}</div></div>
   <div class="f"><span>실내 · 실외 (중복 선택 가능)</span><div class="iopick"><label><input type="checkbox" name="indoor"${c.indoor?' checked':''}><span>실내</span></label><label><input type="checkbox" name="outdoor"${c.outdoor?' checked':''}><span>실외</span></label></div></div>
@@ -1286,7 +1297,7 @@ function courtForm(c={}){
   <label class="check"><input type="checkbox" name="resident"${c.resident?' checked':''}> 관내 주민 우선 예약 있음</label>
   <div><div class="small muted" style="font-weight:600;margin-bottom:4px">주민 우선 예약 오픈 (해당 시)</div>${ruleFields('r_',c.resRule)}</div>
   <div class="grid2"><label class="f">우선 대상 지역<input class="in" name="area" list="areas-c" value="${h(c.area)}" placeholder="비우면 위치와 같음"></label><label class="check" style="align-self:end;padding-bottom:8px"><input type="checkbox" name="workers"${c.workers?' checked':''}> 관내 직장인도 포함</label></div>
-  <label class="f">예약 대상 기간 / 메모<textarea class="in" name="memo" placeholder="예: 다음 달 이용분 오픈, 1인 월 2회 제한, 추첨제">${h(c.memo)}</textarea></label>
+  <div class="f">예약 대상 기간 / 메모${bigMemo('memo',c.memo,'예: 다음 달 이용분 오픈, 1인 월 2회 제한, 추첨제','코트 메모')}</div>
   <datalist id="areas-c">${SEOUL.concat(NEAR).map(a=>`<option value="${a}">`).join('')}</datalist>`;
 }
 const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:(fd.map||'').trim(),courts:courtsN(fd.courts)?courtsN(fd.courts)+'면':'',surface:Object.keys(fd).filter(k=>k.startsWith('surf_')&&fd[k]===true).map(k=>k.slice(5)).join('·'),indoor:!!fd.indoor,outdoor:!!fd.outdoor,feeN:numOf(fd.feeN)||0,feeUnit:fd.feeUnit||'1시간',fee:numOf(fd.feeN)?'':(old.fee||''),url:fd.url.trim(),platform:old.platform||'etc',kind:fd.kind||'public',smash:!!fd.smash,genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:(numOf(fd.feeN)&&old.fee&&!fd.memo.includes(old.fee)?['요금 상세: '+old.fee,fd.memo.trim()].filter(Boolean).join('\n'):fd.memo.trim())});

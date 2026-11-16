@@ -107,6 +107,8 @@ a.btn{text-decoration:none;color:inherit;display:inline-block}
 textarea.in{resize:vertical;min-height:70px}
 label.f,div.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600;min-width:0}
 label.f > .in,label.f > select,label.f > textarea{font-size:14px;color:var(--ink);font-weight:400}
+/* 직접 입력한 값은 본문색, 고정 단위·안내만 회색 */
+.f .in,.f .pickbtn,.f .lv-btn{color:var(--ink);font-weight:400}.f .pickbtn.ph,.f .in::placeholder{color:var(--muted)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .check{display:flex;align-items:center;gap:8px;font-size:13px}
@@ -773,6 +775,13 @@ details[open]>summary .led-tg i{transform:rotate(180deg)}
 .sfx .in{flex:1;padding-right:34px;text-align:right}
 .sfx i{position:absolute;right:12px;font-style:normal;color:var(--muted);font-weight:600;pointer-events:none}
 .feerow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:6px}
+.memo-prev{display:block;text-align:left;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;min-height:70px;max-height:9.6em;overflow:hidden;line-height:1.6;cursor:text;position:relative;-webkit-mask-image:linear-gradient(#000 75%,transparent);mask-image:linear-gradient(#000 75%,transparent)}
+.memo-prev.ph{color:var(--muted);-webkit-mask-image:none;mask-image:none}
+.me-ov{position:fixed;inset:0;z-index:50;background:rgba(10,16,24,.45);display:flex;justify-content:center;align-items:flex-start;padding:max(24px,calc(env(safe-area-inset-top,0px) + 12px)) 16px 16px}
+.me-box{width:min(560px,100%);height:min(62vh,520px);background:var(--surface);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden}
+.me-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.me-bar b{font-size:15px}
+.me-box .me-ta{flex:1;min-height:0;border:0;border-radius:0;resize:none;padding:14px 16px;line-height:1.6;color:var(--ink);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;outline:none}
 .iopick{display:flex;gap:8px}
 .iopick label{cursor:pointer}
 .iopick input{position:absolute;opacity:0;pointer-events:none}
@@ -979,7 +988,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=2a610e7d9e';
+const CUR_APP = 'app.js?v=92883def42';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1007,7 +1016,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=2a610e7d9e';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=92883def42';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
