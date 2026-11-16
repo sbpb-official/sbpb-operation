@@ -93,6 +93,8 @@ document.addEventListener('focusin',e=>{const t=e.target;if(!t.dataset||!(t.data
 document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.dataset.comma||t.dataset.selall)&&t._selAt&&Date.now()-t._selAt<500){e.preventDefault();try{t.setSelectionRange(0,t.value.length)}catch(_){}}},true);
 function closeLv(){if(typeof releaseRoom==='function')releaseRoom();document.querySelectorAll('.lv-pop').forEach(p=>{p.hidden=true;const w=p._wrap;if(w){delete p._wrap;if(w.isConnected){w.appendChild(p);w.querySelector('.dbtn').setAttribute('aria-expanded','false')}else p.remove();return}p.previousElementSibling&&p.previousElementSibling.setAttribute('aria-expanded','false')})}
 document.addEventListener('click',e=>{if(!e.target.closest('.lvsel,.calpop'))closeLv()},true);
+/* a popup inside a <label> must not re-trigger the label's button (it reset the calendar to the selected month) */
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.lv-pop')&&e.target.closest('label'))e.preventDefault()},true);
 /* ---------- wheel picker (bottom sheet, scroll-snap columns) ---------- */
 const WH=44;
 function openWheel(title,cols,onDone,onChange){
@@ -149,6 +151,9 @@ function calHtml(pop){const wrap=calWrap(pop);const val=wrap.querySelector('inpu
 ACT['cal-open']=t=>{const wrap=t.closest('.dfield');const pop=wrap.querySelector('.calpop')||[...document.querySelectorAll('body>.calpop')].find(p=>p._wrap===wrap);const open=pop.hidden;closeLv();if(!open)return;
   if(wrap.classList.contains('dcell')){pop._wrap=wrap;document.body.appendChild(pop)}/* table cells clip popups: show it at page level */
   const v=wrap.querySelector('input').value||ymd(today0());pop.dataset.ym=v.slice(0,7);pop.innerHTML=calHtml(pop);pop.hidden=false;t.setAttribute('aria-expanded','true');placePop(t,pop)};
+/* swipe left/right on the calendar to change month */
+document.addEventListener('touchstart',e=>{const g=e.target.closest&&e.target.closest('.calpop .cal-g');if(!g)return;const t0=e.touches[0];g._sw={x:t0.clientX,y:t0.clientY}},{passive:true});
+document.addEventListener('touchend',e=>{const g=e.target.closest&&e.target.closest('.calpop .cal-g');if(!g||!g._sw)return;const t1=e.changedTouches[0];const dx=t1.clientX-g._sw.x,dy=t1.clientY-g._sw.y;g._sw=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5){const b=g.closest('.calpop').querySelector(`[data-act=cal-nav][data-v="${dx<0?1:-1}"]`);if(b)ACT['cal-nav'](b)}},{passive:true});
 ACT['cal-nav']=t=>{const pop=t.closest('.calpop');let [y,m]=pop.dataset.ym.split('-').map(Number);m+=+t.dataset.v;if(m<1){m=12;y--}if(m>12){m=1;y++}pop.dataset.ym=`${y}-${pad(m)}`;pop.innerHTML=calHtml(pop)};
 ACT['cal-pick']=t=>{const wrap=calWrap(t);const inp=wrap.querySelector('input');const btn=wrap.querySelector('.dbtn');const v=t.dataset.v;
   inp.value=v;btn.classList.toggle('ph',!v);btn.innerHTML=(v?fmtCal(v,!!wrap.dataset.short):'날짜 선택')+'<span class="lv-caret" aria-hidden="true">▾</span>';closeLv();

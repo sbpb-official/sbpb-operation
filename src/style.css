@@ -723,11 +723,11 @@ body.ro [data-act="renew-open"]{display:none!important}
 .modal.pick .m-head{position:static}
 
 /* date fields: calendar dropdown */
-.lv-pop.calpop{padding:10px;min-width:280px}
+.lv-pop.calpop{padding:10px;min-width:280px;color:var(--ink);font-weight:400;font-size:14px}
 .calpop .cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.calpop .cal-h b{font-family:var(--f-display);font-size:15px}
+.calpop .cal-h b{font-family:var(--f-display);font-size:16px;color:var(--ink)}
 .lv-pop.calpop .cal-h button,.lv-pop.calpop .cal-f button{all:unset;cursor:pointer;padding:6px 12px;border-radius:8px;font-size:14px;color:var(--ink);width:auto;display:inline-block}
-.lv-pop.calpop .cal-h button{font-size:20px;line-height:1;padding:4px 12px}
+.lv-pop.calpop .cal-h button{font-size:22px;line-height:1;width:44px;height:40px;display:inline-flex;align-items:center;justify-content:center;padding:0;border-radius:10px;background:var(--surface-2);color:var(--ink);font-weight:700}
 .lv-pop.calpop .cal-h button:hover,.lv-pop.calpop .cal-f button:hover{background:var(--surface-2)}
 .calpop .cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
 .calpop .cal-g span{font-size:11px;font-weight:700;color:var(--muted);text-align:center;padding:4px 0}
