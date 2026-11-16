@@ -795,6 +795,8 @@ details[open]>summary .led-tg i{transform:rotate(180deg)}
 /* chip followed by text in list rows: keep breathing room */
 .li .sub .chip{margin:0 8px 0 0}
 
+.gmark{font-style:normal;font-size:9px;font-weight:700;color:var(--muted);border:1px solid currentColor;border-radius:4px;width:14px;height:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;margin-left:3px;vertical-align:1px}
+
 /* modal */
 .ov{position:fixed;left:0;right:0;top:0;bottom:0;height:auto;   /* full screen, not the area above the keyboard: the keyboard covers the modal instead of shrinking it */
   background:rgba(10,16,24,.5);z-index:20;display:flex;align-items:center;justify-content:center;overflow:hidden;overflow:clip;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}

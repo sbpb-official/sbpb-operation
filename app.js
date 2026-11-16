@@ -609,7 +609,7 @@ function viewHome(){
   ${kp}<div class="dash">${cal}<div class="side">
   <section class="panel"><div class="panel-h"><h2>다가오는 행사</h2><a href="#events">전체 보기</a></div><div class="list">${upHtml}</div></section>
   ${(()=>{const ts=S.events.filter(e=>e.type==='개인대회'&&e.date);if(!ts.length)return '';const up2=ts.filter(e=>diffDays(e.date)>=0).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);const past=ts.filter(e=>diffDays(e.date)<0&&e.result&&e.result!=='대기').sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
-    const li=e=>`<div class="li click" data-act="ev-open" data-id="${e.id}"><div class="grow"><div class="ttl">${h((e.entrants||[]).map(nameOf).join(', ')||'출전 멤버 미입력')}</div><div class="sub">${fmtD(e.date)} · ${h(e.title)}${e.division?' · '+h(e.division):''}${(e.cheer||[]).length?` · 응원 ${(e.cheer||[]).length}명`:''}</div></div>${diffDays(e.date)>=0?`<span class="dday">${ddayLabel(e.date)}</span>`:`<span class="result ${resultCls(e.result)}" style="font-size:12px">${h(e.result)}</span>`}</div>`;
+    const li=e=>`<div class="li click" data-act="ev-open" data-id="${e.id}"><div class="grow"><div class="ttl">${entLine(e)||'출전 멤버 미입력'}</div><div class="sub">${fmtD(e.date)} · ${h(e.title)}${e.division?' · '+h(e.division):''}${(e.cheer||[]).length?` · 응원 ${(e.cheer||[]).length}명`:''}</div></div>${diffDays(e.date)>=0?`<span class="dday">${ddayLabel(e.date)}</span>`:`<span class="result ${resultCls(e.result)}" style="font-size:12px">${h(e.result)}</span>`}</div>`;
     return `<section class="panel"><div class="panel-h"><h2>멤버 대회 소식</h2><a href="#events" data-act="ev-filter" data-v="all">전체 보기</a></div><div class="list">${up2.map(li).join('')}${past.map(li).join('')}</div></section>`})()}
   <section class="panel"><div class="panel-h"><h2>예약 오픈 임박</h2><a href="#courts">코트 보기</a></div><div class="list">${opHtml}</div></section>
   <section class="panel"><div class="panel-h"><h2>회원 개요</h2><a href="#members">회원 보기</a></div>${mo}</section>
@@ -1244,6 +1244,8 @@ function cfCount(){const n=$('#cf-n');if(n)n.textContent=(document.querySelector
 function pxSync(f){if(!f)return;f.querySelector(`[name=${f.dataset.px}]`).value=JSON.stringify([...f.querySelectorAll('.cfx')].map(e=>e.dataset.x));if(f.id==='conf-fields')cfCount()}
 function pxAdd(f,x){if(!f||[...f.querySelectorAll('.cfx')].some(e=>e.dataset.x===x))return;f.querySelector('.cf-add').insertAdjacentHTML('beforebegin',cfxChip(x));pxSync(f)}
 /* external partners in a tournament: registered guests or a new name */
+/* 출전자 한 줄: 멤버 + 외부 파트너(게스트 표시) */
+const entLine=e=>(e.entrants||[]).map(nameOf).map(h).concat(ptNames(e).map(n=>`${h(n)}<i class="gmark">G</i>`)).join(', ');
 const ptList=e=>e.partners||(e.partner?['n:'+e.partner]:[]);
 const ptNames=e=>ptList(e).map(cfxName);
 ACT['cf-x-del']=t=>{const f=t.closest('[data-px]');t.closest('.cfx').remove();pxSync(f)};
@@ -1292,7 +1294,7 @@ function viewEvents(){
   const ev=S.events.find(e=>e.id===evSel);
   const filters=[['all','전체'],['upcoming','예정'],['past','지난 이벤트']];
   const left=`<section class="panel evlist"><div class="row" style="margin-bottom:10px">${filters.map(([v,l])=>`<button class="btn sm ${evFilter===v?'pri':'ghost'}" data-act="ev-filter" data-v="${v}">${l}</button>`).join('')}</div>
-   <div class="list">${(()=>{const row=e=>{const d=parseYmd(e.date);const nc=S.notes.filter(n=>n.eventId===e.id).length;return `<div class="li click t-${h(e.type)}${e.id===evSel?' on':''}" data-act="ev-open" data-id="${e.id}">${dateBox(e.date)}<div class="grow"><div class="ttl">${h(e.title)}</div><div class="sub"><span class="chip ttag">${e.type==='개인대회'?'개인 대회':h(e.type)}</span> ${e.type==='개인대회'?`${h((e.entrants||[]).map(nameOf).join(', '))}${e.result&&e.result!=='대기'?` · <b>${h(e.result)}</b>`:''}`:h(e.status||'')}${nc?` · 메모 ${nc}`:''}</div></div>${e.date&&diffDays(e.date)>=0?`<span class="dday small">${ddayLabel(e.date)}</span>`:''}</div>`};const sec=(l,n)=>`<div class="ev-sec">${l} <span class="num">${n}</span></div>`;
+   <div class="list">${(()=>{const row=e=>{const d=parseYmd(e.date);const nc=S.notes.filter(n=>n.eventId===e.id).length;return `<div class="li click t-${h(e.type)}${e.id===evSel?' on':''}" data-act="ev-open" data-id="${e.id}">${dateBox(e.date)}<div class="grow"><div class="ttl">${h(e.title)}</div><div class="sub"><span class="chip ttag">${e.type==='개인대회'?'개인 대회':h(e.type)}</span> ${e.type==='개인대회'?`${entLine(e)}${e.result&&e.result!=='대기'?` · <b>${h(e.result)}</b>`:''}`:h(e.status||'')}${nc?` · 메모 ${nc}`:''}</div></div>${e.date&&diffDays(e.date)>=0?`<span class="dday small">${ddayLabel(e.date)}</span>`:''}</div>`};const sec=(l,n)=>`<div class="ev-sec">${l} <span class="num">${n}</span></div>`;
      let o='';if(showUp){if(secs)o+=sec('예정',up.length);o+=up.map(row).join('')||(secs?'<div class="muted small ev-none">예정된 행사 없음</div>':'')}
      if(showPast){if(secs)o+=sec('지난 이벤트',past.length);o+=pastShown.map(row).join('');if(secs&&past.length>PAST_N)o+=evPastMore?`<button class="btn sm ghost ev-more" data-act="ev-past-less">지난 이벤트 접기</button>`:`<button class="btn sm ghost ev-more" data-act="ev-past-more">지난 이벤트 ${past.length-PAST_N}건 더 보기</button>`;if(secs&&!past.length)o+='<div class="muted small ev-none">지난 행사 없음</div>'}
      return o||'<div class="muted small" style="padding:8px">해당 행사 없음</div>'})()}</div></section>`;
