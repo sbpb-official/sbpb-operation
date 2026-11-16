@@ -824,7 +824,10 @@ details[open]>summary .led-tg i{transform:rotate(180deg)}
 .set-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
 .set-row span{color:var(--muted)}
 .set-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-.vers{display:flex;flex-direction:column}
+.vers{display:flex;flex-direction:column;height:min(56vh,460px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:10px;padding:0 14px}
+.ver-n{margin-left:auto;font-size:12px;color:var(--muted)}
+.ver-pg{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.ver-pg .num{font-size:13px;color:var(--muted)}
 .ver{padding:12px 0;border-bottom:1px solid var(--line)}.ver:last-child{border-bottom:0}
 .ver-h{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
 .ver-h b{font-family:var(--f-display);font-size:16px;color:var(--court)}
@@ -1038,7 +1041,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=2007bfd3b0';
+const CUR_APP = 'app.js?v=c540f4e8ac';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1066,7 +1069,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=2007bfd3b0';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=c540f4e8ac';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();

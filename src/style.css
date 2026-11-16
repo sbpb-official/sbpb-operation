@@ -803,7 +803,10 @@ details[open]>summary .led-tg i{transform:rotate(180deg)}
 .set-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
 .set-row span{color:var(--muted)}
 .set-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-.vers{display:flex;flex-direction:column}
+.vers{display:flex;flex-direction:column;height:min(56vh,460px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:10px;padding:0 14px}
+.ver-n{margin-left:auto;font-size:12px;color:var(--muted)}
+.ver-pg{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.ver-pg .num{font-size:13px;color:var(--muted)}
 .ver{padding:12px 0;border-bottom:1px solid var(--line)}.ver:last-child{border-bottom:0}
 .ver-h{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
 .ver-h b{font-family:var(--f-display);font-size:16px;color:var(--court)}
