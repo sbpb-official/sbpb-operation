@@ -706,7 +706,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target;if(!t.closest||!t.closest('#mform'))return;
-  if(t.name==='staff'){const r=t.form.elements.role;if(r){r.disabled=!t.checked}const st=t.form.querySelector('.staff-term');if(st){st.hidden=!t.checked;if(t.checked&&!st.querySelector('input:checked'))st.querySelector('input').checked=true}}
+  if(t.name==='staff'){const r=t.form.elements.role;if(r){r.disabled=!t.checked}const st=t.form.querySelector('.staff-term');if(st){st.hidden=!t.checked;if(t.checked){const cy=new Date().getFullYear();const fut=[...st.querySelectorAll('input')].filter(i=>+i.name.slice(3)>=cy);if(!fut.some(i=>i.checked)){const c=st.querySelector(`[name=sy_${cy}]`);if(c)c.checked=true}}}}
   if(t.name==='birth'){const o=$('#age-out');if(o)o.value=t.value?'만 '+ageOf(t.value)+'세':''}
 });
 ACT['m-sort']=t=>{const k=t.dataset.k;if(mf.sort===k)mf.dir*=-1;else{mf.sort=k;mf.dir=1}render()};
@@ -722,14 +722,16 @@ function memberForm(m={}){
   <label class="f">가입일 (선택)${wheelField(m.joined,'joined','ymd','가입일')}</label></div>
   <div class="grid2"><label class="check" style="align-self:end;padding-bottom:8px"><input type="checkbox" name="staff"${(isStaff(m)||isStaff(m,curY()+1))?' checked':''}> 운영진</label>
   <label class="f">직책 (운영진 체크 시 선택)<select class="in" name="role"${(isStaff(m)||isStaff(m,curY()+1))?'':' disabled'}><option value="">선택</option>${ROLES.map(r=>`<option${(staffRole(m)||staffRole(m,curY()+1)||m.role)===r?' selected':''}>${r}</option>`).join('')}</select></label></div>
-  <div class="f staff-term"${(isStaff(m)||isStaff(m,curY()+1))?'':' hidden'}><span>임기 (중복 선택 가능)</span><div class="iopick">${[curY(),curY()+1].map((y,i)=>`<label><input type="checkbox" name="sy_${y}"${isStaff(m,y)?' checked':''}><span>${y}년 (${i?'내년':'올해'})</span></label>`).join('')}</div></div>
+  <div class="f staff-term"${(isStaff(m)||isStaff(m,curY()+1))?'':' hidden'}><span>임기 (중복 선택 가능)</span><div class="iopick">${staffYearList(m).map(y=>`<label><input type="checkbox" name="sy_${y}"${isStaff(m,y)?' checked':''}><span>${y}년</span></label>`).join('')}</div></div>
   <div class="f">등록 연도 <span style="font-weight:500">(매년 연장 시 체크 · 탈퇴·게스트 전환 후에도 기록 유지)</span><div class="cbchips">${(()=>{const ys=yearsOf(m);const mx=Math.max(new Date().getFullYear()+1,...ys);const o=[];for(let y=CLUB_Y;y<=mx;y++)o.push(y);return o.map(y=>`<label><input type="checkbox" name="yr_${y}"${ys.includes(y)?' checked':''}>${y}년</label>`).join('')})()}</div></div>
   <label class="f">메모<textarea class="in" name="memo" placeholder="선호 포지션, 참고사항 등">${h(m.memo)}</textarea></label>
   ${m.id&&isCur(m)?`<div class="convbox"><div><b>게스트로 전환</b><span>가끔 참석하는 경우. 게스트 명단으로 이동, 등록 연도 기록 유지</span></div><button type="button" class="btn" data-act="m-to-guest" data-id="${m.id}">게스트 전환</button></div>`:''}
   <datalist id="areas-m">${SEOUL.concat(NEAR).map(a=>`<option value="${a}">`).join('')}</datalist>`;
 }
+/* 임기 버튼: 기록이 있는 첫 해부터 올해까지, 8월부터는 다음 해도 */
+function staffYearList(m){const t=new Date(),y0=t.getFullYear(),last=t.getMonth()>=7?y0+1:y0;const ys=Object.keys(staffMap(m)).map(Number).filter(Boolean);const first=Math.min(y0,...ys),end=Math.max(last,...ys);const out=[];for(let y=first;y<=end;y++)out.push(y);return out}
 function staffFromFd(fd,old){const sy={...staffMap(old)};const role=(fd.role||'').trim();
-  [curY(),curY()+1].forEach(y=>{if(fd.staff&&fd['sy_'+y])sy[String(y)]=role;else delete sy[String(y)]});/* 지난 연도 기록은 그대로 보존 */
+  Object.keys(fd).filter(k=>/^sy_\d{4}$/.test(k)).forEach(k=>{const y=k.slice(3);if(!fd.staff){if(y>=String(curY()))delete sy[y];return}if(fd[k]===true){if(!(y in sy)||y>=String(curY()))sy[y]=role}else delete sy[y]});/* 화면에 없는 연도는 그대로 보존 · 지난 해 직책은 유지 */
   return {staffYears:sy,staff:isStaff({staffYears:sy}),role:isStaff({staffYears:sy})?role:''}}
 const memberFromFd=(fd,old={})=>({...old,name:fd.name.trim(),gender:fd.gender,since:fd.since,level:Number(fd.level),district:(fd.district||'').trim(),work:(fd.work||'').trim(),status:fd.status,joined:fd.joined,memo:fd.memo.trim(),...staffFromFd(fd,old),birth:fd.birth||'',years:Object.keys(fd).filter(k=>k.startsWith('yr_')&&fd[k]===true).map(k=>Number(k.slice(3))).sort(),...(fd.status!==ST(old)&&['탈퇴','게스트'].includes(fd.status)?{changedYear:new Date().getFullYear(),changedAt:Date.now()}:{})});
 ACT['m-new']=()=>openModal('회원 추가',memberForm(),fd=>{const id=uid();return put('members',id,{...memberFromFd(fd),createdAt:Date.now()})});
