@@ -927,3 +927,4 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 }
 
 .mi-list{display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.45}.mi-list .check{align-items:flex-start}
+.tel{color:var(--court);font-weight:600;text-decoration:underline;text-underline-offset:2px;font-variant-numeric:tabular-nums}
