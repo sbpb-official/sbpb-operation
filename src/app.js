@@ -111,7 +111,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
-    {k:'evgames',t:'행사(MT · 내부대회) 대진: 없음 → 이벤트 상세에 "행사 대진 · 결과" (팀 설정 · 행사 대진 보기 · 점수 입력 · 팀 승수 → 동점이면 득실로 순위 · 시상 기록), 대진표에 팀 색 표시 · 점수 표시, 행사 대진은 정기모임 출석률 · 페어 통계에서 제외'},
+    {k:'evgames',t:'행사(MT · 내부대회) 대진: 없음 → 이벤트 상세에 "행사 대진 · 결과" (팀 설정(이름 · 색) · 행사 대진 보기 · 점수 입력 · 팀 승수 → 동점이면 득실로 순위 · 시상 기록), 대진표에 팀 색 표시 · 점수 표시, 행사 대진은 정기모임 출석률 · 페어 통계에서 제외'},
     {k:'attdays',t:'정기모임 출석률: 비율 · 횟수만 표시 → 줄을 누르면 출석한 날짜 · 결석한 날짜 펼침 (다시 누르면 접힘)'},
     {k:'evbtn',t:'이벤트 상단 버튼: 대회 출전 기록 · 행사 추가 → 행사 추가만 (대회 출전 기록은 행사 추가에서 종류를 개인 대회로 선택)'},
     {k:'statpick',t:'페어 통계 사람 선택: 기록에 나온 모든 사람(게스트 · 미등록 포함) → 현 회원만'},
@@ -1241,7 +1241,7 @@ function posterHtml(d=draft,inter=true){
   const c=d.cfg;const courts=c.courtList||defCourts();const PEV=evOfB(d);const PTL=PEV?teamTally(PEV):null;const N=(r,slot)=>inter?nm(r,slot):nmS(d,r,slot);
   const st=toMin(c.start),mins=Number(c.mins)||30;const lastT=(d.rounds[d.rounds.length-1]||{}).time;const end=lastT?lastT.split('–')[1]:fromMin(st+d.rounds.length*mins);
   return `<div class="poster${d.allowBlank?' blank-ok':''}"${inter?' id="poster"':''}>
-   <div class="p-head"><img class="p-logo" src="logo-g-lg.png" alt="SBPB Tennis Club"><div><div class="p-title">${h(c.title||'SBPB 정기모임')}</div><div class="p-meta">${fmtFull(c.date)} · ${h(c.meet||(c.start===REG.gameStart?REG.start:c.start))}–${end}${c.place?' · '+h(c.place):''}</div></div><span class="p-status${d.status==='확정'?'':' draft'}">${d.status==='확정'?'확정':'초안'}</span></div>${PEV&&(PEV.teams||[]).length?`<div class="p-teams">${PEV.teams.map((t,i)=>{const x=PTL&&PTL.rows[i];return `<span><i class="tdot" style="background:${TEAM_C[i%4]}"></i><b>${h(t.name)}</b>${x&&PTL.played?` <b class="num">${x.w}승</b> <span class="p-gd">득실 ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}</span>`:''}</span>`}).join('')}</div>`:''}
+   <div class="p-head"><img class="p-logo" src="logo-g-lg.png" alt="SBPB Tennis Club"><div><div class="p-title">${h(c.title||'SBPB 정기모임')}</div><div class="p-meta">${fmtFull(c.date)} · ${h(c.meet||(c.start===REG.gameStart?REG.start:c.start))}–${end}${c.place?' · '+h(c.place):''}</div></div><span class="p-status${d.status==='확정'?'':' draft'}">${d.status==='확정'?'확정':'초안'}</span></div>${PEV&&(PEV.teams||[]).length?`<div class="p-teams">${PEV.teams.map((t,i)=>{const x=PTL&&PTL.rows[i];return `<span><i class="tdot" style="background:${tcol(PEV,i)}"></i><b>${h(t.name)}</b>${x&&PTL.played?` <b class="num">${x.w}승</b> <span class="p-gd">득실 ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}</span>`:''}</span>`}).join('')}</div>`:''}
    <table class="p-table"><thead><tr><th style="width:84px">타임</th>${courts.map(x=>`<th>${h(x.name)}</th>`).join('')}<th style="width:180px">벤치</th></tr></thead><tbody>
    ${d.rounds.map((R,r)=>`<tr><td class="t"><b>${r+1}</b><span>${R.time?h(R.time):`${fromMin(st+r*mins)}–${fromMin(st+(r+1)*mins)}`}</span></td>${courts.map((_,ci)=>{const m=R.matches[ci];if(!m)return '<td class="c-none">코트 미사용</td>';const ty=mtype(d.players,m);return `<td class="c-${ty}"><div class="m"><span class="tag ${ty}">${ty}</span>${['a','b'].map(s=>`<div class="tm">${tdot(PEV,(m[s]||[])[0])}${(m[s]||[]).length===1?N(r,`m${ci}${s}0`):`${N(r,`m${ci}${s}0`)}<span class="amp">&amp;</span>${N(r,`m${ci}${s}1`)}`}</div>`).join(m.sc&&m.sc[0]!==''&&m.sc[1]!==''&&m.sc[0]!=null?`<div class="vs sc"><b${+m.sc[0]>+m.sc[1]?' class="w"':''}>${m.sc[0]}</b> : <b${+m.sc[1]>+m.sc[0]?' class="w"':''}>${m.sc[1]}</b></div>`:'<div class="vs">VS</div>')}</div></td>`}).join('')}<td class="bench">${benchHtml(R.rest.map((k,i)=>N(r,'r'+i)))}</td></tr>`).join('')}
    </tbody></table>
@@ -1628,7 +1628,8 @@ ACT['note-del']=t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='
 ACT['note-edit']=t=>{const n=S.notes.find(x=>x.id===t.dataset.id);if(!n)return;openModal('메모 수정',`<label class="f">내용<textarea class="in" name="text" rows="6">${h(n.text)}</textarea></label><label class="f">분류<select class="in" name="color">${Object.entries(NOTE_KIND).map(([c,k])=>`<option value="${c}"${n.color===c?' selected':''}>${k}</option>`).join('')}</select></label>`,fd=>put('notes',n.id,{...n,text:fd.text.trim(),color:fd.color}))};
 
 /* ---------- 행사 대진 (MT · 내부대회): 팀전 · 점수 · 시상 ---------- */
-const TEAM_C=['#2F6FBF','#D9480F','#2F9E44','#7048E8'];
+const TEAM_C=['#2F6FBF','#D9480F','#2F9E44','#7048E8'];const TEAM_CN=['파랑','주황','초록','보라'];
+const tcol=(ev,i)=>{const t=ev&&ev.teams&&ev.teams[i];return t&&t.color!=null&&TEAM_C[t.color]?TEAM_C[t.color]:TEAM_C[i%4]};
 const evOfB=b=>b&&b.cfg&&b.cfg.eventId?S.events.find(e=>e.id===b.cfg.eventId):null;
 /* 선수 key → 팀 번호 (행사에 등록된 팀 기준) */
 function teamMap(ev){const m={};((ev&&ev.teams)||[]).forEach((t,i)=>(t.members||[]).forEach(k=>m[k]=i));return m}
@@ -1638,11 +1639,11 @@ function teamTally(ev){const T=(ev&&ev.teams)||[];if(T.length<2)return null;cons
     const ta=tm[(m.a||[]).find(Boolean)],tb=tm[(m.b||[]).find(Boolean)];if(ta==null||tb==null||ta===tb)return;const x=+m.sc[0],y=+m.sc[1];played++;
     r[ta].gf+=x;r[ta].ga+=y;r[tb].gf+=y;r[tb].ga+=x;if(x>y){r[ta].w++;r[tb].l++}else if(y>x){r[tb].w++;r[ta].l++}})));
   const rank=r.slice().sort((p,q)=>q.w-p.w||(q.gf-q.ga)-(p.gf-p.ga));return {rows:r,rank,played}}
-const tdot=(ev,k)=>{if(!ev||!k)return '';const i=teamMap(ev)[k];return i==null?'':`<i class="tdot" style="background:${TEAM_C[i%4]}" title="${h(ev.teams[i].name)}"></i>`};
+const tdot=(ev,k)=>{if(!ev||!k)return '';const i=teamMap(ev)[k];return i==null?'':`<i class="tdot" style="background:${tcol(ev,i)}" title="${h(ev.teams[i].name)}"></i>`};
 function evGames(ev){if(ev.type==='개인대회')return '';const bs=S.brackets.filter(b=>b.cfg&&b.cfg.eventId===ev.id).sort((x,y)=>(x.cfg.start||'').localeCompare(y.cfg.start||''));
   const T=ev.teams||[];const tl=teamTally(ev);const aw=ev.awards||[];
-  const teamsHtml=T.length?`<div class="eg-teams">${T.map((t,i)=>`<div class="eg-team"><b><i class="tdot" style="background:${TEAM_C[i%4]}"></i>${h(t.name)}</b><span class="small muted">${h((t.members||[]).map(k=>keyName(k)).join(', '))}</span></div>`).join('')}</div>`:'<p class="small muted" style="margin:0">팀 없음 · 팀전이면 팀 설정</p>';
-  const res=tl&&tl.played?`<div class="eg-res">${tl.rank.map((x,j)=>`<span class="eg-sc${j===0&&(tl.rank[0].w!==tl.rank[1].w||(tl.rank[0].gf-tl.rank[0].ga)!==(tl.rank[1].gf-tl.rank[1].ga))?' win':''}"><i class="tdot" style="background:${TEAM_C[x.i%4]}"></i>${h(x.name)} <b class="num">${x.w}승</b> <span class="muted small">${x.l}패 · 득실 ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}</span></span>`).join('')}<span class="small muted">점수 입력 ${tl.played}경기</span></div>`:'';
+  const teamsHtml=T.length?`<div class="eg-teams">${T.map((t,i)=>`<div class="eg-team"><b><i class="tdot" style="background:${tcol(ev,i)}"></i>${h(t.name)}</b><span class="small muted">${h((t.members||[]).map(k=>keyName(k)).join(', '))}</span></div>`).join('')}</div>`:'<p class="small muted" style="margin:0">팀 없음 · 팀전이면 팀 설정</p>';
+  const res=tl&&tl.played?`<div class="eg-res">${tl.rank.map((x,j)=>`<span class="eg-sc${j===0&&(tl.rank[0].w!==tl.rank[1].w||(tl.rank[0].gf-tl.rank[0].ga)!==(tl.rank[1].gf-tl.rank[1].ga))?' win':''}"><i class="tdot" style="background:${tcol(ev,x.i)}"></i>${h(x.name)} <b class="num">${x.w}승</b> <span class="muted small">${x.l}패 · 득실 ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}</span></span>`).join('')}<span class="small muted">점수 입력 ${tl.played}경기</span></div>`:'';
   return `<div class="evgames"><div class="eg-h"><h3>행사 대진 · 결과</h3>${RO?'':`<div class="row"><button class="btn sm" data-act="eg-teams">팀 설정</button><button class="btn sm" data-act="eg-award">시상 추가</button></div>`}</div>
     ${teamsHtml}${res}
     ${bs.length?`<div class="list">${bs.map(b=>`<div class="li click" data-act="bv-open" data-id="${b.id}"><div class="grow"><div class="ttl">${h(b.cfg.title||ev.title)}</div><div class="sub">${h(b.cfg.start||'')}${b.rounds?` · ${b.rounds.length}타임`:''} · ${(b.cfg.courtList||[]).map(c=>h(c.name)).join(' · ')}</div></div><span class="chip">대진 보기</span></div>`).join('')}</div>`:'<p class="small muted" style="margin:8px 0 0">등록된 행사 대진 없음</p>'}
@@ -1652,9 +1653,9 @@ ACT['eg-award']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;
 ACT['eg-award-del']=async t=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const aw=(ev.awards||[]).slice();aw.splice(+t.dataset.i,1);const {id,...rest}=ev;await put('events',ev.id,{...rest,awards:aw});render()};
 ACT['eg-teams']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const T=(ev.teams&&ev.teams.length?ev.teams:[{name:'팀 1',members:[]},{name:'팀 2',members:[]}]);const tm=teamMap({teams:T});
   const ppl=byName(S.members.filter(isCur).map(m=>({key:m.id,name:m.name}))).concat(byName(S.guests.map(g=>({key:g.id,name:g.name,g:true}))).filter(p=>tm[p.key]!=null));
-  openModal('팀 설정',`<div class="grid2">${T.map((t,i)=>`<label class="f"><span><i class="tdot" style="background:${TEAM_C[i]}"></i>팀 ${i+1} 이름</span><input class="in" name="tn${i}" value="${h(t.name)}"></label>`).join('')}</div>
+  openModal('팀 설정',`<div class="grid2">${T.map((t,i)=>`<div class="f"><label class="f" style="margin:0">팀 ${i+1} 이름<input class="in" name="tn${i}" value="${h(t.name)}"></label><label class="f" style="margin:6px 0 0">색<select class="in" name="tc${i}">${TEAM_C.map((c,ci)=>`<option value="${ci}"${(t.color!=null?t.color:i)===ci?' selected':''}>${TEAM_CN[ci]}</option>`).join('')}</select></label></div>`).join('')}</div>
     <p class="small muted" style="margin:4px 0 8px">사람마다 팀 선택 · 다시 누르면 해제</p><div class="eg-pick">${ppl.map(p=>`<div class="eg-prow"><span>${h(p.name)}${p.g?' <span class="gmark">G</span>':''}</span><span class="seg">${T.map((t,i)=>`<button type="button" data-act="eg-tpick" data-k="${h(p.key)}" data-i="${i}" class="${tm[p.key]===i?'on':''}">${i+1}</button>`).join('')}</span><input type="hidden" name="tk_${h(p.key)}" value="${tm[p.key]==null?'':tm[p.key]}"></div>`).join('')}</div>`,
-    async fd=>{const teams=T.map((t,i)=>({name:(fd['tn'+i]||'').trim()||`팀 ${i+1}`,members:[]}));Object.keys(fd).filter(k=>k.startsWith('tk_')&&fd[k]!=='').forEach(k=>teams[+fd[k]].members.push(k.slice(3)));
+    async fd=>{const teams=T.map((t,i)=>({name:(fd['tn'+i]||'').trim()||`팀 ${i+1}`,color:Number(fd['tc'+i]??i),members:[]}));Object.keys(fd).filter(k=>k.startsWith('tk_')&&fd[k]!=='').forEach(k=>teams[+fd[k]].members.push(k.slice(3)));
       const {id,...rest}=ev;await put('events',ev.id,{...rest,teams});toast('팀 저장');render()})};
 ACT['eg-tpick']=t=>{const row=t.closest('.eg-prow');const inp=row.querySelector('input');const on=t.classList.contains('on');row.querySelectorAll('button').forEach(b=>b.classList.remove('on'));if(on)inp.value='';else{t.classList.add('on');inp.value=t.dataset.i}};
 /* 점수 입력: 대진 보기 창에서 경기마다 게임 점수 */
@@ -1668,7 +1669,7 @@ function eventBracketImport(j){const ev=S.events.find(e=>e.date===j.date&&(!j.ev
   const ix=nameIndex();const unknown=new Set();const kof=n=>{if(!n)return null;const p=ix[n];if(p)return p.key;unknown.add(n);return 'n:'+n};
   const players={};const reg=n=>{const k=kof(n);if(!k)return null;if(!players[k]){const p=ix[n];players[k]=p?{name:p.name,gender:p.gender,level:p.level,guest:p.guest}:{name:n,gender:'',level:3,guest:true,unreg:true}}return k};
   const rounds=j.rounds.map(R=>({matches:R.matches.map(m=>{const o={a:m.a.map(reg),b:m.b.map(reg)};if(m.t)o.t=m.t;return o}),rest:(R.rest||[]).map(reg).filter(Boolean),...(R.time?{time:R.time}:{})}));
-  const teams=(j.teams||[]).map(t=>({name:t.name,members:t.members.map(kof).filter(Boolean)}));
+  const teams=(j.teams||[]).map((t,i)=>({name:t.name,color:t.color!=null?t.color:i,members:t.members.map(kof).filter(Boolean)}));
   const body=`<div class="mi-list"><div><b>${h(ev.title)}</b> ${fmtD(ev.date)}</div><div>${h(j.courts.join(' · '))} · ${h(j.start)} 시작 · ${rounds.length}타임 · ${Object.keys(players).length}명</div>${teams.length?`<div>팀: ${teams.map(t=>h(t.name)+' '+t.members.length+'명').join(' · ')}</div>`:''}</div>${unknown.size?`<p class="small" style="margin:8px 0 0">회원 · 게스트 목록에 없는 이름: ${[...unknown].map(h).join(', ')}</p>`:''}`;
   openModal('행사 대진 가져오기',body,async()=>{const bid='ev-'+ev.id+'-'+(j.key||'main');
     await put('brackets',bid,{cfg:{title:j.title||ev.title,date:ev.date,place:ev.place||'',start:j.start,end:j.end||'',mins:j.mins||30,courtList:j.courts.map(n=>({name:n,pref:''})),eventId:ev.id},players,rounds,status:'확정',createdBy:myId||null});
