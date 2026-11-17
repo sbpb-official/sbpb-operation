@@ -54,7 +54,8 @@ const staffChip=m=>isStaff(m)?` <span class="chip staff">${h((staffRole(m)||'운
 const ddayLabel=s=>{const n=diffDays(s);return n===0?'D-DAY':n>0?`D-${n}`:`D+${-n}`};
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 const SEOUL=['강남구','강동구','강북구','강서구','관악구','광진구','구로구','금천구','노원구','도봉구','동대문구','동작구','마포구','서대문구','서초구','성동구','성북구','송파구','양천구','영등포구','용산구','은평구','종로구','중구','중랑구'];
-const NEAR=['성남시','하남시','과천시','고양시','부천시','광명시','구리시','남양주시','안양시','수원시','용인시','의정부시'];
+/* 경기도 시 · 군 전체 (가나다순) */
+const NEAR=['가평군','고양시','과천시','광명시','광주시','구리시','군포시','김포시','남양주시','동두천시','부천시','성남시','수원시','시흥시','안산시','안성시','안양시','양주시','양평군','여주시','연천군','오산시','용인시','의왕시','의정부시','이천시','파주시','평택시','포천시','하남시','화성시'];
 const EV_TYPES=['정기모임','내부대회','교류전','MT','개인대회','기타'];
 const EV_STATUS=['기획중','확정','완료','취소'];
 const REG={weekday:6,start:'09:00',end:'12:00',gameStart:'09:30',place:'서울시립대',title:'SBPB 정기모임'};
@@ -111,6 +112,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'areaall',t:'회원 거주지 · 직장 선택 목록: 경기 12개 시 · 직접 입력 후 목록으로 돌아갈 수 없음 → 경기도 시 · 군 31곳 전체(가나다순), 직접 입력 칸 옆 "목록" 버튼으로 다시 선택'},
     {k:'evdraw',t:'대진표 모임 설정: 정기모임 기본값만 → "행사 대진" 버튼 (행사 선택 후 형식 프리셋 선택 또는 옵션 직접 조합: 참가 단위 개인 로테이션 · 고정 페어 · 단식 / 진행 방식 타임표 · 리그 · 토너먼트 · 리그 → 토너먼트 / 팀전 / 조 · 진출 수), 프리셋 추가 · 수정 · 삭제, 팀이 있는 타임표는 같은 팀끼리 페어 · 다른 팀과 대결로 자동 생성'},
     {k:'trtree',t:'행사 리그 · 토너먼트: 목록 → 본선은 나뭇가지 대진표(라운드별 칸 · 우승 칸), 리그 경기 목록(⋮⋮ 끌어서 진행 순서 변경), 점수 입력 시 승수 → 득실로 조 순위 자동 계산 · 점수 없이 승자만 기록 가능(지난 행사용), 결과 없으면 조 순위 직접 입력'},
     {k:'tourney',t:'행사 토너먼트: 없음 → 우승 · 본선(4강 · 결승) · 조별 예선 순위 기록 (이긴 팀을 누르거나 점수 입력으로 승자 기록, 결승 승자는 우승으로 표시) · 파일로 조 편성 · 결과 · 시상 가져오기'},
@@ -372,7 +374,7 @@ const AREA_ITEMS=()=>[{v:'',l:'선택 안 함'},...SEOUL.map(a=>({v:a,l:areaLabe
 function areaField(name,val,ph){
   const known=!val||SEOUL.includes(val)||NEAR.includes(val);
   const opt=(v,l)=>`<button type="button" role="option" data-act="area-pick" data-v="${h(v)}" aria-selected="${String(v===val)}">${h(l)}</button>`;
-  return `<div class="areaf lvsel" data-area="${name}" data-ph="${h(ph)}"><button type="button" class="in pickbtn${val?'':' ph'}" data-act="area-open" aria-haspopup="listbox" aria-expanded="false"${known?'':' hidden'}>${h(val?areaLabel(val):ph)}<span class="lv-caret" aria-hidden="true">▾</span></button><div class="lv-pop" role="listbox" hidden>${opt('','선택 안 함')}<div class="lv-grp">서울</div>${SEOUL.map(a=>opt(a,a)).join('')}<div class="lv-grp">경기</div>${NEAR.map(a=>opt(a,a)).join('')}<div class="lv-grp">목록에 없으면</div><button type="button" role="option" data-act="area-pick" data-v="__custom">직접 입력</button></div><input class="in" type="text" name="${name}" value="${h(val)}" placeholder="예: 김포시"${known?' hidden':''}></div>`;
+  return `<div class="areaf lvsel" data-area="${name}" data-ph="${h(ph)}"><button type="button" class="in pickbtn${val?'':' ph'}" data-act="area-open" aria-haspopup="listbox" aria-expanded="false"${known?'':' hidden'}>${h(val?areaLabel(val):ph)}<span class="lv-caret" aria-hidden="true">▾</span></button><div class="lv-pop" role="listbox" hidden>${opt('','선택 안 함')}<div class="lv-grp">서울</div>${SEOUL.map(a=>opt(a,a)).join('')}<div class="lv-grp">경기</div>${NEAR.map(a=>opt(a,a)).join('')}<div class="lv-grp">목록에 없으면</div><button type="button" role="option" data-act="area-pick" data-v="__custom">직접 입력</button></div><div class="area-cust"${known?' hidden':''}><input class="in" type="text" name="${name}" value="${h(val)}" placeholder="예: 세종시 · 인천 부평구"><button type="button" class="btn" data-act="area-open" aria-haspopup="listbox" aria-expanded="false">목록</button></div></div>`;
 }
 // dropdown lists (level, area): float over the form at the button, always fully on screen with their own scroll
 // all custom dropdowns: open DOWNWARD from the pressed control, list scrolls inside.
@@ -394,8 +396,9 @@ function placeOpenPop(e){const p=document.querySelector('.lv-pop:not([hidden])')
 document.addEventListener('scroll',placeOpenPop,true);window.addEventListener('resize',()=>placeOpenPop());if(window.visualViewport)visualViewport.addEventListener('resize',()=>placeOpenPop());
 ACT['area-open']=t=>{const wrap=t.closest('.areaf');const pop=wrap.querySelector('.lv-pop');const open=pop.hidden;closeLv();pop.hidden=!open;t.setAttribute('aria-expanded',String(open));if(open){placePop(t,pop);const s=pop.querySelector('[aria-selected="true"]');if(s)pop.scrollTop=s.offsetTop-pop.clientHeight/2+s.offsetHeight/2}};
 ACT['area-pick']=t=>{const wrap=t.closest('.areaf');const btn=wrap.querySelector('.pickbtn');const inp=wrap.querySelector('input');const v=t.dataset.v;closeLv();
-  if(v==='__custom'){btn.hidden=true;inp.hidden=false;inp.value='';inp.focus();return}
-  inp.value=v;btn.classList.toggle('ph',!v);btn.innerHTML=h(v?areaLabel(v):wrap.dataset.ph)+'<span class="lv-caret" aria-hidden="true">▾</span>';
+  const cust=wrap.querySelector('.area-cust');
+  if(v==='__custom'){btn.hidden=true;cust.hidden=false;inp.value='';inp.focus();return}
+  btn.hidden=false;cust.hidden=true;inp.value=v;btn.classList.toggle('ph',!v);btn.innerHTML=h(v?areaLabel(v):wrap.dataset.ph)+'<span class="lv-caret" aria-hidden="true">▾</span>';
   wrap.querySelectorAll('.lv-pop [data-act="area-pick"]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.v===v)));btn.focus()};
 /* ---------- store ---------- */
 const COLS=['members','events','notes','courts','brackets','guests','regstat','rentals','dues','ledger','names','attend','presets'];
