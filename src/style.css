@@ -345,7 +345,8 @@ a.addr{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:1
 .open-box .big{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:18px;color:var(--ink);line-height:1.3}
 .open-box .big b{font-weight:800;font-variant-numeric:tabular-nums}
 .open-box .big .dday{font-family:var(--f-display);font-size:26px;font-weight:800;color:var(--court);line-height:1}
-.open-box.soon{border-left-color:var(--warn,#E8590C)}.open-box.soon .big .dday{color:var(--warn,#E8590C)}
+.open-box.res{background:color-mix(in srgb,var(--warn) 9%,var(--surface));border-color:color-mix(in srgb,var(--warn) 25%,var(--line));border-left-color:var(--warn)}
+.open-box.res .l,.open-box.res .big .dday{color:var(--warn)}
 .open-box .d{font-size:13px;color:var(--muted)}.open-box .d b{color:var(--ink);font-weight:700}
 .prio{border-top:1px solid var(--line);padding-top:10px}
 .prio .l{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}

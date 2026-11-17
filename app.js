@@ -105,6 +105,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'resbox',t:'코트 카드 오픈 상자 색: 주민 우선 · 일반 모두 초록, 하루 안으로 다가오면 주황 → 주민 우선 오픈은 항상 주황(테두리 · 이름 · D-day · 배경), 일반 오픈은 항상 초록'},
     {k:'resdday',t:'주민 우선 예약 오픈 D-day 색: 대시보드 예약 오픈 목록은 기본 글자색 · 코트 › 45일 내 예약 오픈은 진한 주황 → 둘 다 주민 우선 배지와 같은 주황'},
     {k:'chipgap2',t:'행사 목록 종류 배지 · 진행 상태: 사이 간격 약 12px · 제목에 바로 붙음 · 세로 중심 어긋남 → 사이 간격 8px로 일정, 제목과 배지 사이 4px, 배지와 진행 상태 세로 가운데 맞춤'},
     {k:'tempguest',t:'미등록 이름 표시 이름: "일회성"(일회성으로 표시 · 일회성 게스트 · 일회성 해제) → "임시 게스트"(임시 게스트로 표시 · 임시 게스트 · 임시 게스트 해제), 안내 문구 "한 번 온 사람은 일회성으로 표시" → "정규 게스트가 아니면 임시 게스트로 표시"'},
@@ -1655,11 +1656,11 @@ function viewCourts(){
     const g=nextOpen(c.genRule),r=c.resident?nextOpen(c.resRule):null;
     const pm=priorityMembers(c);
     const fd=d=>`${d.getMonth()+1}.${d.getDate()} (${WD[d.getDay()]})`;
-    const ob=(l,d,rule)=>{if(rule&&rule.type==='rolling'){const n=Number(rule.days||0);const [hh,mi]=(rule.time||'00:00').split(':').map(Number);const now=new Date();const opened=now.getHours()*60+now.getMinutes()>=hh*60+mi;
+    const ob=(l,d,rule)=>{const rc=l.startsWith('주민')?' res':'';if(rule&&rule.type==='rolling'){const n=Number(rule.days||0);const [hh,mi]=(rule.time||'00:00').split(':').map(Number);const now=new Date();const opened=now.getHours()*60+now.getMinutes()>=hh*60+mi;
         const upto=today0();upto.setDate(upto.getDate()+n-(opened?0:1));const nx=today0();nx.setDate(nx.getDate()+(opened?1:0));const nxUse=new Date(nx);nxUse.setDate(nxUse.getDate()+n);
-        return `<div class="open-box roll"><div class="l">${l}</div><div class="big">이용일 <b>${n}일 전</b>${rule.time?` <b>${h(rule.time)}</b>`:''}</div><div class="d">지금 <b>${fd(upto)}</b> 이용분까지 예약 가능</div><div class="d">다음 오픈 ${opened?'내일':'오늘'} ${h(rule.time||'')} → ${fd(nxUse)} 이용분</div></div>`}
-      if(!d)return `<div class="open-box"><div class="l">${l}</div><div class="big">미정</div><div class="d">${h(ruleText(rule))}</div></div>`;
-      const dd=diffDays(ymd(d));return `<div class="open-box${dd<=1?' soon':''}"><div class="l">${l}</div><div class="big"><span class="dday">${ddayLabel(ymd(d))}</span><b>${fd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}</b></div><div class="d">${h(ruleText(rule))}</div></div>`};
+        return `<div class="open-box roll${rc}"><div class="l">${l}</div><div class="big">이용일 <b>${n}일 전</b>${rule.time?` <b>${h(rule.time)}</b>`:''}</div><div class="d">지금 <b>${fd(upto)}</b> 이용분까지 예약 가능</div><div class="d">다음 오픈 ${opened?'내일':'오늘'} ${h(rule.time||'')} → ${fd(nxUse)} 이용분</div></div>`}
+      if(!d)return `<div class="open-box${rc}"><div class="l">${l}</div><div class="big">미정</div><div class="d">${h(ruleText(rule))}</div></div>`;
+      const dd=diffDays(ymd(d));return `<div class="open-box${rc}"><div class="l">${l}</div><div class="big"><span class="dday">${ddayLabel(ymd(d))}</span><b>${fd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}</b></div><div class="d">${h(ruleText(rule))}</div></div>`};
     return `<article class="ccard"><div class="hd"><div><h3>${h(c.name)}</h3><div class="cbadges">${c.district?`<span class="cb cb-area">${h(c.district)}</span>`:''}${surfList(c.surface).map(s=>`<span class="cb ${({'인조잔디':'cb-grass','하드':'cb-hard','클레이':'cb-clay'})[s]||'cb-etc'}">${h(s)}</span>`).join('')}${c.indoor?'<span class="cb cb-io">실내</span>':''}${c.outdoor?'<span class="cb cb-io">실외</span>':''}${c.courts?`<span class="cb-n">${h(c.courts)}</span>`:''}${isSmash(c)?'<span class="cb cb-etc">스매시 앱 예약</span>':''}</div>${addrLink(c.address,c.name,c.map)}</div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
     ${c.genRule&&c.genRule.type?`<div class="opens">${c.resident?ob('주민 우선 오픈',r,c.resRule):''}${ob('일반 오픈',g,c.genRule)}</div>`:''}
     <dl class="kv"><dt>요금</dt><dd>${feeText(c)?h(feeText(c)):'-'}</dd>${c.memo?`<dt>메모</dt><dd style="white-space:pre-wrap">${h(c.memo)}</dd>`:''}</dl>
