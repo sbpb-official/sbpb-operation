@@ -106,7 +106,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
     {k:'blank',t:'대진표 확정 · 이미지 다운로드: 빈자리가 있으면 불가 → 기본은 그대로, "공란 허용"을 켜면 빈자리를 – 로 두고 확정 · 다운로드 가능 (현장에서 채우는 날용)'},
-    {k:'archive',t:'대진표 기록: 앱에서 만든 대진표만 → 지난 대진표(이미지) 기록 가져오기 · "이전 기록" 표시, 대시보드 캘린더 정기모임 날짜와 대진표 탭에서 보기, 회원 · 게스트 목록에 없는 이름은 "미등록 이름"(횟수 · 날짜 · 페어)으로 정리, 나중에 같은 이름으로 등록하면 지난 기록에 자동 연결'},
+    {k:'archive',t:'대진표 기록: 참석자 섹션에 붙은 "대진표 기록" · 앱에서 만든 대진표만 → 대진표 탭의 별도 섹션 "대진 히스토리", 지난 대진표(이미지) 기록 가져오기 · "이전 기록" 표시, 대시보드 캘린더 정기모임 날짜에서도 보기, 회원 · 게스트 목록에 없는 이름은 "미등록 이름"(횟수 · 날짜 · 페어)으로 정리, 나중에 같은 이름으로 등록하면 지난 기록에 자동 연결'},
     {k:'historyui',t:'업데이트 기록: 11.14부터 · 배포마다 잘게 나뉜 버전 · 긴 목록 → 최초 요청(11.12 Claude 아티팩트 시기)부터 실제 배포 날짜 · 시간대 기준 기록, 같은 날 배포는 한 버전으로 묶음(하루 20개 안팎을 넘으면 나눔), 고정 높이 상자 안에서 페이지 넘겨 보기'},
     {k:'news',t:'업데이트 안내: 접속 때 바뀐 내용 전체를 창에 표시 → 버전과 바뀐 항목 수만 짧게 안내, 상세 내역은 설정 › 업데이트 기록 (상세 보기 버튼)'},
     {k:'staff',t:'운영진: 체크 하나로 즉시 바뀜(연도 구분 없음) → 회원 수정 › 운영진 체크 후 임기 연도 선택, 지난 임기 기록 보존, 내년 운영진은 명단에 흐린 배지 (8월부터 다음 해 선택 가능)'},
@@ -1147,7 +1147,7 @@ function logicHtml(){
 }
 document.addEventListener('toggle',e=>{if(e.target.id==='logic'){lsSet('sbpb-logic-open',e.target.open);const s=e.target.querySelector('summary span');if(s)s.textContent=e.target.open?'접기':'펼치기'}},true);
 function historyPanel(list){
-  return `<section class="panel"><div class="panel-h"><h2>대진표 기록</h2><span class="small muted">${list.length}건</span></div><div class="list hist" data-ks="hist">${list.length?list.map(b=>`<div class="li click" data-act="bv-open" data-id="${b.id}">${dateBox(b.cfg?.date)}<div class="grow"><div class="ttl">${h(b.cfg?.title)}</div><div class="sub">${fmtFull(b.cfg?.date)} · ${Object.keys(b.players||{}).length}명</div></div>${b.archive?'<span class="chip">이전 기록</span>':''}<span class="chip ${b.status==='확정'?'ball':''}">${h(b.status)}</span></div>`).join(''):'<div class="muted small">저장된 대진표 없음. 확정 시 대진표 기록에 저장</div>'}</div>${unregHtml()}</section>`;
+  return `<section class="panel"><div class="panel-h"><h2>대진 히스토리</h2><span class="small muted">${list.length}건</span></div><div class="list hist" data-ks="hist">${list.length?list.map(b=>`<div class="li click" data-act="bv-open" data-id="${b.id}">${dateBox(b.cfg?.date)}<div class="grow"><div class="ttl">${h(b.cfg?.title)}</div><div class="sub">${fmtFull(b.cfg?.date)} · ${Object.keys(b.players||{}).length}명</div></div>${b.archive?'<span class="chip">이전 기록</span>':''}<span class="chip ${b.status==='확정'?'ball':''}">${h(b.status)}</span></div>`).join(''):'<div class="muted small">저장된 대진표 없음. 저장 · 확정 시 대진 히스토리에 기록</div>'}</div>${unregHtml()}</section>`;
 }
 async function relinkArchive(){if(RO||!db)return;const ix=nameIndex();
   for(const b of S.brackets){if(!b.archive)continue;const map={};Object.keys(b.players||{}).forEach(k=>{if(k.startsWith('n:')){const p=ix[b.players[k].name];if(p&&!b.players[p.key])map[k]=p}});
@@ -1212,8 +1212,7 @@ function viewDraw(){
     <div class="row" style="margin-top:10px;flex-wrap:nowrap"><input class="in" id="pl-q" placeholder="이름·닉네임 검색" value="${h(plq)}" data-plq="1" style="flex:1"><div class="seg">${[['','전체'],['M','회원'],['G',`게스트 ${all.filter(p=>p.guest).length}`]].map(([v,l])=>`<button class="${plf===v?'on':''}" data-act="pl-f" data-v="${v}">${l}</button>`).join('')}</div></div>
     ${plist}
     <button class="btn ball" style="width:100%;margin-top:14px;padding:10px" data-act="gen">${draft?'대진표 다시 생성':'대진표 생성'}</button>
-    </section>
-    ${historyPanel(saved)}`;
+    </section>`;
   let selbar='';
   if(draft&&sel){const k=getSlot(sel.r,sel.slot);const inMatch=sel.slot[0]==='m';selbar=`<div class="selbar"><span><b>${h(dn(draft.players[k]?.name))}</b> 선택됨 (${sel.r+1}타임) · 같은 타임의 다른 이름 또는 빈자리 선택</span><span class="row" style="margin-left:auto"><button class="btn sm" data-act="sel-clear">${inMatch?'자리 비우기 (벤치로)':'이 타임에서 빼기'}</button><button class="btn sm danger" data-act="sel-out">모든 타임에서 빼기</button><button class="btn sm ghost" data-act="sel-cancel">취소</button></span></div>`}
   const stage=draft?`<div class="stage-bar"><div class="hint">이름 선택 시 변경·삭제 메뉴 표시 <button class="btn sm ghost" data-act="zoom-toggle">${posterZoom==='fit'?'크게 보기':'화면에 맞추기'}</button></div>
@@ -1223,7 +1222,8 @@ function viewDraw(){
     `<div class="empty" style="padding:60px 16px"><b>참석자 목록에서 인원 선택 후 '대진표 생성' 버튼으로 생성</b>기존 카톡 공지와 같은 형식(타임 · 코트 1–3 · 벤치)으로 생성</div>`;
   return `<div class="page-head"><div><h1>대진표</h1><p>매주 토요일 정기모임 대진 자동 생성, 수정 후 이미지 다운로드 및 카톡방 공지</p></div></div>
   ${logicHtml()}
-  <div class="draw"><div>${settings}</div><div style="min-width:0">${stage}</div></div>`;
+  <div class="draw"><div>${settings}</div><div style="min-width:0">${stage}</div></div>
+  <div class="draw-hist">${historyPanel(saved)}</div>`;
 }
 document.addEventListener('input',e=>{
   const t=e.target;
@@ -1876,7 +1876,7 @@ async function archiveImport(list,people={}){const ix=nameIndex();const plan=[],
     const rounds=e.rounds.map(R=>({matches:R.matches.map(m=>{const all=[...m.a,...m.b].every(x=>!x);const o={a:m.a.map(n=>key(n,m.t)),b:m.b.map(n=>key(n,m.t))};if(!all&&m.t)o.t=m.t;return o}),rest:R.rest.map(n=>key(n)),...(R.time?{time:R.time}:{})}));
     const first=(e.rounds[0]||{}).time;const start=first?first.split('–')[0].padStart(5,'0'):'09:30';
     try{await put('brackets','arch-'+e.date,{cfg:{title:'SBPB 정기모임',date:e.date,place:REG.place,start,end:'12:00',mins:30,courtList:[1,2,3].map(i=>({name:`코트 ${i}`,pref:''}))},players,rounds,status:'확정',archive:true,allowBlank:!!e.blank,createdBy:myId||null});done++}catch(err){}}
-  alert(`대진 기록 가져오기 완료 ${done}건${skipRain.length?`\n우천 취소일 제외: ${skipRain.join(', ')}`:''}${skipHas.length?`\n이미 대진표가 있어 제외: ${skipHas.join(', ')}`:''}${unknown.size?`\n\n회원·게스트 목록에 없는 이름 ${unknown.size}명 (대진표 › 대진표 기록 › 미등록 이름에서 확인)`:''}`);render()}
+  alert(`대진 기록 가져오기 완료 ${done}건${skipRain.length?`\n우천 취소일 제외: ${skipRain.join(', ')}`:''}${skipHas.length?`\n이미 대진표가 있어 제외: ${skipHas.join(', ')}`:''}${unknown.size?`\n\n회원·게스트 목록에 없는 이름 ${unknown.size}명 (대진표 › 대진 히스토리 › 미등록 이름에서 확인)`:''}`);render()}
 ACT['data-import']=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='application/json,.json';
   inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;let j;try{j=JSON.parse(await f.text())}catch(e){toast('JSON 파일 읽기 실패');return}
     if(j&&Array.isArray(j.archive)){closeModal();await archiveImport(j.archive,j.people||{});return}

@@ -831,6 +831,8 @@ details[open]>summary .led-tg i{transform:rotate(180deg)}
 
 .poster.blank-ok .nm.empty,.poster.blank-ok .nm-s.empty{border-color:transparent;background:none;color:#8A908C;box-shadow:none}
 
+.draw-hist{margin-top:16px}
+
 /* modal */
 .ov{position:fixed;left:0;right:0;top:0;bottom:0;height:auto;   /* full screen, not the area above the keyboard: the keyboard covers the modal instead of shrinking it */
   background:rgba(10,16,24,.5);z-index:20;display:flex;align-items:center;justify-content:center;overflow:hidden;overflow:clip;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
