@@ -105,6 +105,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'singles',t:'대진표 단식 경기: 표시 불가(복식만) → 남단 · 여단 · 혼단 경기 한 명씩 표시(지난 대진 기록용), 색은 같은 성별 복식과 같은 계열'},
     {k:'resbox',t:'코트 카드 오픈 상자 색: 주민 우선 · 일반 모두 초록, 하루 안으로 다가오면 주황 → 주민 우선 오픈은 항상 주황(테두리 · 이름 · D-day · 배경), 일반 오픈은 항상 초록'},
     {k:'resdday',t:'주민 우선 예약 오픈 D-day 색: 대시보드 예약 오픈 목록은 기본 글자색 · 코트 › 45일 내 예약 오픈은 진한 주황 → 둘 다 주민 우선 배지와 같은 주황'},
     {k:'chipgap2',t:'행사 목록 종류 배지 · 진행 상태: 사이 간격 약 12px · 제목에 바로 붙음 · 세로 중심 어긋남 → 사이 간격 8px로 일정, 제목과 배지 사이 4px, 배지와 진행 상태 세로 가운데 맞춤'},
@@ -1166,7 +1167,7 @@ function posterHtml(d=draft,inter=true){
   return `<div class="poster${d.allowBlank?' blank-ok':''}"${inter?' id="poster"':''}>
    <div class="p-head"><img class="p-logo" src="logo-g-lg.png" alt="SBPB Tennis Club"><div><div class="p-title">${h(c.title||'SBPB 정기모임')}</div><div class="p-meta">${fmtFull(c.date)} · ${h(c.meet||(c.start===REG.gameStart?REG.start:c.start))}–${end}${c.place?' · '+h(c.place):''}</div></div><span class="p-status${d.status==='확정'?'':' draft'}">${d.status==='확정'?'확정':'초안'}</span></div>
    <table class="p-table"><thead><tr><th style="width:84px">타임</th>${courts.map(x=>`<th>${h(x.name)}</th>`).join('')}<th style="width:180px">벤치</th></tr></thead><tbody>
-   ${d.rounds.map((R,r)=>`<tr><td class="t"><b>${r+1}</b><span>${R.time?h(R.time):`${fromMin(st+r*mins)}–${fromMin(st+(r+1)*mins)}`}</span></td>${courts.map((_,ci)=>{const m=R.matches[ci];if(!m)return '<td class="c-none">코트 미사용</td>';const ty=mtype(d.players,m);return `<td class="c-${ty}"><div class="m"><span class="tag ${ty}">${ty}</span><div class="tm">${N(r,`m${ci}a0`)}<span class="amp">&amp;</span>${N(r,`m${ci}a1`)}</div><div class="vs">VS</div><div class="tm">${N(r,`m${ci}b0`)}<span class="amp">&amp;</span>${N(r,`m${ci}b1`)}</div></div></td>`}).join('')}<td class="bench">${benchHtml(R.rest.map((k,i)=>N(r,'r'+i)))}</td></tr>`).join('')}
+   ${d.rounds.map((R,r)=>`<tr><td class="t"><b>${r+1}</b><span>${R.time?h(R.time):`${fromMin(st+r*mins)}–${fromMin(st+(r+1)*mins)}`}</span></td>${courts.map((_,ci)=>{const m=R.matches[ci];if(!m)return '<td class="c-none">코트 미사용</td>';const ty=mtype(d.players,m);return `<td class="c-${ty}"><div class="m"><span class="tag ${ty}">${ty}</span>${['a','b'].map(s=>`<div class="tm">${(m[s]||[]).length===1?N(r,`m${ci}${s}0`):`${N(r,`m${ci}${s}0`)}<span class="amp">&amp;</span>${N(r,`m${ci}${s}1`)}`}</div>`).join('<div class="vs">VS</div>')}</div></td>`}).join('')}<td class="bench">${benchHtml(R.rest.map((k,i)=>N(r,'r'+i)))}</td></tr>`).join('')}
    </tbody></table>
    <div class="p-foot"><div class="p-sign">사방팔방 SBPB</div></div>
   </div>`;
@@ -1998,7 +1999,7 @@ ACT['admin-open']=async()=>{if(!WEB)return;let list=[];try{list=await window.SBP
   async fd=>{const em=[...new Set(String(fd.emails||'').split(/[\s,;]+/).map(s=>s.trim().toLowerCase()).filter(s=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s)))];await window.SBPB_WEB.saveAdmins(em);toast(`운영진 ${em.length}명 저장 완료`)},
   `<button type="button" class="btn ghost" data-act="web-logout">로그아웃</button>`)};
 /* 지난 대진표 기록 가져오기: 이름으로 회원·게스트를 찾아 연결, 못 찾은 이름은 이름 그대로 보관(미등록) */
-const ARCH_GUESS={'남복':'M','여복':'F'};
+const ARCH_GUESS={'남복':'M','여복':'F','남단':'M','여단':'F'};
 function nameIndex(){const ix={};S.members.forEach(m=>{if(m.name&&!ix[m.name])ix[m.name]={key:m.id,name:m.name,gender:m.gender,level:Number(m.level)||3,guest:false}});
   S.guests.forEach(g=>{const p={key:g.id,name:g.name,gender:g.gender,level:Number(g.level)||3,guest:true};[g.name,...String(g.nick||'').split(/\s*,\s*/)].forEach(n=>{if(n&&!ix[n])ix[n]=p})});return ix}
 async function archiveImport(list,people={}){const ix=nameIndex();const plan=[],skipRain=[],skipHas=[];
