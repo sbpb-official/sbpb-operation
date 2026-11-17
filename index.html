@@ -1025,6 +1025,10 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .pe-cell{position:relative}.pe-dd{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;max-height:240px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.3);display:flex;flex-direction:column;padding:4px}
 .pe-dd button{display:flex;align-items:center;gap:8px;min-height:40px;padding:8px 10px;border:0;background:none;color:var(--ink);font:inherit;font-size:14px;text-align:left;border-radius:8px;cursor:pointer}.pe-dd button:hover{background:var(--surface-2)}
 .pe-g{width:6px;height:6px;border-radius:50%;background:var(--muted)}.pe-g.g-M{background:var(--male)}.pe-g.g-F{background:var(--female)}
+.se-boxes{display:grid;grid-template-columns:1fr 1fr;gap:10px}.se-boxes.ko{grid-template-columns:1fr}
+.se-box{display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid var(--line);border-radius:10px}.se-l{font-size:13px}.se-vs{font-size:11px;color:var(--muted);text-align:center}
+.se-chip{white-space:normal;text-align:center}
+@media (max-width:520px){.se-boxes{grid-template-columns:1fr}}
 
 </style>
 </head>
@@ -1151,7 +1155,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=fbe234a2b9';
+const CUR_APP = 'app.js?v=ff40df773f';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1179,7 +1183,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=fbe234a2b9';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=ff40df773f';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
