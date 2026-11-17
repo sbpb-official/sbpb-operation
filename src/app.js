@@ -112,6 +112,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'evsetup',t:'이벤트 행사 상세 › 행사 대진 · 결과: 결과 기록만 → 대회 형식 선택(프리셋 · 옵션) → 팀 설정 또는 페어 설정(확정 인원으로 번호 지정 · 무작위 남녀 혼합) → 대진 만들기 (타임표는 대진표 화면으로 이어짐, 리그 · 토너먼트는 행사에 바로 생성) · 끝난 행사의 토너먼트는 대진 히스토리에도 표시'},
     {k:'areaall',t:'회원 거주지 · 직장 선택 목록: 경기 12개 시 · 직접 입력 후 목록으로 돌아갈 수 없음 → 경기도 시 · 군 31곳 전체(가나다순), 직접 입력 칸 옆 "목록" 버튼으로 다시 선택'},
     {k:'evdraw',t:'대진표 모임 설정: 정기모임 기본값만 → "행사 대진" 버튼 (행사 선택 후 형식 프리셋 선택 또는 옵션 직접 조합: 참가 단위 개인 로테이션 · 고정 페어 · 단식 / 진행 방식 타임표 · 리그 · 토너먼트 · 리그 → 토너먼트 / 팀전 / 조 · 진출 수), 프리셋 추가 · 수정 · 삭제, 팀이 있는 타임표는 같은 팀끼리 페어 · 다른 팀과 대결로 자동 생성'},
     {k:'trtree',t:'행사 리그 · 토너먼트: 목록 → 본선은 나뭇가지 대진표(라운드별 칸 · 우승 칸), 리그 경기 목록(⋮⋮ 끌어서 진행 순서 변경), 점수 입력 시 승수 → 득실로 조 순위 자동 계산 · 점수 없이 승자만 기록 가능(지난 행사용), 결과 없으면 조 순위 직접 입력'},
@@ -1281,7 +1282,9 @@ function logicHtml(){
 }
 document.addEventListener('toggle',e=>{if(e.target.id==='logic'){lsSet('sbpb-logic-open',e.target.open);const s=e.target.querySelector('summary span');if(s)s.textContent=e.target.open?'접기':'펼치기'}},true);
 function historyPanel(list){
-  return `<section class="panel"><div class="panel-h"><h2>대진 히스토리</h2><span class="small muted">${list.length}건</span></div><div class="list hist" data-ks="hist">${list.length?list.map(b=>`<div class="li click" data-act="bv-open" data-id="${b.id}">${dateBox(b.cfg?.date)}<div class="grow"><div class="ttl">${h(b.cfg?.title)}</div><div class="sub">${fmtFull(b.cfg?.date)} · ${Object.keys(b.players||{}).length}명</div></div>${b.archive?'<span class="chip">이전 기록</span>':''}${b.cfg&&b.cfg.eventId?'<span class="chip">행사</span>':''}<span class="chip ${b.status==='확정'?'ball':''}">${h(b.status)}</span></div>`).join(''):'<div class="muted small">저장된 대진표 없음. 저장 · 확정 시 대진 히스토리에 기록</div>'}</div>${unregHtml()}</section>`;
+  const evT=S.events.filter(e=>e.tourney&&e.date&&diffDays(e.endDate||e.date)<0);const evRow=e=>`<div class="li click" data-act="ev-open" data-id="${e.id}">${dateBox(e.date)}<div class="grow"><div class="ttl">${h(e.title)}</div><div class="sub">${fmtFull(e.date)} · ${h(e.tourney.title||'토너먼트')}</div></div><span class="chip">행사</span><span class="chip ball">${(()=>{const f=e.tourney.ko&&e.tourney.ko[e.tourney.ko.length-1];return f&&f.w?'완료':'기록'})()}</span></div>`;
+  const merged=list.map(b=>({d:b.cfg?.date||'',b})).concat(evT.map(e=>({d:e.date,e}))).sort((x,y)=>y.d.localeCompare(x.d));
+  return `<section class="panel"><div class="panel-h"><h2>대진 히스토리</h2><span class="small muted">${merged.length}건</span></div><div class="list hist" data-ks="hist">${merged.length?merged.map(x=>x.e?evRow(x.e):[x.b].map(b=>`<div class="li click" data-act="bv-open" data-id="${b.id}">${dateBox(b.cfg?.date)}<div class="grow"><div class="ttl">${h(b.cfg?.title)}</div><div class="sub">${fmtFull(b.cfg?.date)} · ${Object.keys(b.players||{}).length}명</div></div>${b.archive?'<span class="chip">이전 기록</span>':''}${b.cfg&&b.cfg.eventId?'<span class="chip">행사</span>':''}<span class="chip ${b.status==='확정'?'ball':''}">${h(b.status)}</span></div>`).join('')).join(''):'<div class="muted small">저장된 대진표 없음. 저장 · 확정 시 대진 히스토리에 기록</div>'}</div>${unregHtml()}</section>`;
 }
 async function relinkArchive(){if(RO||!db)return;const ix=nameIndex();
   for(const b of S.brackets){if(!b.archive)continue;const map={};Object.keys(b.players||{}).forEach(k=>{if(k.startsWith('n:')){const p=ix[b.players[k].name];if(p&&!b.players[p.key])map[k]=p}});
@@ -1654,8 +1657,8 @@ function evGames(ev){if(ev.type==='개인대회')return '';const bs=S.brackets.f
   const T=ev.teams||[];const tl=teamTally(ev);const aw=ev.awards||[];
   const teamsHtml=T.length?`<div class="eg-teams">${T.map((t,i)=>`<div class="eg-team"><b><i class="tdot" style="background:${tcol(ev,i)}"></i>${h(t.name)}</b><span class="small muted">${h((t.members||[]).map(k=>keyName(k)).join(', '))}</span></div>`).join('')}</div>`:'<p class="small muted" style="margin:0">팀 없음 · 팀전이면 팀 설정</p>';
   const res=tl&&tl.played?`<div class="eg-res">${tl.rank.map((x,j)=>`<span class="eg-sc${j===0&&(tl.rank[0].w!==tl.rank[1].w||(tl.rank[0].gf-tl.rank[0].ga)!==(tl.rank[1].gf-tl.rank[1].ga))?' win':''}"><i class="tdot" style="background:${tcol(ev,x.i)}"></i>${h(x.name)} <b class="num">${x.w}승</b> <span class="muted small">${x.l}패 · 득실 ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}</span></span>`).join('')}<span class="small muted">점수 입력 ${tl.played}경기</span></div>`:'';
-  return `<div class="evgames"><div class="eg-h"><h3>행사 대진 · 결과</h3>${RO?'':`<div class="row"><button class="btn sm" data-act="eg-teams">팀 설정</button><button class="btn sm" data-act="eg-award">시상 추가</button></div>`}</div>
-    ${ev.tourney?'':teamsHtml}${res}${tourHtml(ev)}
+  return `<div class="evgames"><div class="eg-h"><h3>행사 대진 · 결과</h3>${RO?'':`<div class="row"><button class="btn sm" data-act="eg-award">시상 추가</button></div>`}</div>
+    ${evSetupHtml(ev)}${ev.tourney||!T.length?'':teamsHtml}${res}${tourHtml(ev)}
     ${bs.length?`<div class="list">${bs.map(b=>`<div class="li click" data-act="bv-open" data-id="${b.id}"><div class="grow"><div class="ttl">${h(b.cfg.title||ev.title)}</div><div class="sub">${h(b.cfg.start||'')}${b.rounds?` · ${b.rounds.length}타임`:''} · ${(b.cfg.courtList||[]).map(c=>h(c.name)).join(' · ')}</div></div><span class="chip">대진 보기</span></div>`).join('')}</div>`:ev.tourney?'':'<p class="small muted" style="margin:8px 0 0">등록된 행사 대진 없음</p>'}
     ${aw.length?`<div class="eg-aw"><h4 class="st-h">시상</h4>${aw.map((x,i)=>`<div class="eg-awr"><b>${h(x.t)}</b><span>${h(x.w)}</span>${RO?'':`<button class="x" data-act="eg-award-del" data-i="${i}" aria-label="시상 삭제">×</button>`}</div>`).join('')}</div>`:''}</div>`}
 ACT['eg-award']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;
@@ -1744,9 +1747,13 @@ function trBuild(ev,o){const T=ev.tourney;o=o||(T&&T.fmt)||{unit:'pair',prog:'ko
     async fd=>{const ix=nameIndex();const kof=n=>{n=n.trim();const p=ix[n];return p?p.key:'n:'+n};
       let teams=fd.teams.split('\n').map(s=>s.trim()).filter(Boolean).map(s=>({p:(single?[s]:s.split(/\s*[\/&,]\s*/)).filter(Boolean).map(kof),rank:null}));
       if(teams.length<2){toast('참가 2팀 이상 입력');return}
-      const fmt={...o,groups:+(fd.groups||0),adv:+(fd.adv||o.adv||2)};let tr={title:fd.title.trim()||PROG_L[o.prog],fmt,groups:[],teams:[],lg:[],ko:[]};
+      const tr=trMake(teams,o,{title:fd.title.trim(),groups:fd.groups,adv:fd.adv,mix:fd.mix});
+      const {id,...rest}=ev;await put('events',ev.id,{...rest,tourney:tr});evSel=ev.id;toast('행사 대진 만듦 · 이벤트에서 결과 기록');location.hash='#events';render()})}
+/* 참가 팀 목록 → 형식대로 조 · 리그 경기 · 본선 */
+function trMake(teams,o,x={}){
+  const fmt={...o,groups:+(x.groups??o.groups??0),adv:+(x.adv||o.adv||2)};let tr={title:(x.title||'').trim()||PROG_L[o.prog],fmt,groups:[],teams:[],lg:[],ko:[]};
       if(o.prog==='ko'){tr.teams=teams;tr.ko=seedRefs(teams.map((_,i)=>'T'+i))}
-      else{if(fd.mix==='rand')teams=shuffle(teams);const G=Math.max(1,fmt.groups);const L='ABCD';tr.groups=Array.from({length:G},(_,i)=>({name:G>1?L[i]+'조':'리그',teams:[]}));teams.forEach((t,i)=>tr.groups[i%G].teams.push(t));
+      else{if(x.mix==='rand')teams=shuffle(teams);const G=Math.max(1,fmt.groups);const L='ABCD';tr.groups=Array.from({length:G},(_,i)=>({name:G>1?L[i]+'조':'리그',teams:[]}));teams.forEach((t,i)=>tr.groups[i%G].teams.push(t));
         /* 리그 경기: 조마다 풀리그, 조를 번갈아 가며 진행 순서 배치 (현장에서 끌어다 놓아 변경) */
         const per=tr.groups.map((g,gi)=>rrPairs(g.teams.length).map(([a,b])=>({g:gi,a,b,w:null})));const mx=Math.max(...per.map(x=>x.length));for(let i=0;i<mx;i++)per.forEach(x=>{if(x[i])tr.lg.push(x[i])});
         if(o.prog==='league-ko'){const adv=fmt.adv;let refs;
@@ -1755,7 +1762,7 @@ function trBuild(ev,o){const T=ev.tourney;o=o||(T&&T.fmt)||{unit:'pair',prog:'ko
           else if(G===4)refs=adv===2?['A1','B2','C1','D2','B1','A2','D1','C2']:['A1','B1','C1','D1'];
           else refs=adv===2?['A1','B2','C1','A2','B1','C2']:['A1','B1','C1'];
           tr.ko=G===1?seedRefs(refs):(refs.length%2===0&&(refs.length&(refs.length-1))===0?koFromRefs(refs):seedRefs(refs))}}
-      const {id,...rest}=ev;await put('events',ev.id,{...rest,tourney:tr});evSel=ev.id;toast('행사 대진 만듦 · 이벤트에서 결과 기록');location.hash='#events';render()})}
+  return tr}
 ACT['tr-build']=()=>{const ev=S.events.find(e=>e.id===evSel);if(ev)trBuild(ev)};
 
 /* 순위: 리그 결과(승수 → 득실)가 있으면 자동, 없으면 직접 입력한 순위 */
@@ -1809,6 +1816,40 @@ function tourneyImport(j){const ev=S.events.find(e=>j.eventTitle&&e.title.includ
   const tr={title:j.title||'토너먼트',groups:j.groups.map(g=>({name:g.name,teams:g.teams.map(t=>({p:t.p.map(kof),rank:t.rank||null}))})),ko:(j.ko||[{stage:'4강',a:'A1',b:'B2'},{stage:'4강',a:'B1',b:'A2'},{stage:'결승',a:'W0',b:'W1'}]).map(m=>({...m,w:m.w||null}))};
   openModal('토너먼트 가져오기',`<div class="mi-list"><div><b>${h(ev.title)}</b> ${fmtD(ev.date)} · ${h(tr.title)}</div>${tr.groups.map(g=>`<div>${h(g.name)}: ${g.teams.map(t=>h(t.p.map(k=>keyName(k)).join('/'))).join(', ')}</div>`).join('')}</div>${unknown.size?`<p class="small" style="margin:8px 0 0">회원 · 게스트 목록에 없는 이름: ${[...unknown].map(h).join(', ')}</p>`:''}`,
     async()=>{const {id,...rest}=ev;const aw=(ev.awards||[]).slice();(j.awards||[]).forEach(x=>{if(!aw.some(y=>y.t===x.t&&y.w===x.w))aw.push({t:x.t,w:x.w})});await put('events',ev.id,{...rest,tourney:tr,awards:aw});evSel=ev.id;toast('토너먼트 등록');render()})}
+
+/* ---------- 이벤트 › 행사 대진 준비: 형식 선택 → 팀 · 페어 설정 → 대진 만들기 ---------- */
+/* 참가자: 확정 인원(회원) + 확정 게스트 · 직접 입력 이름 */
+function evPeople(ev){const out=(ev.confirmed||[]).slice();(ev.confirmedExtra||[]).forEach(x=>out.push(x.startsWith('g:')?x.slice(2):x));return [...new Set(out)]}
+const pGender=k=>{const m=S.members.find(x=>x.id===k)||S.guests.find(x=>x.id===k);return m?m.gender:''};
+ACT['ev-fmt']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const PS=presets();const cur=ev.fmt||PS[0];
+  openModal('대회 형식',`<div class="ev-fmt">${PS.map(p=>`<label class="check"><input type="radio" name="preset" value="${p.id}"${(ev.fmt&&ev.fmt.preset===p.id)||(!ev.fmt&&p===PS[0])?' checked':''}> <span><b>${h(p.name)}</b> <span class="small muted">${h(fmtLine(p))}</span></span></label>`).join('')}</div>
+    <details class="ps-opt"${ev.fmt&&!ev.fmt.preset?' open':''}><summary class="small">옵션 직접 조정</summary>${optSelects(cur,'o_')}</details><div class="row" style="margin-top:8px"><button type="button" class="btn sm ghost" data-act="ps-manage">프리셋 관리</button></div>`,
+    async fd=>{const o=optFrom(fd,'o_');const p=PS.find(x=>x.id===fd.preset);const same=p&&['unit','prog','teams','groups','adv'].every(k=>String(p[k]??(k==='adv'?2:0))===String(o[k]));
+      const {id,...rest}=ev;await put('events',ev.id,{...rest,fmt:{...o,preset:same?p.id:'',name:same?p.name:'직접 조합'}});toast('대회 형식 저장');render()})};
+/* 페어 설정: 확정 인원을 두 명씩 묶기 (번호가 같은 사람끼리 한 페어) · 무작위 남녀 혼합 */
+ACT['ev-pairs']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const ppl=byName(evPeople(ev).map(k=>({key:k,name:keyName(k)})));
+  if(ppl.length<2){toast('행사 확정 인원 먼저 체크 (수정 › 확정 인원)');return}
+  const cur={};(ev.pairs||[]).forEach((p,i)=>p.forEach(k=>cur[k]=i+1));const N=Math.ceil(ppl.length/2);
+  openModal('페어 설정',`<p class="small muted" style="margin:0 0 8px">같은 번호끼리 한 페어 · 확정 인원 ${ppl.length}명</p><div class="row" style="margin-bottom:8px"><button type="button" class="btn sm" data-act="ev-pairs-rand">무작위 (남녀 혼합)</button><button type="button" class="btn sm ghost" data-act="ev-pairs-clear">모두 비우기</button></div>
+    <div class="eg-pick">${ppl.map(p=>`<label class="eg-prow"><span>${h(p.name)} <span class="muted small">${pGender(p.key)==='F'?'여':pGender(p.key)==='M'?'남':''}</span></span><select class="in" name="pr_${h(p.key)}" style="width:96px" data-g="${pGender(p.key)}"><option value="">–</option>${Array.from({length:N},(_,i)=>`<option value="${i+1}"${cur[p.key]===i+1?' selected':''}>${i+1}번</option>`).join('')}</select></label>`).join('')}</div>`,
+    async fd=>{const g={};Object.keys(fd).filter(k=>k.startsWith('pr_')&&fd[k]).forEach(k=>(g[fd[k]]=g[fd[k]]||[]).push(k.slice(3)));const pairs=Object.keys(g).sort((x,y)=>x-y).map(k=>g[k]);
+      const bad=pairs.filter(p=>p.length!==2);if(bad.length){toast('한 번호에 두 명씩 지정 필요');throw new Error('keep')}const {id,...rest}=ev;await put('events',ev.id,{...rest,pairs});toast(`페어 ${pairs.length}팀 저장`);render()})};
+ACT['ev-pairs-rand']=()=>{const sels=[...document.querySelectorAll('#mform select[name^="pr_"]')];const M=shuffle(sels.filter(s=>s.dataset.g==='M')),F=shuffle(sels.filter(s=>s.dataset.g==='F')),O=shuffle(sels.filter(s=>s.dataset.g!=='M'&&s.dataset.g!=='F'));
+  const order=[];while(M.length&&F.length)order.push(M.pop(),F.pop());const rest=shuffle(M.concat(F,O));order.push(...rest);order.forEach((s,i)=>s.value=String(Math.floor(i/2)+1));if(order.length%2)order[order.length-1].value=''};
+ACT['ev-pairs-clear']=()=>document.querySelectorAll('#mform select[name^="pr_"]').forEach(s=>s.value='');
+/* 대진 만들기: 타임표는 대진표 화면으로, 리그 · 토너먼트는 이 행사에 바로 생성 */
+ACT['ev-make']=async()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const o=ev.fmt;if(!o){ACT['ev-fmt']();return}
+  if(o.prog==='time'){Object.assign(cfg,{eventId:ev.id,title:ev.title,date:ev.date,place:ev.place||cfg.place});const roster=new Set(rosterAll().map(p=>p.key));const tm=(ev.teams||[]).flatMap(t=>t.members||[]);
+    const want=tm.length?tm:evPeople(ev);if(want.length)cfg.picked=want.filter(k=>roster.has(k));saveCfg();location.hash='#draw';toast('대진표 화면에서 생성 · 저장하면 이 행사에 연결');return}
+  let teams;if(o.unit==='single')teams=evPeople(ev).map(k=>({p:[k],rank:null}));else teams=(ev.pairs||[]).map(p=>({p:p.slice(),rank:null}));
+  if(teams.length<2){toast(o.unit==='single'?'확정 인원 2명 이상 필요':'페어 설정 먼저 (2팀 이상)');return}
+  if(ev.tourney){const ch=await choiceDialog({title:'대진 다시 만들기',msg:'이미 만든 대진이 있음',choices:[{key:'go',label:'새로 만들기',sub:'기존 순위 · 승자 · 점수 기록은 지워짐',cls:'danger'}]});if(ch!=='go')return}
+  const tr=trMake(teams,o,{title:ev.fmt.name&&ev.fmt.name!=='직접 조합'?ev.fmt.name.replace(/\s*\(.*\)$/,''):PROG_L[o.prog],groups:o.groups,adv:o.adv,mix:'rand'});
+  const {id,...rest}=ev;await put('events',ev.id,{...rest,tourney:tr});toast('대진 만듦');render()};
+function evSetupHtml(ev){const o=ev.fmt;const ppl=evPeople(ev);const need=o?(o.teams>=2?'teams':o.unit==='pair'?'pairs':o.unit==='single'?'single':'rot'):null;
+  const st=need==='teams'?`팀 ${(ev.teams||[]).length}개`:need==='pairs'?`페어 ${(ev.pairs||[]).length}팀`:`참가 ${ppl.length}명`;
+  return `<div class="ev-setup"><div><b>대회 형식</b> <span>${o?h(o.name||'')+' · '+h(fmtLine(o)):'<span class="muted">미정</span>'}</span></div>${o?`<div class="small muted">${st}${need==='pairs'&&(ev.pairs||[]).length?` · ${h(ev.pairs.map(p=>p.map(k=>keyName(k)).join('/')).join(', '))}`:''}</div>`:''}
+    ${RO?'':`<div class="row"><button class="btn sm" data-act="ev-fmt">${o?'형식 변경':'형식 선택'}</button>${need==='teams'?'<button class="btn sm" data-act="eg-teams">팀 설정</button>':''}${need==='pairs'?'<button class="btn sm" data-act="ev-pairs">페어 설정</button>':''}${o?`<button class="btn sm pri" data-act="ev-make">대진 만들기</button>`:''}</div>`}</div>`}
 function viewEvents(){
   const sorted=S.events.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   // 예정: 가까운 날짜부터 · 지난 이벤트: 최근 것부터

@@ -989,3 +989,4 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .lg-ms{display:flex;flex-direction:column;gap:4px;min-width:0}.lg-ms .tr-side{min-height:36px;padding:6px 10px;font-size:13px}
 .tr-gt{grid-template-columns:32px 1fr auto}
 .area-cust{display:flex;gap:8px}.area-cust[hidden]{display:none}.area-cust .in{flex:1;min-width:0}.area-cust .btn{flex:none}
+.ev-setup{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:10px;background:var(--surface-2);font-size:14px;line-height:1.5}.ev-setup .row{margin-top:4px}
