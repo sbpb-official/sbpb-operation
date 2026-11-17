@@ -227,9 +227,9 @@ table.tbl.mt{table-layout:fixed;min-width:980px}
 .p-table td.t span{display:block;font-size:11.5px;color:#6A706C;margin-top:4px;font-variant-numeric:tabular-nums}
 .p-table td.bench{background:#FBFBF9;font-size:13.5px;color:#4A504C;line-height:1.75}
 .p-table td.c-남복{background:#EDF4FC}.p-table td.c-여복{background:#FDF0EA}.p-table td.c-혼복{background:#EEF7E9}
-.p-table td.c-잡복,.p-table td.c-미완성{background:#F5F5F2}.p-table td.c-none{background:#F7F7F5;color:#A0A5A1;font-size:12px}
+.p-table td.c-미정,.p-table td.c-잡복,.p-table td.c-미완성{background:#F5F5F2}.p-table td.c-none{background:#F7F7F5;color:#A0A5A1;font-size:12px}
 .tag{display:inline-block;font-size:12px;font-weight:700;padding:3px 11px;border-radius:999px;margin-bottom:7px;letter-spacing:.03em}
-.tag.남복{background:#D3E3F6;color:#1F5C9E}.tag.여복{background:#F9D8CA;color:#B4441E}.tag.혼복{background:#D5EBC9;color:#2F7024}.tag.잡복,.tag.미완성{background:#E5E7E4;color:#5B615D}
+.tag.남복{background:#D3E3F6;color:#1F5C9E}.tag.여복{background:#F9D8CA;color:#B4441E}.tag.혼복{background:#D5EBC9;color:#2F7024}.tag.미정{background:#ECEDEA;color:#8A908C}.tag.잡복,.tag.미완성{background:#E5E7E4;color:#5B615D}
 .m .tm{font-size:15px;font-weight:600;color:#1F2421;line-height:1.55}
 .m .amp{color:#9AA09C;font-weight:500;margin:0 3px}
 .m .vs{font-family:var(--f-display);font-size:10.5px;font-weight:700;color:#A3A9A5;letter-spacing:.14em;margin:1px 0}
@@ -820,6 +820,16 @@ details[open]>summary .led-tg i{transform:rotate(180deg)}
 .upd-note .upd-v{display:inline-block;font-family:var(--f-display);font-size:22px;color:var(--court);margin-bottom:6px}
 .upd-note p{margin:4px 0;font-size:15px;line-height:1.5;word-break:keep-all}
 .upd-note p.muted{font-size:13px}
+
+.emptywarn .blank-tg{display:inline-flex;margin-left:10px;font-weight:600;color:var(--ink)}
+.emptywarn.ok{color:var(--muted)}
+
+.unreg-list{display:flex;flex-direction:column;max-height:320px;overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--line);border-radius:10px}
+.ur{padding:9px 12px;border-bottom:1px solid var(--line)}.ur:last-child{border-bottom:0}
+.ur-h{display:flex;justify-content:space-between;align-items:baseline}.ur-h b{font-size:14px}.ur-h span{font-size:12px;font-weight:700;color:var(--court)}
+.ur-d,.ur-p{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5;word-break:keep-all}
+
+.poster.blank-ok .nm.empty,.poster.blank-ok .nm-s.empty{border-color:transparent;background:none;color:#8A908C;box-shadow:none}
 
 /* modal */
 .ov{position:fixed;left:0;right:0;top:0;bottom:0;height:auto;   /* full screen, not the area above the keyboard: the keyboard covers the modal instead of shrinking it */
