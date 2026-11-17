@@ -105,6 +105,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'unregsort',t:'미등록 이름 목록 순서: 많이 온 순 → 가나다순'},
     {k:'choicewrap',t:'선택 창 버튼 설명: 긴 문구가 창 밖으로 넘쳐 잘림 → 버튼 안에서 줄바꿈'},
     {k:'mergenick',t:'미등록 이름 합치기: 합친 이름은 사라짐 · 되돌릴 수 없음 → 합칠 때 본명 선택(게스트는 이름 변경 가능), 나머지 이름은 닉네임으로 저장(여러 개는 쉼표로) · 방문 횟수 · 마지막 방문일 반영, 미등록 이름 › 합친 이름에서 되돌리기(대진 기록 · 게스트 정보 복원)'},
     {k:'tabs7',t:'휴대폰 탭: 6개 → 설정 탭 추가로 7개, 한 화면에 모두 보이게 간격 조정'},
@@ -1201,7 +1202,7 @@ function unregList(){const ix=nameIndex();const map={};
   S.brackets.slice().sort((x,y)=>(x.cfg?.date||'').localeCompare(y.cfg?.date||'')).forEach(b=>{const P=b.players||{};const nm=k=>P[k]&&P[k].name;const isU=k=>k&&String(k).startsWith('n:')&&!ix[nm(k)];
     const touch=n=>{const o=map[n]||(map[n]={name:n,dates:[],pairs:{}});if(!o.dates.includes(b.cfg.date))o.dates.push(b.cfg.date);return o};
     (b.rounds||[]).forEach(R=>{(R.matches||[]).forEach(m=>{if(!m)return;['a','b'].forEach(s=>{const [x,y]=m[s]||[];[[x,y],[y,x]].forEach(([p,q])=>{if(isU(p)){const o=touch(nm(p));if(q){const qn=nm(q);o.pairs[qn]=(o.pairs[qn]||0)+1}}})})});(R.rest||[]).forEach(k=>{if(isU(k))touch(nm(k))})})});
-  return Object.values(map).sort((x,y)=>y.dates.length-x.dates.length||x.name.localeCompare(y.name,'ko'))}
+  return Object.values(map).sort((x,y)=>x.name.localeCompare(y.name,'ko'))}
 const nameMark=n=>(S.names||[]).find(x=>x.name===n);
 const mergeLogs=()=>(S.names||[]).filter(x=>x.type==='merge').sort((x,y)=>(y.at||0)-(x.at||0));
 function unregHtml(){const L=unregList();const MG=mergeLogs();if(!L.length&&!MG.length)return '';
