@@ -321,7 +321,8 @@ table.tbl.mt{table-layout:fixed;min-width:980px}
 .timeline{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
 .tl{flex:none;width:180px;border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;background:var(--surface)}
 .tl .dday{font-size:22px;color:var(--court)}
-.tl.res .dday{color:var(--t-tour)}
+.tl.res .dday{color:var(--warn)}
+.li .dday.res{color:var(--warn)}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-top:16px}
 .ccard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .ccard .hd{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}

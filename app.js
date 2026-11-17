@@ -105,6 +105,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'resdday',t:'주민 우선 예약 오픈 D-day 색: 대시보드 예약 오픈 목록은 기본 글자색 · 코트 › 45일 내 예약 오픈은 진한 주황 → 둘 다 주민 우선 배지와 같은 주황'},
     {k:'chipgap2',t:'행사 목록 종류 배지 · 진행 상태: 사이 간격 약 12px · 제목에 바로 붙음 · 세로 중심 어긋남 → 사이 간격 8px로 일정, 제목과 배지 사이 4px, 배지와 진행 상태 세로 가운데 맞춤'},
     {k:'tempguest',t:'미등록 이름 표시 이름: "일회성"(일회성으로 표시 · 일회성 게스트 · 일회성 해제) → "임시 게스트"(임시 게스트로 표시 · 임시 게스트 · 임시 게스트 해제), 안내 문구 "한 번 온 사람은 일회성으로 표시" → "정규 게스트가 아니면 임시 게스트로 표시"'},
     {k:'unregsort',t:'미등록 이름 목록 순서: 많이 온 순 → 가나다순'},
@@ -742,7 +743,7 @@ function viewHome(){
     </section>`;
   // side
   const upHtml=up.length?up.slice(0,5).map(ev=>`<div class="li click t-${h(ev.type)}" data-act="ev-open" data-id="${ev.id}">${dateBox(ev.date)}<div class="grow"><div class="ttl">${h(ev.title)}</div><div class="sub"><span class="chip ttag">${h(ev.type)}</span> ${h(ev.status||'')}</div></div><span class="dday">${ddayLabel(ev.date)}</span></div>`).join(''):`<div class="empty"><b>예정된 행사 없음</b>내부대회·교류전·MT 등록 가능<div class="row"><button class="btn pri sm" data-act="ev-new">행사 추가</button></div></div>`;
-  const opHtml=ops.length?ops.slice(0,5).map(o=>{const pm=o.kind==='res'?priorityMembers(o.court).length:null;const ds=ymd(o.date);return `<div class="li"><div class="grow"><div class="ttl">${h(o.court.name)}</div><div class="sub">${o.date.getMonth()+1}/${o.date.getDate()} (${WD[o.date.getDay()]}) ${pad(o.date.getHours())}:${pad(o.date.getMinutes())} · ${o.kind==='res'?`<span class="chip warn">주민 우선</span> 가능 회원 ${pm}명`:'일반 오픈'}</div></div><span class="dday">${ddayLabel(ds)}</span></div>`}).join(''):`<div class="empty"><b>등록된 코트 없음</b>공공 코트 등록 시 오픈일 자동 계산<div class="row"><a class="btn sm" href="#courts">코트 등록</a></div></div>`;
+  const opHtml=ops.length?ops.slice(0,5).map(o=>{const pm=o.kind==='res'?priorityMembers(o.court).length:null;const ds=ymd(o.date);return `<div class="li"><div class="grow"><div class="ttl">${h(o.court.name)}</div><div class="sub">${o.date.getMonth()+1}/${o.date.getDate()} (${WD[o.date.getDay()]}) ${pad(o.date.getHours())}:${pad(o.date.getMinutes())} · ${o.kind==='res'?`<span class="chip warn">주민 우선</span> 가능 회원 ${pm}명`:'일반 오픈'}</div></div><span class="dday${o.kind==='res'?' res':''}">${ddayLabel(ds)}</span></div>`}).join(''):`<div class="empty"><b>등록된 코트 없음</b>공공 코트 등록 시 오픈일 자동 계산<div class="row"><a class="btn sm" href="#courts">코트 등록</a></div></div>`;
   // member overview
   let mo='';
   if(act.length){
