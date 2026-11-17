@@ -105,6 +105,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'mergenick',t:'미등록 이름 합치기: 합친 이름은 사라짐 → 게스트에 합치면 합쳐진 이름(닉네임)이 그 게스트의 닉네임으로 저장 (여러 개는 쉼표로) · 방문 횟수 · 마지막 방문일 반영, 다음 가져오기 때 닉네임으로도 자동 연결'},
     {k:'tabs7',t:'휴대폰 탭: 6개 → 설정 탭 추가로 7개, 한 화면에 모두 보이게 간격 조정'},
     {k:'unregreview',t:'미등록 이름 검수: 목록만 표시(검수는 대화로 요청) → 이름마다 게스트로 등록(지난 기록 자동 연결) · 다른 이름과 합치기 · 일회성으로 표시, 일회성 게스트는 별도 묶음에 기록 보관 · 다시 오면 "N회째 방문" 표시'},
     {k:'bracketcopy',t:'지난 대진 활용: 불러와서 수정만 가능(날짜를 바꾸면 원래 기록이 그 날짜로 옮겨짐) → "새 대진으로 복사"로 원본은 두고 다음 정기모임 새 초안 생성, 불러온 기록의 날짜를 바꾸면 "새 대진으로 복사 · 원본 날짜 수정" 중 선택 (테마 선택 창)'},
@@ -1226,10 +1227,13 @@ ACT['nm-merge']=t=>{const n=t.dataset.n;const people=byName(S.members.filter(isC
     <div class="cfx-new"><input class="in" id="nm-q" placeholder="이름 검색"></div><div class="cfx-list" id="nm-list">${people.map(p=>`<button type="button" data-act="nm-merge-to" data-from="${h(n)}" data-key="${h(p.key)}" data-name="${h(p.name)}"><b>${h(p.name)}</b> <span class="muted small">${h(p.sub)}</span></button>`).join('')}</div></div>`;
   document.body.appendChild(ov);const q=ov.querySelector('#nm-q');q.addEventListener('input',()=>{const v=q.value.trim();ov.querySelectorAll('#nm-list button').forEach(b=>b.hidden=!!v&&!b.dataset.name.includes(v))})};
 ACT['nm-merge-to']=t=>{const from=t.dataset.from,key=t.dataset.key,to=t.dataset.name;
-  choiceDialog({title:`${from} → ${to}`,msg:'지난 대진 기록의 이름을 하나로 합침',choices:[{key:'go',label:`${to}(으)로 합치기`,sub:`${from} 기록이 모두 ${to} 기록으로 바뀜`,cls:'pri'}]}).then(async ch=>{if(ch!=='go')return;
+  choiceDialog({title:`${from} → ${to}`,msg:'지난 대진 기록의 이름을 하나로 합침',choices:[{key:'go',label:`${to}(으)로 합치기`,sub:`${from} 기록이 모두 ${to} 기록으로 바뀜${S.guests.some(g=>g.id===key)?` · ${from}은(는) ${to}의 닉네임으로 저장`:''}`,cls:'pri'}]}).then(async ch=>{if(ch!=='go')return;
     const o=$('#cfxpick');if(o)o.remove();
     let pl;if(key.startsWith('n:'))pl=nmPlayer(to)||{name:to,gender:'',level:3,guest:true,unreg:true};else{const m=S.members.find(x=>x.id===key),g=S.guests.find(x=>x.id===key);const p=m||g;pl={name:p.name,gender:p.gender,level:Number(p.level)||3,guest:!m}}
-    await rekeyBrackets('n:'+from,key,pl);const mk=nameMark(from);if(mk){try{await del('names',mk.id)}catch(e){}}toast(`${from} → ${to} 합치기 완료`);render()})};
+    await rekeyBrackets('n:'+from,key,pl);
+    const tg=S.guests.find(x=>x.id===key);if(tg){const nk0=String(tg.nick||'').split(/\s*,\s*/).filter(Boolean);const ds=[...new Set(S.brackets.filter(b=>b.players&&(b.players[key]||b.players['n:'+from])&&b.cfg).map(b=>b.cfg.date))].sort();const {id,...rest}=tg;
+      try{await put('guests',tg.id,{...rest,nick:!nk0.includes(from)&&from!==tg.name?nk0.concat(from).join(', '):tg.nick||'',visits:Math.max(tg.visits||0,ds.length),lastDate:[tg.lastDate||'',ds[ds.length-1]||''].sort().pop()})}catch(e){}}
+    const mk=nameMark(from);if(mk){try{await del('names',mk.id)}catch(e){}}toast(`${from} → ${to} 합치기 완료`);render()})};
 document.addEventListener('toggle',e=>{if(e.target.id==='oneoff')lsSet('sbpb-oneoff-open',e.target.open)},true);
 document.addEventListener('toggle',e=>{if(e.target.id==='unreg')lsSet('sbpb-unreg-open',e.target.open)},true);
 function viewDrawRO(){
@@ -1950,7 +1954,7 @@ ACT['admin-open']=async()=>{if(!WEB)return;let list=[];try{list=await window.SBP
 /* 지난 대진표 기록 가져오기: 이름으로 회원·게스트를 찾아 연결, 못 찾은 이름은 이름 그대로 보관(미등록) */
 const ARCH_GUESS={'남복':'M','여복':'F'};
 function nameIndex(){const ix={};S.members.forEach(m=>{if(m.name&&!ix[m.name])ix[m.name]={key:m.id,name:m.name,gender:m.gender,level:Number(m.level)||3,guest:false}});
-  S.guests.forEach(g=>{const p={key:g.id,name:g.name,gender:g.gender,level:Number(g.level)||3,guest:true};[g.name,g.nick].forEach(n=>{if(n&&!ix[n])ix[n]=p})});return ix}
+  S.guests.forEach(g=>{const p={key:g.id,name:g.name,gender:g.gender,level:Number(g.level)||3,guest:true};[g.name,...String(g.nick||'').split(/\s*,\s*/)].forEach(n=>{if(n&&!ix[n])ix[n]=p})});return ix}
 async function archiveImport(list,people={}){const ix=nameIndex();const plan=[],skipRain=[],skipHas=[];
   for(const e of list){const ds=e.date;const rs=regStat(ds);
     if(rs&&rs.status==='취소'&&/우천/.test(rs.reason||'')){skipRain.push(ds);continue}
