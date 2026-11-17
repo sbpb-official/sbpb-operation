@@ -111,7 +111,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
-    {k:'mergepick',t:'미등록 이름 › 다른 이름과 합치기 목록: 현 회원 · 게스트 · 미등록 이름만(탈퇴 회원 등 빠짐) → 탈퇴 회원 · 게스트 명단에 없는 전환 회원도 표시, 이름 옆에 회원 · 게스트 · 탈퇴 회원 · 미등록 구분'},
+    {k:'mergepick',t:'미등록 이름 › 다른 이름과 합치기 목록: 회원 · 게스트 · 미등록 이름이 가나다순으로 섞여 표시 → 게스트(가나다순) 다음 미등록 이름(가나다순)만 표시, 회원 제외'},
     {k:'mcard2',t:'휴대폰 회원 명단 카드: 나이 · 구력 · 거주지 · 직장 · 전화번호 · 상태가 한 줄에 이어져 줄바꿈 위치가 제각각 → 첫 줄 나이 · 구력 · 상태, 둘째 줄 거주지 · 직장 · 전화번호'},
     {k:'phone',t:'회원 전화번호: 없음 → 회원 정보에 입력(010-0000-0000 형태로 자동 정리), 회원 명단에서 번호를 누르면 휴대폰 전화 연결, 엑셀 백업에 포함'},
     {k:'arealabel',t:'회원 거주지 · 직장 표시: "성동구" · "성남시"(선택 목록은 "서울 성동구" · "경기 성남시") → 어디서나 "서울시 성동구" · "경기도 성남시" (회원 명단 · 선택 목록 · 코트 회원 거주지 · 엑셀 백업)'},
@@ -1284,7 +1284,9 @@ ACT['nm-reg']=t=>{const n=t.dataset.n;const p=nmPlayer(n)||{};const o=unregList(
     const g={name:fd.name.trim(),gender:fd.gender,level:fd.level===''?3:Number(fd.level),guest:true};await rekeyBrackets('n:'+n,id,g);
     for(const M of mergeLogs().filter(x=>x.toKey==='n:'+n)){const {id:mid,...rest}=M;try{await put('names',mid,{...rest,toKey:id,toName:g.name})}catch(e){}}
     const mk=nameMark(n);if(mk){try{await del('names',mk.id)}catch(e){}}toast(`${g.name} 게스트 등록 · 대진 기록 ${dates.length}회 연결`);render()})};
-ACT['nm-merge']=t=>{const n=t.dataset.n;const people=byName(S.members.filter(m=>isCur(m)||!S.guests.some(g=>g.name===m.name)).map(m=>({key:m.id,name:m.name,sub:isCur(m)?'회원':ST(m)==='게스트'?'게스트 (회원에서 전환)':'탈퇴 회원',gender:m.gender,level:m.level,guest:false})).concat(S.guests.map(g=>({key:g.id,name:g.name,sub:'게스트'+(g.nick?` · ${g.nick}`:''),gender:g.gender,level:g.level,guest:true})),unregList().filter(o=>o.name!==n).map(o=>({key:'n:'+o.name,name:o.name,sub:'미등록',unreg:true}))));
+ACT['nm-merge']=t=>{const n=t.dataset.n;/* 합칠 대상: 게스트(가나다) → 미등록 이름(가나다). 회원은 합칠 일이 없어 제외 */
+  const people=byName(S.guests.map(g=>({key:g.id,name:g.name,sub:'게스트'+(g.nick?` · ${g.nick}`:''),gender:g.gender,level:g.level,guest:true})).concat(S.members.filter(m=>ST(m)==='게스트'&&!S.guests.some(g=>g.name===m.name)).map(m=>({key:m.id,name:m.name,sub:'게스트',gender:m.gender,level:m.level,guest:false}))))
+    .concat(byName(unregList().filter(o=>o.name!==n).map(o=>({key:'n:'+o.name,name:o.name,sub:'미등록',unreg:true}))));
   const ov=document.createElement('div');ov.className='me-ov';ov.id='cfxpick';
   ov.innerHTML=`<div class="me-box cfx-box" role="dialog" aria-modal="true" aria-label="합칠 이름 선택"><div class="me-bar"><span></span><b>${h(n)} → 합칠 이름</b><button type="button" class="btn ghost" data-act="cfx-close">닫기</button></div>
     <div class="cfx-new"><input class="in" id="nm-q" placeholder="이름 검색"></div><div class="cfx-list" id="nm-list">${people.map(p=>`<button type="button" data-act="nm-merge-to" data-from="${h(n)}" data-key="${h(p.key)}" data-name="${h(p.name)}"><b>${h(p.name)}</b> <span class="muted small">${h(p.sub)}</span></button>`).join('')}</div></div>`;
