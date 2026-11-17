@@ -111,6 +111,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'attdays',t:'정기모임 출석률: 비율 · 횟수만 표시 → 줄을 누르면 출석한 날짜 · 결석한 날짜 펼침 (다시 누르면 접힘)'},
     {k:'evbtn',t:'이벤트 상단 버튼: 대회 출전 기록 · 행사 추가 → 행사 추가만 (대회 출전 기록은 행사 추가에서 종류를 개인 대회로 선택)'},
     {k:'statpick',t:'페어 통계 사람 선택: 기록에 나온 모든 사람(게스트 · 미등록 포함) → 현 회원만'},
     {k:'attendvote',t:'대진표 없는 정기모임 출석: 모두 결석으로 계산 → 출석 투표 기록 파일을 가져오면 그날 출석으로 반영 (대진 기록이 있는 날 · 취소된 날은 제외)'},
@@ -1044,11 +1045,12 @@ function drawStats(){const B=pastBrackets();const pair={},opp={},att={},games={}
   const bd=new Set(B.map(b=>b.cfg.date));(S.attend||[]).forEach(x=>{if(bd.has(x.id))return;(x.keys||[]).forEach(k=>(att[k]=att[k]||new Set()).add(x.id))});
   return {B,pair,opp,att,games,last}}
 const memStart=m=>m.joined||`${Math.min(...yearsOf(m))}-01-01`;
-let statP=lsGet('sbpb-stat-p','');
+let statP=lsGet('sbpb-stat-p','');let attOpen='';
+ACT['st-att-row']=t=>{attOpen=attOpen===t.dataset.id?'':t.dataset.id;render()};
 function statsPanel(){const st=drawStats();const MD=meetDates();const recD=new Set(st.B.map(b=>b.cfg.date).concat((S.attend||[]).map(x=>x.id)));const noRec=MD.filter(d=>!recD.has(d));
   const mem=S.members.filter(isCur);
-  const rows=mem.map(m=>{const ds=MD.filter(d=>d>=memStart(m));const n=ds.filter(d=>st.att[m.id]&&st.att[m.id].has(d)).length;return {m,n,d:ds.length,r:ds.length?n/ds.length:0}}).sort((x,y)=>y.r-x.r||y.n-x.n||x.m.name.localeCompare(y.m.name,'ko'));
-  const attHtml=`<div class="st-att">${rows.map(o=>`<div class="st-row"><b>${h(o.m.name)}</b><span class="st-bar"><i style="width:${Math.round(o.r*100)}%"></i></span><span class="num">${o.d?Math.round(o.r*100)+'%':'–'}</span><span class="muted small num">${o.n}/${o.d}</span></div>`).join('')}</div>
+  const rows=mem.map(m=>{const ds=MD.filter(d=>d>=memStart(m));const on=ds.filter(d=>st.att[m.id]&&st.att[m.id].has(d));const n=on.length;return {m,n,d:ds.length,r:ds.length?n/ds.length:0,on,off:ds.filter(d=>!on.includes(d))}}).sort((x,y)=>y.r-x.r||y.n-x.n||x.m.name.localeCompare(y.m.name,'ko'));
+  const attHtml=`<div class="st-att">${rows.map(o=>{const op=attOpen===o.m.id;const dl=a=>a.map(d=>fmtD(d).replace(/ \((.)\)$/,'($1)')).join(', ');return `<div class="st-row${op?' on':''}" data-act="st-att-row" data-id="${o.m.id}" role="button" tabindex="0" aria-expanded="${op}"><b>${h(o.m.name)}</b><span class="st-bar"><i style="width:${Math.round(o.r*100)}%"></i></span><span class="num">${o.d?Math.round(o.r*100)+'%':'–'}</span><span class="muted small num">${o.n}/${o.d}</span></div>${op?`<div class="st-days"><div><b>출석 ${o.n}회</b> ${o.on.length?dl(o.on):'<span class="muted">없음</span>'}</div><div class="muted"><b>결석 ${o.off.length}회</b> ${o.off.length?dl(o.off):'없음'}</div></div>`:''}`}).join('')}</div>
     <p class="small muted" style="margin:8px 0 0">분모: ${CLUB_Y}년 정기모임 중 취소되지 않은 날 ${MD.length}회 (회원별 가입일 이후)${noRec.length?` · 대진 기록 없는 모임 ${noRec.length}회(모두 결석으로 계산): ${noRec.map(fmtD).join(', ')}`:''}${(S.attend||[]).length?` · 출석 투표로 대신한 날 ${S.attend.filter(x=>!st.B.some(b=>b.cfg.date===x.id)).length}회`:''}</p>`;
   const people=byName(mem.map(m=>({key:m.id,name:m.name})));
   if(!statP||!people.some(p=>p.key===statP))statP=(people.find(p=>!p.g)||people[0]||{}).key||'';
