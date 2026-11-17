@@ -112,7 +112,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
-    {k:'evsetup',t:'이벤트 행사 상세 › 행사 대진 · 결과: 결과 기록만 → 대회 형식 선택(프리셋 · 옵션) → 팀 설정 또는 페어 설정(확정 인원으로 번호 지정 · 무작위 남녀 혼합) → 대진 만들기 (타임표는 대진표 화면으로 이어짐, 리그 · 토너먼트는 행사에 바로 생성) · 끝난 행사의 토너먼트는 대진 히스토리에도 표시'},
+    {k:'evsetup',t:'이벤트 행사 상세 › 행사 대진 · 결과: 결과 기록만 → 대회 형식 선택(프리셋 · 옵션) → 팀 설정 또는 페어 설정(확정 인원 이름을 페어 칸에 끌어다 놓기 · 누르고 칸 누르기 · 무작위 남녀 혼합) → 대진 만들기 (타임표는 대진표 화면으로 이어짐, 리그 · 토너먼트는 행사에 바로 생성) · 끝난 행사의 토너먼트는 대진 히스토리에도 표시'},
     {k:'areaall',t:'회원 거주지 · 직장 선택 목록: 경기 12개 시 · 직접 입력 후 목록으로 돌아갈 수 없음 → 경기도 시 · 군 31곳 전체(가나다순), 직접 입력 칸 옆 "목록" 버튼으로 다시 선택'},
     {k:'evdraw',t:'대진표 모임 설정: 정기모임 기본값만 → "행사 대진" 버튼 (행사 선택 후 형식 프리셋 선택 또는 옵션 직접 조합: 참가 단위 개인 로테이션 · 고정 페어 · 단식 / 진행 방식 타임표 · 리그 · 토너먼트 · 리그 → 토너먼트 / 팀전 / 조 · 진출 수), 프리셋 추가 · 수정 · 삭제, 팀이 있는 타임표는 같은 팀끼리 페어 · 다른 팀과 대결로 자동 생성'},
     {k:'trtree',t:'행사 리그 · 토너먼트: 목록 → 본선은 나뭇가지 대진표(라운드별 칸 · 우승 칸), 리그 경기 목록(⋮⋮ 끌어서 진행 순서 변경), 점수 입력 시 승수 → 득실로 조 순위 자동 계산 · 점수 없이 승자만 기록 가능(지난 행사용), 결과 없으면 조 순위 직접 입력'},
@@ -1826,17 +1826,42 @@ ACT['ev-fmt']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const P
     <details class="ps-opt"${ev.fmt&&!ev.fmt.preset?' open':''}><summary class="small">옵션 직접 조정</summary>${optSelects(cur,'o_')}</details><div class="row" style="margin-top:8px"><button type="button" class="btn sm ghost" data-act="ps-manage">프리셋 관리</button></div>`,
     async fd=>{const o=optFrom(fd,'o_');const p=PS.find(x=>x.id===fd.preset);const same=p&&['unit','prog','teams','groups','adv'].every(k=>String(p[k]??(k==='adv'?2:0))===String(o[k]));
       const {id,...rest}=ev;await put('events',ev.id,{...rest,fmt:{...o,preset:same?p.id:'',name:same?p.name:'직접 조합'}});toast('대회 형식 저장');render()})};
-/* 페어 설정: 확정 인원을 두 명씩 묶기 (번호가 같은 사람끼리 한 페어) · 무작위 남녀 혼합 */
-ACT['ev-pairs']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const ppl=byName(evPeople(ev).map(k=>({key:k,name:keyName(k)})));
+/* 페어 설정: 확정 인원 버튼을 페어 칸(2칸씩)에 끌어다 놓기 · 누르고 칸 누르기로도 가능 · 무작위(남녀 혼합) */
+let PE=null;
+function peHtml(){const chip=(k,sel)=>`<button type="button" class="pe-chip g-${pGender(k)||'x'}${PE.sel===k?' on':''}" data-pk="${h(k)}">${h(keyName(k))}</button>`;
+  return `<div class="pe-pool" data-pe-pool="1">${PE.pool.length?PE.pool.map(k=>chip(k)).join(''):'<span class="small muted">모든 인원 배치 완료</span>'}</div>
+  <div class="pe-slots">${PE.slots.map((s,i)=>`<div class="pe-pair"><span class="pe-n num">${i+1}</span>${[0,1].map(j=>`<div class="pe-cell${s[j]?'':' empty'}" data-pe-cell="${i}_${j}">${s[j]?chip(s[j]):'<span class="muted small">비어 있음</span>'}</div>`).join('')}</div>`).join('')}</div>`}
+function peDraw(){const el=$('#pe');if(el)el.innerHTML=peHtml();const c=$('#pe-count');if(c)c.textContent=`${PE.slots.filter(s=>s[0]&&s[1]).length}/${PE.slots.length}팀 완성`}
+function peTake(k){PE.pool=PE.pool.filter(x=>x!==k);PE.slots.forEach(s=>{for(let j=0;j<2;j++)if(s[j]===k)s[j]=null})}
+function peWhere(k){for(let i=0;i<PE.slots.length;i++)for(let j=0;j<2;j++)if(PE.slots[i][j]===k)return [i,j];return null}
+function peDrop(k,target){if(!k)return;if(target==='pool'){peTake(k);PE.pool.push(k);PE.pool=byName(PE.pool.map(x=>({key:x,name:keyName(x)}))).map(x=>x.key)}
+  else{const [i,j]=target.split('_').map(Number);const from=peWhere(k);const prev=PE.slots[i][j];if(prev===k)return;peTake(k);
+    if(prev){if(from)PE.slots[from[0]][from[1]]=prev;else{PE.slots[i][j]=null;PE.pool.push(prev)}}PE.slots[i][j]=k}
+  PE.sel=null;peDraw()}
+ACT['ev-pairs']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const ppl=byName(evPeople(ev).map(k=>({key:k,name:keyName(k)}))).map(x=>x.key);
   if(ppl.length<2){toast('행사 확정 인원 먼저 체크 (수정 › 확정 인원)');return}
-  const cur={};(ev.pairs||[]).forEach((p,i)=>p.forEach(k=>cur[k]=i+1));const N=Math.ceil(ppl.length/2);
-  openModal('페어 설정',`<p class="small muted" style="margin:0 0 8px">같은 번호끼리 한 페어 · 확정 인원 ${ppl.length}명</p><div class="row" style="margin-bottom:8px"><button type="button" class="btn sm" data-act="ev-pairs-rand">무작위 (남녀 혼합)</button><button type="button" class="btn sm ghost" data-act="ev-pairs-clear">모두 비우기</button></div>
-    <div class="eg-pick">${ppl.map(p=>`<label class="eg-prow"><span>${h(p.name)} <span class="muted small">${pGender(p.key)==='F'?'여':pGender(p.key)==='M'?'남':''}</span></span><select class="in" name="pr_${h(p.key)}" style="width:96px" data-g="${pGender(p.key)}"><option value="">–</option>${Array.from({length:N},(_,i)=>`<option value="${i+1}"${cur[p.key]===i+1?' selected':''}>${i+1}번</option>`).join('')}</select></label>`).join('')}</div>`,
-    async fd=>{const g={};Object.keys(fd).filter(k=>k.startsWith('pr_')&&fd[k]).forEach(k=>(g[fd[k]]=g[fd[k]]||[]).push(k.slice(3)));const pairs=Object.keys(g).sort((x,y)=>x-y).map(k=>g[k]);
-      const bad=pairs.filter(p=>p.length!==2);if(bad.length){toast('한 번호에 두 명씩 지정 필요');throw new Error('keep')}const {id,...rest}=ev;await put('events',ev.id,{...rest,pairs});toast(`페어 ${pairs.length}팀 저장`);render()})};
-ACT['ev-pairs-rand']=()=>{const sels=[...document.querySelectorAll('#mform select[name^="pr_"]')];const M=shuffle(sels.filter(s=>s.dataset.g==='M')),F=shuffle(sels.filter(s=>s.dataset.g==='F')),O=shuffle(sels.filter(s=>s.dataset.g!=='M'&&s.dataset.g!=='F'));
-  const order=[];while(M.length&&F.length)order.push(M.pop(),F.pop());const rest=shuffle(M.concat(F,O));order.push(...rest);order.forEach((s,i)=>s.value=String(Math.floor(i/2)+1));if(order.length%2)order[order.length-1].value=''};
-ACT['ev-pairs-clear']=()=>document.querySelectorAll('#mform select[name^="pr_"]').forEach(s=>s.value='');
+  const N=Math.ceil(ppl.length/2);const slots=Array.from({length:N},()=>[null,null]);const used=new Set();
+  (ev.pairs||[]).slice(0,N).forEach((p,i)=>p.forEach((k,j)=>{if(ppl.includes(k)&&j<2){slots[i][j]=k;used.add(k)}}));
+  PE={pool:ppl.filter(k=>!used.has(k)),slots,sel:null};
+  openModal('페어 설정',`<div class="pe-top"><span class="small muted">확정 인원 ${ppl.length}명 · <b id="pe-count"></b></span><div class="row"><button type="button" class="btn sm" data-act="ev-pairs-rand">무작위 (남녀 혼합)</button><button type="button" class="btn sm ghost" data-act="ev-pairs-clear">모두 비우기</button></div></div>
+    <p class="small muted" style="margin:0 0 8px">이름을 페어 칸으로 끌어다 놓기 · 또는 이름을 누른 뒤 칸 누르기 · 칸의 이름을 목록으로 끌면 빼기</p><div id="pe">${peHtml()}</div>`,
+    async()=>{const bad=PE.slots.filter(s=>(s[0]?1:0)+(s[1]?1:0)===1);if(bad.length){toast('한 명만 들어간 페어가 있음');throw new Error('keep')}
+      const pairs=PE.slots.filter(s=>s[0]&&s[1]).map(s=>[s[0],s[1]]);const {id,...rest}=ev;await put('events',ev.id,{...rest,pairs});toast(`페어 ${pairs.length}팀 저장`);render()});
+  peDraw()};
+ACT['ev-pairs-rand']=()=>{const all=PE.pool.concat(PE.slots.flat().filter(Boolean));const M=shuffle(all.filter(k=>pGender(k)==='M')),F=shuffle(all.filter(k=>pGender(k)==='F')),O=all.filter(k=>pGender(k)!=='M'&&pGender(k)!=='F');
+  const order=[];while(M.length&&F.length)order.push(M.pop(),F.pop());order.push(...shuffle(M.concat(F,O)));PE.slots=PE.slots.map(()=>[null,null]);PE.pool=[];
+  order.forEach((k,i)=>{const s=PE.slots[Math.floor(i/2)];if(s)s[i%2]=k;else PE.pool.push(k)});PE.sel=null;peDraw()};
+ACT['ev-pairs-clear']=()=>{PE.pool=byName(PE.pool.concat(PE.slots.flat().filter(Boolean)).map(k=>({key:k,name:keyName(k)}))).map(x=>x.key);PE.slots=PE.slots.map(()=>[null,null]);PE.sel=null;peDraw()};
+/* 끌어다 놓기 (터치 · 마우스) + 누르기 선택 */
+document.addEventListener('pointerdown',e=>{const c=e.target.closest('.pe-chip');if(!c||!PE||!$('#pe'))return;e.preventDefault();const k=c.dataset.pk;const x0=e.clientX,y0=e.clientY;let ghost=null;
+  const target=ev=>{if(ghost)ghost.style.display='none';const el=document.elementFromPoint(ev.clientX,ev.clientY);if(ghost)ghost.style.display='';const cell=el&&el.closest('[data-pe-cell]');if(cell)return cell.dataset.peCell;if(el&&el.closest('[data-pe-pool]'))return 'pool';return null};
+  const move=ev=>{if(!ghost&&Math.hypot(ev.clientX-x0,ev.clientY-y0)<6)return;if(!ghost){ghost=c.cloneNode(true);ghost.classList.add('pe-ghost');document.body.appendChild(ghost);c.classList.add('dragging')}
+    ghost.style.left=ev.clientX+'px';ghost.style.top=ev.clientY+'px';document.querySelectorAll('.pe-cell.over').forEach(x=>x.classList.remove('over'));const t=target(ev);if(t&&t!=='pool'){const cell=document.querySelector(`[data-pe-cell="${t}"]`);if(cell)cell.classList.add('over')}};
+  const up=ev=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);
+    if(ghost){const t=target(ev);ghost.remove();c.classList.remove('dragging');if(t)peDrop(k,t);else peDraw();return}
+    if(PE.sel&&PE.sel!==k){const loc=peWhere(k);if(loc){peDrop(PE.sel,loc.join('_'));return}}PE.sel=PE.sel===k?null:k;peDraw()};
+  document.addEventListener('pointermove',move);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)});
+document.addEventListener('click',e=>{if(!PE||!PE.sel||!$('#pe')||e.target.closest('.pe-chip'))return;const cell=e.target.closest('[data-pe-cell]');if(cell){peDrop(PE.sel,cell.dataset.peCell);return}if(e.target.closest('[data-pe-pool]'))peDrop(PE.sel,'pool')});
 /* 대진 만들기: 타임표는 대진표 화면으로, 리그 · 토너먼트는 이 행사에 바로 생성 */
 ACT['ev-make']=async()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const o=ev.fmt;if(!o){ACT['ev-fmt']();return}
   if(o.prog==='time'){Object.assign(cfg,{eventId:ev.id,title:ev.title,date:ev.date,place:ev.place||cfg.place});const roster=new Set(rosterAll().map(p=>p.key));const tm=(ev.teams||[]).flatMap(t=>t.members||[]);
