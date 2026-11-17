@@ -111,7 +111,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
-    {k:'tourney',t:'행사 토너먼트: 없음 → 조별 리그 순위 · 4강 · 결승 기록 (이긴 팀을 누르거나 점수 입력으로 승자 기록, 결승 승자는 우승으로 표시) · 파일로 조 편성 가져오기'},
+    {k:'tourney',t:'행사 토너먼트: 없음 → 우승 · 본선(4강 · 결승) · 조별 예선 순위 기록 (이긴 팀을 누르거나 점수 입력으로 승자 기록, 결승 승자는 우승으로 표시) · 파일로 조 편성 · 결과 · 시상 가져오기'},
     {k:'evgames',t:'행사(MT · 내부대회) 대진: 없음 → 이벤트 상세에 "행사 대진 · 결과" (팀 설정(이름 · 색) · 행사 대진 보기 · 점수 입력 · 팀 승수 → 동점이면 득실로 순위 · 시상 기록), 대진표에 팀 색 표시 · 점수 표시, 행사 대진은 정기모임 출석률 · 페어 통계에서 제외'},
     {k:'attdays',t:'정기모임 출석률: 비율 · 횟수만 표시 → 줄을 누르면 출석한 날짜 · 결석한 날짜 펼침 (다시 누르면 접힘)'},
     {k:'evbtn',t:'이벤트 상단 버튼: 대회 출전 기록 · 행사 추가 → 행사 추가만 (대회 출전 기록은 행사 추가에서 종류를 개인 대회로 선택)'},
@@ -1686,7 +1686,7 @@ function tourHtml(ev){const tr=ev.tourney;if(!tr)return '';const fin=tr.ko[tr.ko
   const side=(m,i,s)=>{const t=trTeam(tr,m[s]);const won=m.w===s;return `<button type="button" class="tr-side${won?' w':''}${m.w&&!won?' l':''}" ${RO||!t?'disabled':''} data-act="tr-win" data-i="${i}" data-s="${s}"><span>${h(trName(t))}</span>${m.sc&&m.sc[s==='a'?0:1]!==''&&m.sc[s==='a'?0:1]!=null?`<b class="num">${m.sc[s==='a'?0:1]}</b>`:''}</button>`};
   const ko=`<div class="tr-ko">${tr.ko.map((m,i)=>`<div class="tr-m"><span class="tr-st">${h(m.stage)}${m.a[0]!=='W'?` <span class="muted">${m.a} vs ${m.b}</span>`:''}</span>${side(m,i,'a')}${side(m,i,'b')}</div>`).join('')}</div>`;
   return `<div class="tr"><div class="eg-h"><h4 class="st-h" style="margin:0">${h(tr.title||'토너먼트')}</h4>${RO?'':'<button class="btn sm" data-act="tr-score">점수 입력</button>'}</div>
-    ${champ?`<div class="tr-champ">우승 <b>${h(trName(champ))}</b></div>`:''}${grp}${ko}${RO?'':'<p class="small muted" style="margin:0">4강 · 결승은 이긴 팀을 누르면 기록 · 다시 누르면 해제</p>'}</div>`}
+    ${champ?`<div class="tr-champ">우승 <b>${h(trName(champ))}</b></div>`:''}<h4 class="tr-sec">본선</h4>${ko}${RO?'':'<p class="small muted" style="margin:0">이긴 팀을 누르면 기록 · 다시 누르면 해제</p>'}<h4 class="tr-sec">조별 예선</h4>${grp}</div>`}
 const saveTr=async(ev,tr)=>{const {id,...rest}=ev;await put('events',ev.id,{...rest,tourney:tr});render()};
 ACT['tr-win']=async t=>{const ev=S.events.find(e=>e.id===evSel);if(!ev||!ev.tourney)return;const tr=JSON.parse(JSON.stringify(ev.tourney));const m=tr.ko[+t.dataset.i];m.w=m.w===t.dataset.s?null:t.dataset.s;
   tr.ko.forEach((x,j)=>{if(j>+t.dataset.i&&(x.a==='W'+t.dataset.i||x.b==='W'+t.dataset.i))x.w=null});await saveTr(ev,tr)};

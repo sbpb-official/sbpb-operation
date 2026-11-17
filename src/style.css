@@ -966,3 +966,4 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .tr-side{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;text-align:left;cursor:pointer}
 .tr-side.w{border-color:var(--court);background:color-mix(in srgb,var(--court) 12%,var(--surface));font-weight:700}.tr-side.l{color:var(--muted)}.tr-side:disabled{cursor:default}
 @media (max-width:520px){.tr-groups{grid-template-columns:1fr}}
+.tr-sec{font-size:13px;font-weight:700;margin:4px 0 0;color:var(--muted)}
