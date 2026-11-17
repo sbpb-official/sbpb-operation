@@ -106,7 +106,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
     {k:'blank',t:'대진표 확정 · 이미지 다운로드: 빈자리가 있으면 불가 → 기본은 그대로, "공란 허용"을 켜면 빈자리를 – 로 두고 확정 · 다운로드 가능 (현장에서 채우는 날용)'},
-    {k:'archive',t:'대진표 기록: 앱에서 만든 대진표만 → 지난 대진표(이미지) 기록 가져오기 · "이전 기록" 표시, 대시보드 캘린더 정기모임 날짜와 대진표 탭에서 보기, 회원 · 게스트 목록에 없는 이름은 "미등록 이름"(횟수 · 날짜 · 페어)으로 정리'},
+    {k:'archive',t:'대진표 기록: 앱에서 만든 대진표만 → 지난 대진표(이미지) 기록 가져오기 · "이전 기록" 표시, 대시보드 캘린더 정기모임 날짜와 대진표 탭에서 보기, 회원 · 게스트 목록에 없는 이름은 "미등록 이름"(횟수 · 날짜 · 페어)으로 정리, 나중에 같은 이름으로 등록하면 지난 기록에 자동 연결'},
     {k:'historyui',t:'업데이트 기록: 11.14부터 · 배포마다 잘게 나뉜 버전 · 긴 목록 → 최초 요청(11.12 Claude 아티팩트 시기)부터 실제 배포 날짜 · 시간대 기준 기록, 같은 날 배포는 한 버전으로 묶음(하루 20개 안팎을 넘으면 나눔), 고정 높이 상자 안에서 페이지 넘겨 보기'},
     {k:'news',t:'업데이트 안내: 접속 때 바뀐 내용 전체를 창에 표시 → 버전과 바뀐 항목 수만 짧게 안내, 상세 내역은 설정 › 업데이트 기록 (상세 보기 버튼)'},
     {k:'staff',t:'운영진: 체크 하나로 즉시 바뀜(연도 구분 없음) → 회원 수정 › 운영진 체크 후 임기 연도 선택, 지난 임기 기록 보존, 내년 운영진은 명단에 흐린 배지 (8월부터 다음 해 선택 가능)'},
@@ -394,6 +394,7 @@ async function boot(){
 // one-time data fixes, run once by the first operator who loads the data (a flag doc prevents re-runs)
 let migBusy=false;
 async function runMigrations(){
+  setTimeout(()=>relinkArchive(),1500);/* 매 접속: 새로 등록된 회원 · 게스트를 지난 대진 기록에 연결 */
   if(migBusy||RO||!db)return;
   const F='mig-joined-2026';                         // 2026-11-14: 현 회원 22명 가입일을 2026-01-01로 일괄 적용 (덮어쓰기)
   const F2='mig-court-achasan';                      // 2026-11-14: 아차산배수지 테니스장 코트 정보 추가 (같은 이름 코트가 있으면 건너뜀)
@@ -1148,6 +1149,11 @@ document.addEventListener('toggle',e=>{if(e.target.id==='logic'){lsSet('sbpb-log
 function historyPanel(list){
   return `<section class="panel"><div class="panel-h"><h2>대진표 기록</h2><span class="small muted">${list.length}건</span></div><div class="list hist" data-ks="hist">${list.length?list.map(b=>`<div class="li click" data-act="bv-open" data-id="${b.id}">${dateBox(b.cfg?.date)}<div class="grow"><div class="ttl">${h(b.cfg?.title)}</div><div class="sub">${fmtFull(b.cfg?.date)} · ${Object.keys(b.players||{}).length}명</div></div>${b.archive?'<span class="chip">이전 기록</span>':''}<span class="chip ${b.status==='확정'?'ball':''}">${h(b.status)}</span></div>`).join(''):'<div class="muted small">저장된 대진표 없음. 확정 시 대진표 기록에 저장</div>'}</div>${unregHtml()}</section>`;
 }
+async function relinkArchive(){if(RO||!db)return;const ix=nameIndex();
+  for(const b of S.brackets){if(!b.archive)continue;const map={};Object.keys(b.players||{}).forEach(k=>{if(k.startsWith('n:')){const p=ix[b.players[k].name];if(p&&!b.players[p.key])map[k]=p}});
+    if(!Object.keys(map).length)continue;const players={...b.players};Object.entries(map).forEach(([k,p])=>{delete players[k];players[p.key]={name:p.name,gender:p.gender,level:p.level,guest:p.guest}});
+    const f=k=>map[k]?map[k].key:k;const rounds=b.rounds.map(R=>({...R,matches:R.matches.map(m=>m&&{...m,a:m.a.map(f),b:m.b.map(f)}),rest:R.rest.map(f)}));
+    const {id,...rest}=b;try{await put('brackets',b.id,{...rest,players,rounds})}catch(e){}}}
 /* 대진표 기록 속 미등록 이름: 회원·게스트 목록에 아직 없는 이름 (몇 번 · 언제 · 누구와 페어) */
 function unregList(){const ix=nameIndex();const map={};
   S.brackets.slice().sort((x,y)=>(x.cfg?.date||'').localeCompare(y.cfg?.date||'')).forEach(b=>{const P=b.players||{};const nm=k=>P[k]&&P[k].name;const isU=k=>k&&String(k).startsWith('n:')&&!ix[nm(k)];
@@ -1856,7 +1862,7 @@ ACT['admin-open']=async()=>{if(!WEB)return;let list=[];try{list=await window.SBP
 const ARCH_GUESS={'남복':'M','여복':'F'};
 function nameIndex(){const ix={};S.members.forEach(m=>{if(m.name&&!ix[m.name])ix[m.name]={key:m.id,name:m.name,gender:m.gender,level:Number(m.level)||3,guest:false}});
   S.guests.forEach(g=>{const p={key:g.id,name:g.name,gender:g.gender,level:Number(g.level)||3,guest:true};[g.name,g.nick].forEach(n=>{if(n&&!ix[n])ix[n]=p})});return ix}
-async function archiveImport(list){const ix=nameIndex();const plan=[],skipRain=[],skipHas=[];
+async function archiveImport(list,people={}){const ix=nameIndex();const plan=[],skipRain=[],skipHas=[];
   for(const e of list){const ds=e.date;const rs=regStat(ds);
     if(rs&&rs.status==='취소'&&/우천/.test(rs.reason||'')){skipRain.push(ds);continue}
     if(S.brackets.some(b=>b.cfg&&b.cfg.date===ds&&!b.archive)){skipHas.push(ds);continue}
@@ -1866,14 +1872,14 @@ async function archiveImport(list){const ix=nameIndex();const plan=[],skipRain=[
   let done=0;const unknown=new Set();
   for(const e of plan){const players={};
     const key=(n,t)=>{if(!n)return null;const p=ix[n];if(p){players[p.key]={name:p.name,gender:p.gender,level:p.level,guest:p.guest};return p.key}
-      const k='n:'+n;unknown.add(n);if(!players[k])players[k]={name:n,gender:'',level:3,guest:true,unreg:true};if(!players[k].gender&&ARCH_GUESS[t])players[k].gender=ARCH_GUESS[t];return k};
+      const k='n:'+n;unknown.add(n);if(!players[k])players[k]={name:n,gender:people[n]||'',level:3,guest:true,unreg:true};if(!players[k].gender&&ARCH_GUESS[t])players[k].gender=ARCH_GUESS[t];return k};
     const rounds=e.rounds.map(R=>({matches:R.matches.map(m=>{const all=[...m.a,...m.b].every(x=>!x);const o={a:m.a.map(n=>key(n,m.t)),b:m.b.map(n=>key(n,m.t))};if(!all&&m.t)o.t=m.t;return o}),rest:R.rest.map(n=>key(n)),...(R.time?{time:R.time}:{})}));
     const first=(e.rounds[0]||{}).time;const start=first?first.split('–')[0].padStart(5,'0'):'09:30';
     try{await put('brackets','arch-'+e.date,{cfg:{title:'SBPB 정기모임',date:e.date,place:REG.place,start,end:'12:00',mins:30,courtList:[1,2,3].map(i=>({name:`코트 ${i}`,pref:''}))},players,rounds,status:'확정',archive:true,allowBlank:!!e.blank,createdBy:myId||null});done++}catch(err){}}
   alert(`대진 기록 가져오기 완료 ${done}건${skipRain.length?`\n우천 취소일 제외: ${skipRain.join(', ')}`:''}${skipHas.length?`\n이미 대진표가 있어 제외: ${skipHas.join(', ')}`:''}${unknown.size?`\n\n회원·게스트 목록에 없는 이름 ${unknown.size}명 (대진표 › 대진표 기록 › 미등록 이름에서 확인)`:''}`);render()}
 ACT['data-import']=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='application/json,.json';
   inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;let j;try{j=JSON.parse(await f.text())}catch(e){toast('JSON 파일 읽기 실패');return}
-    if(j&&Array.isArray(j.archive)){closeModal();await archiveImport(j.archive);return}
+    if(j&&Array.isArray(j.archive)){closeModal();await archiveImport(j.archive,j.people||{});return}
     const data=j&&j.data?j.data:j;const cols=COLS.filter(c=>Array.isArray(data[c]));const n=cols.reduce((s,c)=>s+data[c].length,0);
     if(!n){toast('가져올 데이터 없음');return}
     if(!confirm(`${n}건을 가져옵니다. 같은 항목은 파일 내용으로 덮어씀. 진행할까요?`))return;
