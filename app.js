@@ -105,6 +105,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'mixfix',t:'지난 대진 기록 경기 종류: 캡처 · PDF에 적힌 종류 그대로(남남 대 여여도 혼복 등) → 선수 성별을 모두 알면 성별로 판단(남남 대 여여 · 남남 대 남여는 잡복, 넷 다 여자면 여복)'},
     {k:'singles',t:'대진표 단식 경기: 표시 불가(복식만) → 남단 · 여단 · 혼단 경기 한 명씩 표시(지난 대진 기록용), 색은 같은 성별 복식과 같은 계열'},
     {k:'resbox',t:'코트 카드 오픈 상자 색: 주민 우선 · 일반 모두 초록, 하루 안으로 다가오면 주황 → 주민 우선 오픈은 항상 주황(테두리 · 이름 · D-day · 배경), 일반 오픈은 항상 초록'},
     {k:'resdday',t:'주민 우선 예약 오픈 D-day 색: 대시보드 예약 오픈 목록은 기본 글자색 · 코트 › 45일 내 예약 오픈은 진한 주황 → 둘 다 주민 우선 배지와 같은 주황'},
@@ -978,7 +979,11 @@ function rosterAll(){
   return ms.concat(gs);
 }
 function mtype(P,m){
-  if(!m)return null;if(m.t)return m.t;if([...m.a,...m.b].every(k=>!k))return '미정';const ks=[...m.a,...m.b];if(ks.some(k=>!k||!P[k]))return '미완성';
+  if(!m)return null;
+  /* 기록에 적힌 종류(m.t)가 있어도 모든 선수 성별을 알면 성별로 다시 판단: 남남 대 여여 · 남남 대 남여 등은 잡복 */
+  if(m.t){const ks=[...m.a,...m.b].filter(Boolean),gs=ks.map(k=>P[k]&&P[k].gender);const known=gs.every(x=>x==='M'||x==='F');
+    if(known&&m.a.length===1&&m.b.length===1&&ks.length===2)return gs[0]!==gs[1]?'혼단':gs[0]==='M'?'남단':'여단';
+    if(!(known&&ks.length===4&&m.a.length===2&&m.b.length===2))return m.t}if([...m.a,...m.b].every(k=>!k))return '미정';const ks=[...m.a,...m.b];if(ks.some(k=>!k||!P[k]))return '미완성';
   const g=ks.map(k=>P[k].gender);
   if(g.every(x=>x==='M'))return '남복';if(g.every(x=>x==='F'))return '여복';
   if(P[m.a[0]].gender!==P[m.a[1]].gender&&P[m.b[0]].gender!==P[m.b[1]].gender)return '혼복';
