@@ -111,6 +111,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'evgames',t:'행사(MT · 내부대회) 대진: 없음 → 이벤트 상세에 "행사 대진 · 결과" (팀 설정 · 행사 대진 보기 · 점수 입력 · 팀 승수 → 동점이면 득실로 순위 · 시상 기록), 대진표에 팀 색 표시 · 점수 표시, 행사 대진은 정기모임 출석률 · 페어 통계에서 제외'},
     {k:'attdays',t:'정기모임 출석률: 비율 · 횟수만 표시 → 줄을 누르면 출석한 날짜 · 결석한 날짜 펼침 (다시 누르면 접힘)'},
     {k:'evbtn',t:'이벤트 상단 버튼: 대회 출전 기록 · 행사 추가 → 행사 추가만 (대회 출전 기록은 행사 추가에서 종류를 개인 대회로 선택)'},
     {k:'statpick',t:'페어 통계 사람 선택: 기록에 나온 모든 사람(게스트 · 미등록 포함) → 현 회원만'},
@@ -1026,7 +1027,7 @@ function assignCourts(ms,types,courts){
 /* ---------- 대진 통계: 전체 기록 기준 페어 · 맞대결 · 정기모임 출석률 ---------- */
 /* 지난 정기모임 대진(확정 · 이전 기록)만, 같은 날짜가 여럿이면 직접 만든 대진 우선 */
 function pastBrackets(){const today=ymd(today0());const by={};
-  S.brackets.filter(b=>b.cfg&&b.cfg.date&&b.cfg.date<=today&&(b.archive||b.status==='확정')).forEach(b=>{const o=by[b.cfg.date];if(!o||(o.archive&&!b.archive))by[b.cfg.date]=b});
+  S.brackets.filter(b=>b.cfg&&b.cfg.date&&!b.cfg.eventId&&b.cfg.date<=today&&(b.archive||b.status==='확정')).forEach(b=>{const o=by[b.cfg.date];if(!o||(o.archive&&!b.archive))by[b.cfg.date]=b});
   return Object.values(by).sort((x,y)=>x.cfg.date.localeCompare(y.cfg.date))}
 const keyName=(k,b)=>{const m=S.members.find(x=>x.id===k),g=S.guests.find(x=>x.id===k);return (m||g||{}).name||(b&&b.players&&b.players[k]&&b.players[k].name)||String(k).replace(/^n:/,'')};
 /* 실제 모임이 열린 날: CLUB_Y 1월부터 지난 토요일 중 취소 · 삭제가 아닌 날 + 대진 기록이 있는 날 */
@@ -1237,12 +1238,12 @@ function normB(b){const bc={...b.cfg};if(!bc.courtList){const n=Math.max(...b.ro
 // bench: 4명 이상이면 두 줄. 짝수는 반반, 홀수는 윗줄이 한 명 적게
 function benchHtml(names){const n=names.length;if(!n)return '–';if(n<4)return names.join(', ');const top=Math.floor(n/2);return `<span class="bl">${names.slice(0,top).join(', ')}</span><span class="bl">${names.slice(top).join(', ')}</span>`}
 function posterHtml(d=draft,inter=true){
-  const c=d.cfg;const courts=c.courtList||defCourts();const N=(r,slot)=>inter?nm(r,slot):nmS(d,r,slot);
+  const c=d.cfg;const courts=c.courtList||defCourts();const PEV=evOfB(d);const PTL=PEV?teamTally(PEV):null;const N=(r,slot)=>inter?nm(r,slot):nmS(d,r,slot);
   const st=toMin(c.start),mins=Number(c.mins)||30;const lastT=(d.rounds[d.rounds.length-1]||{}).time;const end=lastT?lastT.split('–')[1]:fromMin(st+d.rounds.length*mins);
   return `<div class="poster${d.allowBlank?' blank-ok':''}"${inter?' id="poster"':''}>
-   <div class="p-head"><img class="p-logo" src="logo-g-lg.png" alt="SBPB Tennis Club"><div><div class="p-title">${h(c.title||'SBPB 정기모임')}</div><div class="p-meta">${fmtFull(c.date)} · ${h(c.meet||(c.start===REG.gameStart?REG.start:c.start))}–${end}${c.place?' · '+h(c.place):''}</div></div><span class="p-status${d.status==='확정'?'':' draft'}">${d.status==='확정'?'확정':'초안'}</span></div>
+   <div class="p-head"><img class="p-logo" src="logo-g-lg.png" alt="SBPB Tennis Club"><div><div class="p-title">${h(c.title||'SBPB 정기모임')}</div><div class="p-meta">${fmtFull(c.date)} · ${h(c.meet||(c.start===REG.gameStart?REG.start:c.start))}–${end}${c.place?' · '+h(c.place):''}</div></div><span class="p-status${d.status==='확정'?'':' draft'}">${d.status==='확정'?'확정':'초안'}</span></div>${PEV&&(PEV.teams||[]).length?`<div class="p-teams">${PEV.teams.map((t,i)=>{const x=PTL&&PTL.rows[i];return `<span><i class="tdot" style="background:${TEAM_C[i%4]}"></i><b>${h(t.name)}</b>${x&&PTL.played?` <b class="num">${x.w}승</b> <span class="p-gd">득실 ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}</span>`:''}</span>`}).join('')}</div>`:''}
    <table class="p-table"><thead><tr><th style="width:84px">타임</th>${courts.map(x=>`<th>${h(x.name)}</th>`).join('')}<th style="width:180px">벤치</th></tr></thead><tbody>
-   ${d.rounds.map((R,r)=>`<tr><td class="t"><b>${r+1}</b><span>${R.time?h(R.time):`${fromMin(st+r*mins)}–${fromMin(st+(r+1)*mins)}`}</span></td>${courts.map((_,ci)=>{const m=R.matches[ci];if(!m)return '<td class="c-none">코트 미사용</td>';const ty=mtype(d.players,m);return `<td class="c-${ty}"><div class="m"><span class="tag ${ty}">${ty}</span>${['a','b'].map(s=>`<div class="tm">${(m[s]||[]).length===1?N(r,`m${ci}${s}0`):`${N(r,`m${ci}${s}0`)}<span class="amp">&amp;</span>${N(r,`m${ci}${s}1`)}`}</div>`).join('<div class="vs">VS</div>')}</div></td>`}).join('')}<td class="bench">${benchHtml(R.rest.map((k,i)=>N(r,'r'+i)))}</td></tr>`).join('')}
+   ${d.rounds.map((R,r)=>`<tr><td class="t"><b>${r+1}</b><span>${R.time?h(R.time):`${fromMin(st+r*mins)}–${fromMin(st+(r+1)*mins)}`}</span></td>${courts.map((_,ci)=>{const m=R.matches[ci];if(!m)return '<td class="c-none">코트 미사용</td>';const ty=mtype(d.players,m);return `<td class="c-${ty}"><div class="m"><span class="tag ${ty}">${ty}</span>${['a','b'].map(s=>`<div class="tm">${tdot(PEV,(m[s]||[])[0])}${(m[s]||[]).length===1?N(r,`m${ci}${s}0`):`${N(r,`m${ci}${s}0`)}<span class="amp">&amp;</span>${N(r,`m${ci}${s}1`)}`}</div>`).join(m.sc&&m.sc[0]!==''&&m.sc[1]!==''&&m.sc[0]!=null?`<div class="vs sc"><b${+m.sc[0]>+m.sc[1]?' class="w"':''}>${m.sc[0]}</b> : <b${+m.sc[1]>+m.sc[0]?' class="w"':''}>${m.sc[1]}</b></div>`:'<div class="vs">VS</div>')}</div></td>`}).join('')}<td class="bench">${benchHtml(R.rest.map((k,i)=>N(r,'r'+i)))}</td></tr>`).join('')}
    </tbody></table>
    <div class="p-foot"><div class="p-sign">사방팔방 SBPB</div></div>
   </div>`;
@@ -1270,7 +1271,7 @@ function logicHtml(){
 }
 document.addEventListener('toggle',e=>{if(e.target.id==='logic'){lsSet('sbpb-logic-open',e.target.open);const s=e.target.querySelector('summary span');if(s)s.textContent=e.target.open?'접기':'펼치기'}},true);
 function historyPanel(list){
-  return `<section class="panel"><div class="panel-h"><h2>대진 히스토리</h2><span class="small muted">${list.length}건</span></div><div class="list hist" data-ks="hist">${list.length?list.map(b=>`<div class="li click" data-act="bv-open" data-id="${b.id}">${dateBox(b.cfg?.date)}<div class="grow"><div class="ttl">${h(b.cfg?.title)}</div><div class="sub">${fmtFull(b.cfg?.date)} · ${Object.keys(b.players||{}).length}명</div></div>${b.archive?'<span class="chip">이전 기록</span>':''}<span class="chip ${b.status==='확정'?'ball':''}">${h(b.status)}</span></div>`).join(''):'<div class="muted small">저장된 대진표 없음. 저장 · 확정 시 대진 히스토리에 기록</div>'}</div>${unregHtml()}</section>`;
+  return `<section class="panel"><div class="panel-h"><h2>대진 히스토리</h2><span class="small muted">${list.length}건</span></div><div class="list hist" data-ks="hist">${list.length?list.map(b=>`<div class="li click" data-act="bv-open" data-id="${b.id}">${dateBox(b.cfg?.date)}<div class="grow"><div class="ttl">${h(b.cfg?.title)}</div><div class="sub">${fmtFull(b.cfg?.date)} · ${Object.keys(b.players||{}).length}명</div></div>${b.archive?'<span class="chip">이전 기록</span>':''}${b.cfg&&b.cfg.eventId?'<span class="chip">행사</span>':''}<span class="chip ${b.status==='확정'?'ball':''}">${h(b.status)}</span></div>`).join(''):'<div class="muted small">저장된 대진표 없음. 저장 · 확정 시 대진 히스토리에 기록</div>'}</div>${unregHtml()}</section>`;
 }
 async function relinkArchive(){if(RO||!db)return;const ix=nameIndex();
   for(const b of S.brackets){if(!b.archive)continue;const map={};Object.keys(b.players||{}).forEach(k=>{if(k.startsWith('n:')){const p=ix[b.players[k].name];if(p&&!b.players[p.key])map[k]=p}});
@@ -1383,7 +1384,7 @@ function choiceDialog({title,msg='',choices}){return new Promise(res=>{const ov=
   document.body.appendChild(ov)})}
 function openBracketView(id){
   const b=S.brackets.find(x=>x.id===id);if(!b)return;const d=normB(b);bvCtx=d;
-  $('#modal-root').innerHTML=`<div class="ov" data-act="ov-close"><div class="modal wide" role="dialog" aria-modal="true" aria-label="대진표 보기"><div class="m-head"><h2>${fmtFull(b.cfg.date)} <span class="chip ${b.status==='확정'?'ball':''}">${h(b.status)}</span></h2><button type="button" class="modal-x" data-act="close-modal" aria-label="닫기">×</button></div><div class="stage" id="bv-stage">${posterHtml(d,false)}</div><div class="row" style="justify-content:flex-end;margin-top:12px">${mode!=='ro'?`<button class="btn danger" data-act="bv-del" data-id="${id}">삭제</button><button class="btn" data-act="br-copy" data-id="${id}">새 대진으로 복사</button><button class="btn" data-act="br-load" data-id="${id}">불러와서 수정</button>`:''}<button class="btn ball" data-act="bv-img" data-id="${id}">이미지 다운로드</button></div></div></div>`;
+  $('#modal-root').innerHTML=`<div class="ov" data-act="ov-close"><div class="modal wide" role="dialog" aria-modal="true" aria-label="대진표 보기"><div class="m-head"><h2>${fmtFull(b.cfg.date)} <span class="chip ${b.status==='확정'?'ball':''}">${h(b.status)}</span></h2><button type="button" class="modal-x" data-act="close-modal" aria-label="닫기">×</button></div><div class="stage" id="bv-stage">${posterHtml(d,false)}</div><div class="row" style="justify-content:flex-end;margin-top:12px">${mode!=='ro'?`<button class="btn danger" data-act="bv-del" data-id="${id}">삭제</button><button class="btn" data-act="br-copy" data-id="${id}">새 대진으로 복사</button><button class="btn" data-act="br-load" data-id="${id}">불러와서 수정</button>${b.cfg.eventId?`<button class="btn" data-act="bv-score" data-id="${id}">점수 입력</button>`:''}`:''}<button class="btn ball" data-act="bv-img" data-id="${id}">이미지 다운로드</button></div></div></div>`;
   lockPage();fitIn($('#bv-stage'));
 }
 ACT['bv-open']=t=>{closeDayPop();openBracketView(t.dataset.id)};
@@ -1625,6 +1626,53 @@ ACT['note-color']=t=>{noteColor=t.dataset.c;document.querySelectorAll('.sw').for
 ACT['note-add']=async()=>{const ta=$('#note-text');const txt=ta.value.trim();if(!txt){ta.focus();return}const id=uid();try{await put('notes',id,{eventId:evSel,text:txt,color:noteColor,authorId:myId||null,createdAt:Date.now(),rot:(Math.random()*3-1.5).toFixed(1)});ta.value='';lsSet('sbpb-notedraft','')}catch(e){}};
 ACT['note-del']=t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='삭제?';setTimeout(()=>{t.dataset.confirm='';t.textContent='×'},2500);return}del('notes',t.dataset.id)};
 ACT['note-edit']=t=>{const n=S.notes.find(x=>x.id===t.dataset.id);if(!n)return;openModal('메모 수정',`<label class="f">내용<textarea class="in" name="text" rows="6">${h(n.text)}</textarea></label><label class="f">분류<select class="in" name="color">${Object.entries(NOTE_KIND).map(([c,k])=>`<option value="${c}"${n.color===c?' selected':''}>${k}</option>`).join('')}</select></label>`,fd=>put('notes',n.id,{...n,text:fd.text.trim(),color:fd.color}))};
+
+/* ---------- 행사 대진 (MT · 내부대회): 팀전 · 점수 · 시상 ---------- */
+const TEAM_C=['#2F6FBF','#D9480F','#2F9E44','#7048E8'];
+const evOfB=b=>b&&b.cfg&&b.cfg.eventId?S.events.find(e=>e.id===b.cfg.eventId):null;
+/* 선수 key → 팀 번호 (행사에 등록된 팀 기준) */
+function teamMap(ev){const m={};((ev&&ev.teams)||[]).forEach((t,i)=>(t.members||[]).forEach(k=>m[k]=i));return m}
+/* 팀전 집계: 경기 승수 → 동점이면 득실(게임 차) */
+function teamTally(ev){const T=(ev&&ev.teams)||[];if(T.length<2)return null;const tm=teamMap(ev);const r=T.map((t,i)=>({i,name:t.name,w:0,l:0,gf:0,ga:0}));let played=0;
+  S.brackets.filter(b=>b.cfg&&b.cfg.eventId===ev.id).forEach(b=>(b.rounds||[]).forEach(R=>(R.matches||[]).forEach(m=>{if(!m||!m.sc||m.sc[0]===''||m.sc[1]===''||m.sc[0]==null||m.sc[1]==null)return;
+    const ta=tm[(m.a||[]).find(Boolean)],tb=tm[(m.b||[]).find(Boolean)];if(ta==null||tb==null||ta===tb)return;const x=+m.sc[0],y=+m.sc[1];played++;
+    r[ta].gf+=x;r[ta].ga+=y;r[tb].gf+=y;r[tb].ga+=x;if(x>y){r[ta].w++;r[tb].l++}else if(y>x){r[tb].w++;r[ta].l++}})));
+  const rank=r.slice().sort((p,q)=>q.w-p.w||(q.gf-q.ga)-(p.gf-p.ga));return {rows:r,rank,played}}
+const tdot=(ev,k)=>{if(!ev||!k)return '';const i=teamMap(ev)[k];return i==null?'':`<i class="tdot" style="background:${TEAM_C[i%4]}" title="${h(ev.teams[i].name)}"></i>`};
+function evGames(ev){if(ev.type==='개인대회')return '';const bs=S.brackets.filter(b=>b.cfg&&b.cfg.eventId===ev.id).sort((x,y)=>(x.cfg.start||'').localeCompare(y.cfg.start||''));
+  const T=ev.teams||[];const tl=teamTally(ev);const aw=ev.awards||[];
+  const teamsHtml=T.length?`<div class="eg-teams">${T.map((t,i)=>`<div class="eg-team"><b><i class="tdot" style="background:${TEAM_C[i%4]}"></i>${h(t.name)}</b><span class="small muted">${h((t.members||[]).map(k=>keyName(k)).join(', '))}</span></div>`).join('')}</div>`:'<p class="small muted" style="margin:0">팀 없음 · 팀전이면 팀 설정</p>';
+  const res=tl&&tl.played?`<div class="eg-res">${tl.rank.map((x,j)=>`<span class="eg-sc${j===0&&(tl.rank[0].w!==tl.rank[1].w||(tl.rank[0].gf-tl.rank[0].ga)!==(tl.rank[1].gf-tl.rank[1].ga))?' win':''}"><i class="tdot" style="background:${TEAM_C[x.i%4]}"></i>${h(x.name)} <b class="num">${x.w}승</b> <span class="muted small">${x.l}패 · 득실 ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}</span></span>`).join('')}<span class="small muted">점수 입력 ${tl.played}경기</span></div>`:'';
+  return `<div class="evgames"><div class="eg-h"><h3>행사 대진 · 결과</h3>${RO?'':`<div class="row"><button class="btn sm" data-act="eg-teams">팀 설정</button><button class="btn sm" data-act="eg-award">시상 추가</button></div>`}</div>
+    ${teamsHtml}${res}
+    ${bs.length?`<div class="list">${bs.map(b=>`<div class="li click" data-act="bv-open" data-id="${b.id}"><div class="grow"><div class="ttl">${h(b.cfg.title||ev.title)}</div><div class="sub">${h(b.cfg.start||'')}${b.rounds?` · ${b.rounds.length}타임`:''} · ${(b.cfg.courtList||[]).map(c=>h(c.name)).join(' · ')}</div></div><span class="chip">대진 보기</span></div>`).join('')}</div>`:'<p class="small muted" style="margin:8px 0 0">등록된 행사 대진 없음</p>'}
+    ${aw.length?`<div class="eg-aw"><h4 class="st-h">시상</h4>${aw.map((x,i)=>`<div class="eg-awr"><b>${h(x.t)}</b><span>${h(x.w)}</span>${RO?'':`<button class="x" data-act="eg-award-del" data-i="${i}" aria-label="시상 삭제">×</button>`}</div>`).join('')}</div>`:''}</div>`}
+ACT['eg-award']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;
+  openModal('시상 추가',`<label class="f">상 이름<input class="in" name="t" required placeholder="예: 우승 팀 · MVP · 발리 대전 우승"></label><label class="f">수상자<input class="in" name="w" required placeholder="예: 사방 · 홍길동"></label>`,async fd=>{if(!fd.t.trim()||!fd.w.trim())return;const {id,...rest}=ev;await put('events',ev.id,{...rest,awards:(ev.awards||[]).concat({t:fd.t.trim(),w:fd.w.trim()})});toast('시상 기록 추가');render()})};
+ACT['eg-award-del']=async t=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const aw=(ev.awards||[]).slice();aw.splice(+t.dataset.i,1);const {id,...rest}=ev;await put('events',ev.id,{...rest,awards:aw});render()};
+ACT['eg-teams']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const T=(ev.teams&&ev.teams.length?ev.teams:[{name:'팀 1',members:[]},{name:'팀 2',members:[]}]);const tm=teamMap({teams:T});
+  const ppl=byName(S.members.filter(isCur).map(m=>({key:m.id,name:m.name}))).concat(byName(S.guests.map(g=>({key:g.id,name:g.name,g:true}))).filter(p=>tm[p.key]!=null));
+  openModal('팀 설정',`<div class="grid2">${T.map((t,i)=>`<label class="f"><span><i class="tdot" style="background:${TEAM_C[i]}"></i>팀 ${i+1} 이름</span><input class="in" name="tn${i}" value="${h(t.name)}"></label>`).join('')}</div>
+    <p class="small muted" style="margin:4px 0 8px">사람마다 팀 선택 · 다시 누르면 해제</p><div class="eg-pick">${ppl.map(p=>`<div class="eg-prow"><span>${h(p.name)}${p.g?' <span class="gmark">G</span>':''}</span><span class="seg">${T.map((t,i)=>`<button type="button" data-act="eg-tpick" data-k="${h(p.key)}" data-i="${i}" class="${tm[p.key]===i?'on':''}">${i+1}</button>`).join('')}</span><input type="hidden" name="tk_${h(p.key)}" value="${tm[p.key]==null?'':tm[p.key]}"></div>`).join('')}</div>`,
+    async fd=>{const teams=T.map((t,i)=>({name:(fd['tn'+i]||'').trim()||`팀 ${i+1}`,members:[]}));Object.keys(fd).filter(k=>k.startsWith('tk_')&&fd[k]!=='').forEach(k=>teams[+fd[k]].members.push(k.slice(3)));
+      const {id,...rest}=ev;await put('events',ev.id,{...rest,teams});toast('팀 저장');render()})};
+ACT['eg-tpick']=t=>{const row=t.closest('.eg-prow');const inp=row.querySelector('input');const on=t.classList.contains('on');row.querySelectorAll('button').forEach(b=>b.classList.remove('on'));if(on)inp.value='';else{t.classList.add('on');inp.value=t.dataset.i}};
+/* 점수 입력: 대진 보기 창에서 경기마다 게임 점수 */
+ACT['bv-score']=t=>{const b=S.brackets.find(x=>x.id===t.dataset.id);if(!b)return;const ev=evOfB(b);const courts=b.cfg.courtList||[];const nm=k=>k?keyName(k,b):'–';
+  openModal('점수 입력',`<p class="small muted" style="margin:0 0 8px">게임 점수 입력 · 비워 두면 미입력${ev&&ev.teams?' · 팀 승패와 득실 자동 계산':''}</p><div class="sc-list">${b.rounds.map((R,ri)=>R.matches.map((m,ci)=>m?`<div class="sc-row"><span class="sc-t">${ri+1}타임 · ${h((courts[ci]||{}).name||'코트 '+(ci+1))}</span><span class="sc-p">${tdot(ev,m.a.find(Boolean))}${h(m.a.map(nm).join(' · '))}</span><input class="in num" name="s_${ri}_${ci}_0" inputmode="numeric" value="${m.sc?h(m.sc[0]??''):''}" aria-label="점수"><span class="muted">:</span><input class="in num" name="s_${ri}_${ci}_1" inputmode="numeric" value="${m.sc?h(m.sc[1]??''):''}" aria-label="점수"><span class="sc-p">${tdot(ev,m.b.find(Boolean))}${h(m.b.map(nm).join(' · '))}</span></div>`:'').join('')).join('')}</div>`,
+    async fd=>{const rounds=b.rounds.map((R,ri)=>({...R,matches:R.matches.map((m,ci)=>{if(!m)return m;const x=(fd[`s_${ri}_${ci}_0`]||'').trim(),y=(fd[`s_${ri}_${ci}_1`]||'').trim();const o={...m};if(x===''&&y==='')delete o.sc;else o.sc=[x===''?'':+x,y===''?'':+y];return o})}));
+      const {id,...rest}=b;await put('brackets',b.id,{...rest,rounds});toast('점수 저장');setTimeout(()=>openBracketView(b.id),50)})};
+/* 행사 대진 파일 가져오기: 시간표와 팀 · 대진 */
+function eventBracketImport(j){const ev=S.events.find(e=>e.date===j.date&&(!j.eventTitle||e.title.includes(j.eventTitle)))||S.events.find(e=>e.date===j.date);
+  if(!ev){toast(`${j.date} 행사를 찾지 못함 · 이벤트에 먼저 등록 필요`);return}
+  const ix=nameIndex();const unknown=new Set();const kof=n=>{if(!n)return null;const p=ix[n];if(p)return p.key;unknown.add(n);return 'n:'+n};
+  const players={};const reg=n=>{const k=kof(n);if(!k)return null;if(!players[k]){const p=ix[n];players[k]=p?{name:p.name,gender:p.gender,level:p.level,guest:p.guest}:{name:n,gender:'',level:3,guest:true,unreg:true}}return k};
+  const rounds=j.rounds.map(R=>({matches:R.matches.map(m=>{const o={a:m.a.map(reg),b:m.b.map(reg)};if(m.t)o.t=m.t;return o}),rest:(R.rest||[]).map(reg).filter(Boolean),...(R.time?{time:R.time}:{})}));
+  const teams=(j.teams||[]).map(t=>({name:t.name,members:t.members.map(kof).filter(Boolean)}));
+  const body=`<div class="mi-list"><div><b>${h(ev.title)}</b> ${fmtD(ev.date)}</div><div>${h(j.courts.join(' · '))} · ${h(j.start)} 시작 · ${rounds.length}타임 · ${Object.keys(players).length}명</div>${teams.length?`<div>팀: ${teams.map(t=>h(t.name)+' '+t.members.length+'명').join(' · ')}</div>`:''}</div>${unknown.size?`<p class="small" style="margin:8px 0 0">회원 · 게스트 목록에 없는 이름: ${[...unknown].map(h).join(', ')}</p>`:''}`;
+  openModal('행사 대진 가져오기',body,async()=>{const bid='ev-'+ev.id+'-'+(j.key||'main');
+    await put('brackets',bid,{cfg:{title:j.title||ev.title,date:ev.date,place:ev.place||'',start:j.start,end:j.end||'',mins:j.mins||30,courtList:j.courts.map(n=>({name:n,pref:''})),eventId:ev.id},players,rounds,status:'확정',createdBy:myId||null});
+    if(teams.length){const {id,...rest}=ev;await put('events',ev.id,{...rest,teams})}toast('행사 대진 등록');evSel=ev.id;render()})}
 function viewEvents(){
   const sorted=S.events.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   // 예정: 가까운 날짜부터 · 지난 이벤트: 최근 것부터
@@ -1655,7 +1703,7 @@ function viewEvents(){
     right=`<section class="panel t-${h(ev.type)}" id="evdetail"><div class="evhead" data-act="memo-toggle" role="button" tabindex="0" aria-expanded="${memoOpen}" title="${memoOpen?'메모 접기':'메모 펼치기'}"><div><span class="chip ttag">${isT?'개인 대회':h(ev.type)}</span> <span class="chip">${h(ev.status)}</span><h2 style="margin-top:6px">${h(ev.title)}</h2>
       ${ev.status==='취소'&&ev.cancelReason?`<div class="small" style="margin-top:6px;color:var(--muted)">취소 사유: <b>${h(ev.cancelReason)}</b>${ev.cancelNote?' · '+h(ev.cancelNote):''}</div>`:''}<div class="meta-row"><span>${fmtFull(ev.date)}${ev.endDate?' – '+fmtFull(ev.endDate):''}</span>${ev.place?`<span>장소 ${h(ev.place)}</span>`:''}${ev.owner?`<span>담당 ${h(ev.owner)}</span>`:''}${ev.headcount?`<span>${h(ev.headcount)}명 예상</span>`:''}${(ev.confirmed||[]).length+(ev.confirmedExtra||[]).length?`<span>${(ev.confirmed||[]).length+(ev.confirmedExtra||[]).length}명 확정</span>`:''}${ev.budget?`<span>예산 ${Number(ev.budget).toLocaleString()}원</span>`:''}${(()=>{const s=ledSum(ev.id);return s.es.length?`<span><a href="#money" data-act="led-go" data-id="${ev.id}">정산 지출 ${won(s.out)}${s.inc?' · 수입 '+won(s.inc):''}</a></span>`:''})()}</div>${(ev.confirmed||[]).length+(ev.confirmedExtra||[]).length&&ev.type!=='개인대회'?`<div class="conf-line"><b>확정</b>${byName((ev.confirmed||[]).map(id=>({id,name:nameOf(id)}))).map(m=>`<span>${h(m.name)}</span>`).join('')}${(ev.confirmedExtra||[]).map(x=>`<span class="ex">${h(cfxName(x))}<i>G</i></span>`).join('')}</div>`:''}</div>
       <div class="row">${ev.date&&diffDays(ev.date)>=0?`<span class="dday" style="font-size:26px;color:var(--tc)">${ddayLabel(ev.date)}</span>`:''}<button class="btn" data-act="ev-edit">수정</button></div></div>
-      ${tour}<details class="memo-fold" id="memo-fold"${memoOpen?' open':''}><summary><span>메모 <b class="num">${notes.length}</b>${ev.desc?' · 개요':''}</span><span class="small muted">${memoOpen?'접기':'펼치기'}</span></summary>
+      ${tour}${evGames(ev)}<details class="memo-fold" id="memo-fold"${memoOpen?' open':''}><summary><span>메모 <b class="num">${notes.length}</b>${ev.desc?' · 개요':''}</span><span class="small muted">${memoOpen?'접기':'펼치기'}</span></summary>
       ${ev.desc?`<p style="white-space:pre-wrap;margin:12px 0 14px">${h(ev.desc)}</p>`:'<div style="height:12px"></div>'}
       <div class="composer"><textarea class="in" id="note-text" placeholder="회의 내용, 할 일, 아이디어 메모" data-notedraft="1">${h(draftTxt)}</textarea>
         <div style="display:flex;flex-direction:column;gap:8px"><div class="swatches">${Object.entries(NOTE_KIND).map(([c,k])=>`<button class="sw nc-${c}" data-act="note-color" data-c="${c}" aria-pressed="${noteColor===c}" title="${k}" aria-label="${k}"></button>`).join('')}</div><button class="btn pri" data-act="note-add">메모 붙이기</button></div></div>
@@ -2124,6 +2172,7 @@ ACT['data-import']=()=>{const inp=document.createElement('input');inp.type='file
     if(j&&Array.isArray(j.archive)){closeModal();await archiveImport(j.archive,j.people||{});return}
     if(j&&j.kind==='memberinfo'&&Array.isArray(j.members)){closeModal();memberInfoImport(j.members);return}
     if(j&&j.kind==='attendance'&&Array.isArray(j.days)){closeModal();attendImport(j.days);return}
+    if(j&&j.kind==='eventbracket'&&Array.isArray(j.rounds)){closeModal();eventBracketImport(j);return}
     const data=j&&j.data?j.data:j;const cols=COLS.filter(c=>Array.isArray(data[c]));const n=cols.reduce((s,c)=>s+data[c].length,0);
     if(!n){toast('가져올 데이터 없음');return}
     if(!confirm(`${n}건을 가져옵니다. 같은 항목은 파일 내용으로 덮어씀. 진행할까요?`))return;

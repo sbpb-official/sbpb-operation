@@ -963,6 +963,22 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .st-row[data-act]{cursor:pointer;padding:6px 8px;margin:0 -8px;border-radius:8px;min-height:40px}.st-row[data-act]:hover,.st-row.on{background:var(--surface-2)}
 .st-days{display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.5;padding:4px 0 10px}.st-days b{font-weight:700;margin-right:6px}
 
+.tdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle;flex:none}
+.evgames{margin:16px 0 4px;padding:14px;border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;gap:12px}
+.eg-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.eg-h h3{margin:0;font-size:15px}
+.eg-teams{display:grid;grid-template-columns:1fr 1fr;gap:8px}.eg-team{display:flex;flex-direction:column;gap:4px;padding:10px;border-radius:10px;background:var(--surface-2)}.eg-team b{font-size:14px}
+.eg-res{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.eg-sc{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:999px;background:var(--surface-2);font-size:14px}.eg-sc.win{outline:2px solid var(--court)}
+.eg-awr{display:flex;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}.eg-awr b{min-width:96px}.eg-awr span{flex:1}
+.eg-pick{display:flex;flex-direction:column;gap:4px;max-height:50vh;overflow:auto}.eg-prow{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:14px}
+.eg-prow .seg button{min-width:44px;min-height:36px}
+.sc-list{display:flex;flex-direction:column;gap:12px}.sc-row{display:grid;grid-template-columns:1fr 56px 12px 56px 1fr;column-gap:6px;row-gap:6px;align-items:center;font-size:14px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.sc-row .sc-t{grid-column:1/-1;grid-row:1;font-size:12px;color:var(--muted)}
+.sc-row .sc-p{grid-row:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sc-row .sc-p:nth-of-type(2){grid-column:1/3}.sc-row .sc-p:last-child{grid-column:4/6;text-align:right}
+.sc-row .in{grid-row:3;text-align:center;padding:8px 4px}.sc-row input:nth-of-type(1){grid-column:2}.sc-row input:nth-of-type(2){grid-column:4}.sc-row>.muted{grid-row:3;grid-column:3;text-align:center}
+.eg-awr .x{border:0;background:none;color:var(--muted);font-size:18px;width:40px;height:40px;cursor:pointer}
+.p-teams{display:flex;gap:16px;flex-wrap:wrap;margin:-4px 0 12px;font-size:14px;color:#2B302D}.p-teams .p-gd{font-size:12px;color:#5B615D}
+.m .vs.sc{font-size:13px;letter-spacing:0;color:#5B615D}.m .vs.sc b{font-weight:800}.m .vs.sc b.w{color:#1D5A3B}
+
 </style>
 </head>
 <body>
@@ -1088,7 +1104,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=95545db959';
+const CUR_APP = 'app.js?v=ed297e9b7d';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1116,7 +1132,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=95545db959';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=ed297e9b7d';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
