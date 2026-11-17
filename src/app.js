@@ -62,6 +62,8 @@ function nextRegNow(){const n=new Date();const t=today0();if(n.getDay()===REG.we
 function nextReg(from=today0()){const d=new Date(from);while(d.getDay()!==REG.weekday)d.setDate(d.getDate()+1);return ymd(d)}
 const NOTE_KIND={yellow:'회의',pink:'할 일',sky:'아이디어',green:'결정'};
 const normArea=s=>String(s||'').trim().replace(/\s+/g,'');
+/* 거주지 표시: 서울은 "서울시 ○○구", 경기는 "경기도 ○○시" (저장 값은 구·시 그대로) */
+const areaLabel=v=>{v=String(v||'').trim();if(!v||/^(서울|경기)/.test(v))return v;if(SEOUL.includes(v))return '서울시 '+v;if(NEAR.includes(v)||/시$/.test(v))return '경기도 '+v;return v};
 function stars(lv){if(lv===null||lv===undefined||lv==='')return '<span class="muted small">레벨 모름</span>';lv=Number(lv)||0;let o='';for(let i=1;i<=5;i++){o+= lv>=i?'★':(lv>=i-.5?'<span class="half">★</span>':'<span class="off">★</span>')}return `<span class="stars" title="레벨 ${lv}">${o}</span>`}
 function ageOf(b){const d=parseYmd(b);if(!d)return null;const t=today0();let a=t.getFullYear()-d.getFullYear();if(t.getMonth()<d.getMonth()||(t.getMonth()===d.getMonth()&&t.getDate()<d.getDate()))a--;return a}
 function bdayIn(b,year){const d=parseYmd(b);if(!d)return null;let m=d.getMonth(),dd=d.getDate();if(m===1&&dd===29&&new Date(year,1,29).getMonth()!==1)dd=28;return `${year}-${pad(m+1)}-${pad(dd)}`}
@@ -105,6 +107,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'arealabel',t:'회원 거주지 · 직장 표시: "성동구" · "성남시"(선택 목록은 "서울 성동구" · "경기 성남시") → 어디서나 "서울시 성동구" · "경기도 성남시" (회원 명단 · 선택 목록 · 코트 회원 거주지 · 엑셀 백업)'},
     {k:'memberinfo',t:'회원 생년월일 · 거주지 일괄 입력: 한 명씩 수정 → 설정 › 데이터 백업 › 데이터 가져오기에 회원 정보 파일을 넣으면 이름으로 찾아 빈 칸 입력, 앱 값과 다른 항목은 목록으로 보여주고 체크한 것만 변경'},
     {k:'mixfix',t:'지난 대진 기록 경기 종류: 캡처 · PDF에 적힌 종류 그대로(남남 대 여여도 혼복 등) → 선수 성별을 모두 알면 성별로 판단(남남 대 여여 · 남남 대 남여는 잡복, 넷 다 여자면 여복)'},
     {k:'singles',t:'대진표 단식 경기: 표시 불가(복식만) → 남단 · 여단 · 혼단 경기 한 명씩 표시(지난 대진 기록용), 색은 같은 성별 복식과 같은 계열'},
@@ -348,11 +351,11 @@ document.addEventListener('change',e=>{const s=e.target;if(!s.matches||!s.matche
   const man=s.value==='manual';g.querySelector('.rv-text').hidden=man;g.querySelector('.rv-date').hidden=!man});
 
 /* area: wheel with "직접 입력" */
-const AREA_ITEMS=()=>[{v:'',l:'선택 안 함'},...SEOUL.map(a=>({v:a,l:'서울 '+a})),...NEAR.map(a=>({v:a,l:'경기 '+a})),{v:'__custom',l:'직접 입력'}];
+const AREA_ITEMS=()=>[{v:'',l:'선택 안 함'},...SEOUL.map(a=>({v:a,l:areaLabel(a)})),...NEAR.map(a=>({v:a,l:areaLabel(a)})),{v:'__custom',l:'직접 입력'}];
 function areaField(name,val,ph){
   const known=!val||SEOUL.includes(val)||NEAR.includes(val);
   const opt=(v,l)=>`<button type="button" role="option" data-act="area-pick" data-v="${h(v)}" aria-selected="${String(v===val)}">${h(l)}</button>`;
-  return `<div class="areaf lvsel" data-area="${name}" data-ph="${h(ph)}"><button type="button" class="in pickbtn${val?'':' ph'}" data-act="area-open" aria-haspopup="listbox" aria-expanded="false"${known?'':' hidden'}>${h(val||ph)}<span class="lv-caret" aria-hidden="true">▾</span></button><div class="lv-pop" role="listbox" hidden>${opt('','선택 안 함')}<div class="lv-grp">서울</div>${SEOUL.map(a=>opt(a,a)).join('')}<div class="lv-grp">경기</div>${NEAR.map(a=>opt(a,a)).join('')}<div class="lv-grp">목록에 없으면</div><button type="button" role="option" data-act="area-pick" data-v="__custom">직접 입력</button></div><input class="in" type="text" name="${name}" value="${h(val)}" placeholder="예: 김포시"${known?' hidden':''}></div>`;
+  return `<div class="areaf lvsel" data-area="${name}" data-ph="${h(ph)}"><button type="button" class="in pickbtn${val?'':' ph'}" data-act="area-open" aria-haspopup="listbox" aria-expanded="false"${known?'':' hidden'}>${h(val?areaLabel(val):ph)}<span class="lv-caret" aria-hidden="true">▾</span></button><div class="lv-pop" role="listbox" hidden>${opt('','선택 안 함')}<div class="lv-grp">서울</div>${SEOUL.map(a=>opt(a,a)).join('')}<div class="lv-grp">경기</div>${NEAR.map(a=>opt(a,a)).join('')}<div class="lv-grp">목록에 없으면</div><button type="button" role="option" data-act="area-pick" data-v="__custom">직접 입력</button></div><input class="in" type="text" name="${name}" value="${h(val)}" placeholder="예: 김포시"${known?' hidden':''}></div>`;
 }
 // dropdown lists (level, area): float over the form at the button, always fully on screen with their own scroll
 // all custom dropdowns: open DOWNWARD from the pressed control, list scrolls inside.
@@ -375,7 +378,7 @@ document.addEventListener('scroll',placeOpenPop,true);window.addEventListener('r
 ACT['area-open']=t=>{const wrap=t.closest('.areaf');const pop=wrap.querySelector('.lv-pop');const open=pop.hidden;closeLv();pop.hidden=!open;t.setAttribute('aria-expanded',String(open));if(open){placePop(t,pop);const s=pop.querySelector('[aria-selected="true"]');if(s)pop.scrollTop=s.offsetTop-pop.clientHeight/2+s.offsetHeight/2}};
 ACT['area-pick']=t=>{const wrap=t.closest('.areaf');const btn=wrap.querySelector('.pickbtn');const inp=wrap.querySelector('input');const v=t.dataset.v;closeLv();
   if(v==='__custom'){btn.hidden=true;inp.hidden=false;inp.value='';inp.focus();return}
-  inp.value=v;btn.classList.toggle('ph',!v);btn.innerHTML=h(v||wrap.dataset.ph)+'<span class="lv-caret" aria-hidden="true">▾</span>';
+  inp.value=v;btn.classList.toggle('ph',!v);btn.innerHTML=h(v?areaLabel(v):wrap.dataset.ph)+'<span class="lv-caret" aria-hidden="true">▾</span>';
   wrap.querySelectorAll('.lv-pop [data-act="area-pick"]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.v===v)));btn.focus()};
 /* ---------- store ---------- */
 const COLS=['members','events','notes','courts','brackets','guests','regstat','rentals','dues','ledger','names'];
@@ -851,9 +854,9 @@ function viewMembers(){
   <select class="in" id="m-s" data-mf="st">${[['','현 회원'],['활동','활동'],['휴면','휴면'],['운영진','운영진'],['게스트','게스트 전환'],['탈퇴','탈퇴'],['all','전체 (전환·탈퇴 포함)']].map(([v,l])=>`<option value="${v}"${mf.st===v?' selected':''}>${l}</option>`).join('')}</select>
   <select class="in" id="m-y" data-mf="yr"><option value="">등록 연도 전체</option>${regYears().map(y=>`<option value="${y}"${String(mf.yr)===String(y)?' selected':''}>${y}년 등록</option>`).join('')}</select>
   <span class="muted small">${list.length}명 표시</span></div>
-  <div class="mcards">${list.map((m,i)=>`<div class="mcard${ST(m)!=='활동'?' dim':''}" data-act="m-edit" data-id="${m.id}"><div class="top1"><div><span class="num muted small" style="margin-right:6px">${i+1}</span><b>${h(m.name)}</b> <span class="g-${m.gender} small">${m.gender==='M'?'남':'여'}</span>${staffChip(m)}${m.sample?' <span class="chip">예시</span>':''}</div>${stars(m.level)}</div><div class="meta">${m.birth?`<span>만 ${ageOf(m.birth)}세</span>`:''}<span>구력 ${h(career(m.since)||'–')}</span><span>${h(m.district||'거주지 미입력')}</span>${m.work?`<span>직장 ${h(m.work)}</span>`:''}<span>${ST_LABEL[ST(m)]} ${yrsHtml(m)}</span></div></div>`).join('')||'<div class="empty">조건에 맞는 회원 없음</div>'}</div>
+  <div class="mcards">${list.map((m,i)=>`<div class="mcard${ST(m)!=='활동'?' dim':''}" data-act="m-edit" data-id="${m.id}"><div class="top1"><div><span class="num muted small" style="margin-right:6px">${i+1}</span><b>${h(m.name)}</b> <span class="g-${m.gender} small">${m.gender==='M'?'남':'여'}</span>${staffChip(m)}${m.sample?' <span class="chip">예시</span>':''}</div>${stars(m.level)}</div><div class="meta">${m.birth?`<span>만 ${ageOf(m.birth)}세</span>`:''}<span>구력 ${h(career(m.since)||'–')}</span><span>${h(areaLabel(m.district)||'거주지 미입력')}</span>${m.work?`<span>직장 ${h(areaLabel(m.work))}</span>`:''}<span>${ST_LABEL[ST(m)]} ${yrsHtml(m)}</span></div></div>`).join('')||'<div class="empty">조건에 맞는 회원 없음</div>'}</div>
   <div class="tbl-wrap"><table class="tbl mt">${PEOPLE_COLS}<thead><tr><th style="cursor:default">No.</th>${th('name','이름')}${th('gender','성별·나이')}${th('level','레벨')}${th('since','구력')}${th('district','거주')}${th('work','직장')}${th('status','상태')}<th>메모</th></tr></thead><tbody>
-  ${list.map((m,i)=>`<tr class="${ST(m)!=='활동'?'dim':''}" data-act="m-edit" data-id="${m.id}" style="cursor:pointer"><td class="num muted">${i+1}</td><td><b>${h(m.name)}</b>${staffChip(m)}${m.sample?' <span class="chip">예시</span>':''}</td><td class="g-${m.gender}">${m.gender==='M'?'남':m.gender==='F'?'여':''}${m.birth?` <span class="muted small">만 ${ageOf(m.birth)}세</span>`:''}</td><td>${stars(m.level)}</td><td><span class="num">${h(career(m.since))}</span> <span class="muted small">${m.since?h(m.since.replace('-','.')):''}</span></td><td>${h(m.district)}</td><td class="muted">${h(m.work)}</td><td>${stChip(m)}${yrsHtml(m)}</td><td class="muted small" style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${h(m.memo)}</td></tr>`).join('')}
+  ${list.map((m,i)=>`<tr class="${ST(m)!=='활동'?'dim':''}" data-act="m-edit" data-id="${m.id}" style="cursor:pointer"><td class="num muted">${i+1}</td><td><b>${h(m.name)}</b>${staffChip(m)}${m.sample?' <span class="chip">예시</span>':''}</td><td class="g-${m.gender}">${m.gender==='M'?'남':m.gender==='F'?'여':''}${m.birth?` <span class="muted small">만 ${ageOf(m.birth)}세</span>`:''}</td><td>${stars(m.level)}</td><td><span class="num">${h(career(m.since))}</span> <span class="muted small">${m.since?h(m.since.replace('-','.')):''}</span></td><td>${h(areaLabel(m.district))}</td><td class="muted">${h(areaLabel(m.work))}</td><td>${stChip(m)}${yrsHtml(m)}</td><td class="muted small" style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${h(m.memo)}</td></tr>`).join('')}
   ${!list.length?'<tr><td colspan="9" class="muted" style="text-align:center;padding:24px">조건에 맞는 회원 없음</td></tr>':''}</tbody></table></div>`;
   return `<div class="page-head"><div><h1>회원 관리</h1><p>현 회원 ${S.members.filter(isCur).length}명 · 활동 ${activeMembers().length}명 · 운영진 ${S.members.filter(m=>isStaff(m)&&isCur(m)).length}명 · ${regYears().map(y=>`${y}년 등록 ${S.members.filter(m=>yearsOf(m).includes(y)).length}명`).join(' · ')}. 항목 선택 시 수정 가능</p></div><div class="row"><button class="btn" data-act="renew-open">연장 관리</button>${samples?`<button class="btn danger" data-act="m-clear-sample">예시 회원 ${samples}명 삭제</button>`:''}<button class="btn pri" data-act="m-new">회원 추가</button></div></div>${body}
   ${guestSection()}
@@ -1681,7 +1684,7 @@ function viewCourts(){
   ${rentalSection()}
   <div class="sec-h" id="extra"><div><h2>추가 코트 예약</h2><p class="small muted" style="margin:2px 0 0">예약처별 오픈 규칙·요금·예약 링크</p></div><div class="row"><button class="btn pri" data-act="c-new">코트 추가</button></div></div>
   ${S.courts.length?`<section class="panel"><div class="panel-h"><h2>45일 내 예약 오픈</h2><span class="small muted">주민 우선 오픈은 주황색</span></div>${tl||'<div class="muted small">45일 내 오픈 예정 코트 없음</div>'}</section>
-  <div class="toolbar" style="margin-top:16px"><select class="in" id="c-area" data-carea="1"><option value="">지역 전체</option>${areas.map(a=>`<option${courtArea===a?' selected':''}>${h(a)}</option>`).join('')}</select><span class="small muted">회원 거주지: ${Object.entries(memAreas).sort((a,b)=>b[1]-a[1]).map(([a,n])=>`${h(a)} ${n}`).join(' · ')||'미입력'}</span></div>
+  <div class="toolbar" style="margin-top:16px"><select class="in" id="c-area" data-carea="1"><option value="">지역 전체</option>${areas.map(a=>`<option${courtArea===a?' selected':''}>${h(a)}</option>`).join('')}</select><span class="small muted">회원 거주지: ${Object.entries(memAreas).sort((a,b)=>b[1]-a[1]).map(([a,n])=>`${h(areaLabel(a))} ${n}`).join(' · ')||'미입력'}</span></div>
   ${cards}`:
   `<div class="empty" style="padding:50px 16px"><b>등록된 추가 코트 없음</b>예약 링크·오픈일·주민 우선 여부 입력 시 다음 오픈일까지 남은 기간과 우선 예약 가능 회원 표시<div class="row"><button class="btn pri" data-act="c-new">코트 추가</button></div></div>`}`;
 }
@@ -1977,7 +1980,7 @@ ACT['bk-xlsx']=async t=>{
   t.disabled=true;let X;try{X=await loadXLSX()}catch(e){t.disabled=false;toast('엑셀 도구 불러오기 실패. 전체 데이터(.json) 백업 권장');return}
   const mn=id=>memberById(id)?.name||'';const yn=v=>v?'O':'';
   const sheets={
-    '회원':S.members.slice().sort((x,y)=>(x.name||'').localeCompare(y.name||'')).map((m,i)=>({'No.':i+1,'이름':m.name,'성별':m.gender==='M'?'남':'여','생년월일':m.birth||'','나이':m.birth?ageOf(m.birth):'','레벨':m.level??'','테니스 시작':m.since||'','구력':career(m.since),'거주지':m.district||'','직장':m.work||'','상태':ST_LABEL[ST(m)]||ST(m),'등록 연도':yearsOf(m).join(', '),'운영진':yn(isStaff(m)),'직책':staffRole(m),'운영진 임기':Object.keys(staffMap(m)).sort().map(y=>`${y}${staffMap(m)[y]?' '+staffMap(m)[y]:''}`).join(', '),'가입일':m.joined||'','메모':m.memo||''})),
+    '회원':S.members.slice().sort((x,y)=>(x.name||'').localeCompare(y.name||'')).map((m,i)=>({'No.':i+1,'이름':m.name,'성별':m.gender==='M'?'남':'여','생년월일':m.birth||'','나이':m.birth?ageOf(m.birth):'','레벨':m.level??'','테니스 시작':m.since||'','구력':career(m.since),'거주지':areaLabel(m.district),'직장':areaLabel(m.work),'상태':ST_LABEL[ST(m)]||ST(m),'등록 연도':yearsOf(m).join(', '),'운영진':yn(isStaff(m)),'직책':staffRole(m),'운영진 임기':Object.keys(staffMap(m)).sort().map(y=>`${y}${staffMap(m)[y]?' '+staffMap(m)[y]:''}`).join(', '),'가입일':m.joined||'','메모':m.memo||''})),
     '게스트':S.guests.map((g,i)=>({'No.':i+1,'이름':g.name,'닉네임':g.nick||'','성별':g.gender==='M'?'남':'여','레벨':g.level??'모름','초대 회원':mn(g.inviter),'방문 횟수':g.visits||0,'최근 방문':g.lastDate||'','구력':g.career||'','연락 경로':g.contact||'','메모':g.memo||''})),
     '행사':S.events.slice().sort((x,y)=>(x.date||'').localeCompare(y.date||'')).map(e=>({'날짜':e.date||'','종료일':e.endDate||'','종류':e.type,'제목':e.title,'상태':e.status||'','장소':e.place||'','담당':e.owner||'','예상 인원':e.headcount||'','확정 인원':(e.confirmed||[]).map(nameOf).concat((e.confirmedExtra||[]).map(cfxName)).join(', '),'예산':e.budget||'','취소 사유':e.cancelReason||'','취소 메모':e.cancelNote||'','출전':(e.entrants||[]).map(mn).join(', '),'외부 파트너':ptNames(e).join(', '),'부문':e.division||'','종목':e.category||'','결과':e.result||'','응원':(e.cheer||[]).map(mn).join(', '),'개요':e.desc||''})),
     '메모':S.notes.slice().sort((x,y)=>(x.createdAt||0)-(y.createdAt||0)).map(n=>({'행사':S.events.find(e=>e.id===n.eventId)?.title||'(삭제된 행사)','분류':NOTE_KIND[n.color]||'메모','내용':n.text,'작성일':n.createdAt?new Date(n.createdAt).toLocaleDateString('ko-KR'):''})),
@@ -2024,7 +2027,7 @@ async function archiveImport(list,people={}){const ix=nameIndex();const plan=[],
     try{await put('brackets','arch-'+e.date,{cfg:{title:'SBPB 정기모임',date:e.date,place:REG.place,start,end:'12:00',mins:30,courtList:[1,2,3].map(i=>({name:`코트 ${i}`,pref:''}))},players,rounds,status:'확정',archive:true,allowBlank:!!e.blank,createdBy:myId||null});done++}catch(err){}}
   alert(`대진 기록 가져오기 완료 ${done}건${skipRain.length?`\n우천 취소일 제외: ${skipRain.join(', ')}`:''}${skipHas.length?`\n이미 대진표가 있어 제외: ${skipHas.join(', ')}`:''}${unknown.size?`\n\n회원·게스트 목록에 없는 이름 ${unknown.size}명 (대진표 › 대진 히스토리 › 미등록 이름에서 확인)`:''}`);render()}
 /* 회원 정보(생년월일 · 거주지) 파일: 이름으로 찾아 빈 칸은 채우고, 이미 다른 값이 있으면 목록으로 보여주고 고른 것만 변경 */
-function memberInfoImport(rows){const F={birth:'생년월일',district:'거주지'};const fmt=(k,v)=>k==='birth'?fmtBirth(v):v;
+function memberInfoImport(rows){const F={birth:'생년월일',district:'거주지'};const fmt=(k,v)=>k==='birth'?fmtBirth(v):areaLabel(v);
   const fill=[],diff=[],same=[],miss=[];
   rows.forEach(r=>{const m=S.members.find(x=>x.name===r.name);if(!m){miss.push(r.name);return}
     Object.keys(F).forEach(k=>{const v=String(r[k]||'').trim();if(!v)return;const cur=String(m[k]||'').trim();
