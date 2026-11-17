@@ -111,6 +111,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'attendvote',t:'대진표 없는 정기모임 출석: 모두 결석으로 계산 → 출석 투표 기록 파일을 가져오면 그날 출석으로 반영 (대진 기록이 있는 날 · 취소된 날은 제외)'},
     {k:'drawstats',t:'대진 통계: 없음 → 대진표 탭에 "대진 통계" 섹션 (정기모임 출석률: 취소되지 않은 정기모임 기준 · 가입일 이후 · 기록 없는 모임 표시 / 페어 통계: 전체 기록 기준 페어 많이 한 순 · 아직 페어 못 한 회원 · 1회만 한 회원 · 맞대결 많이 한 순)'},
     {k:'genhist',t:'대진 자동 생성: 그날 안에서만 같은 페어 반복을 피함 → 최근 10회 정기모임에서 덜 붙은 페어를 조금 우선 (실력 밸런스가 항상 1순위)'},
     {k:'mergepick',t:'미등록 이름 › 다른 이름과 합치기 목록: 회원 · 게스트 · 미등록 이름이 가나다순으로 섞여 표시 → 게스트(가나다순) 다음 미등록 이름(가나다순)만 표시, 회원 제외'},
@@ -390,8 +391,8 @@ ACT['area-pick']=t=>{const wrap=t.closest('.areaf');const btn=wrap.querySelector
   inp.value=v;btn.classList.toggle('ph',!v);btn.innerHTML=h(v?areaLabel(v):wrap.dataset.ph)+'<span class="lv-caret" aria-hidden="true">▾</span>';
   wrap.querySelectorAll('.lv-pop [data-act="area-pick"]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.v===v)));btn.focus()};
 /* ---------- store ---------- */
-const COLS=['members','events','notes','courts','brackets','guests','regstat','rentals','dues','ledger','names'];
-const S={members:[],events:[],notes:[],courts:[],brackets:[],guests:[],regstat:[],rentals:[],dues:[],ledger:[],names:[]};
+const COLS=['members','events','notes','courts','brackets','guests','regstat','rentals','dues','ledger','names','attend'];
+const S={members:[],events:[],notes:[],courts:[],brackets:[],guests:[],regstat:[],rentals:[],dues:[],ledger:[],names:[],attend:[]};
 const CANCEL_REASONS=['우천 취소','코트 측 취소','행사 대체','기타'];
 const regStat=ds=>S.regstat.find(x=>x.id===ds);
 const COURT_CX='코트 측 취소';
@@ -1030,21 +1031,23 @@ function meetDates(){const out=new Set();const n=new Date();const endMin=REG.end
   const d=new Date(CLUB_Y,0,1);while(d.getDay()!==REG.weekday)d.setDate(d.getDate()+1);
   for(;;d.setDate(d.getDate()+7)){const ds=ymd(d);const past=d<today0()||(ds===ymd(today0())&&n.getHours()*60+n.getMinutes()>=endMin);if(!past)break;
     const rs=regStat(ds);if(rs&&(rs.status==='취소'||rs.status==='삭제'))continue;out.add(ds)}
-  pastBrackets().forEach(b=>out.add(b.cfg.date));return [...out].sort()}
+  pastBrackets().forEach(b=>out.add(b.cfg.date));
+  (S.attend||[]).forEach(x=>{const rs=regStat(x.id);if(x.id<=ymd(today0())&&!(rs&&(rs.status==='취소'||rs.status==='삭제')))out.add(x.id)});return [...out].sort()}
 function drawStats(){const B=pastBrackets();const pair={},opp={},att={},games={},last={};const add=(o,k,j,ds)=>{(o[k]=o[k]||{})[j]=(o[k][j]||0)+1};
   B.forEach(b=>{const ds=b.cfg.date;const seen=new Set();
     (b.rounds||[]).forEach(R=>{(R.matches||[]).forEach(m=>{if(!m)return;const A=(m.a||[]).filter(Boolean),Bb=(m.b||[]).filter(Boolean);
       [A,Bb].forEach(t=>{t.forEach(k=>{games[k]=(games[k]||0)+1;seen.add(k)});if(t.length===2){add(pair,t[0],t[1]);add(pair,t[1],t[0]);(last[t[0]]=last[t[0]]||{})[t[1]]=ds;(last[t[1]]=last[t[1]]||{})[t[0]]=ds}});
       A.forEach(x=>Bb.forEach(y=>{add(opp,x,y);add(opp,y,x)}))});(R.rest||[]).forEach(k=>k&&seen.add(k))});
     seen.forEach(k=>(att[k]=att[k]||new Set()).add(ds))});
+  const bd=new Set(B.map(b=>b.cfg.date));(S.attend||[]).forEach(x=>{if(bd.has(x.id))return;(x.keys||[]).forEach(k=>(att[k]=att[k]||new Set()).add(x.id))});
   return {B,pair,opp,att,games,last}}
 const memStart=m=>m.joined||`${Math.min(...yearsOf(m))}-01-01`;
 let statP=lsGet('sbpb-stat-p','');
-function statsPanel(){const st=drawStats();const MD=meetDates();const recD=new Set(st.B.map(b=>b.cfg.date));const noRec=MD.filter(d=>!recD.has(d));
+function statsPanel(){const st=drawStats();const MD=meetDates();const recD=new Set(st.B.map(b=>b.cfg.date).concat((S.attend||[]).map(x=>x.id)));const noRec=MD.filter(d=>!recD.has(d));
   const mem=S.members.filter(isCur);
   const rows=mem.map(m=>{const ds=MD.filter(d=>d>=memStart(m));const n=ds.filter(d=>st.att[m.id]&&st.att[m.id].has(d)).length;return {m,n,d:ds.length,r:ds.length?n/ds.length:0}}).sort((x,y)=>y.r-x.r||y.n-x.n||x.m.name.localeCompare(y.m.name,'ko'));
   const attHtml=`<div class="st-att">${rows.map(o=>`<div class="st-row"><b>${h(o.m.name)}</b><span class="st-bar"><i style="width:${Math.round(o.r*100)}%"></i></span><span class="num">${o.d?Math.round(o.r*100)+'%':'–'}</span><span class="muted small num">${o.n}/${o.d}</span></div>`).join('')}</div>
-    <p class="small muted" style="margin:8px 0 0">분모: ${CLUB_Y}년 정기모임 중 취소되지 않은 날 ${MD.length}회 (회원별 가입일 이후)${noRec.length?` · 대진 기록 없는 모임 ${noRec.length}회(모두 결석으로 계산): ${noRec.map(fmtD).join(', ')}`:''}</p>`;
+    <p class="small muted" style="margin:8px 0 0">분모: ${CLUB_Y}년 정기모임 중 취소되지 않은 날 ${MD.length}회 (회원별 가입일 이후)${noRec.length?` · 대진 기록 없는 모임 ${noRec.length}회(모두 결석으로 계산): ${noRec.map(fmtD).join(', ')}`:''}${(S.attend||[]).length?` · 출석 투표로 대신한 날 ${S.attend.filter(x=>!st.B.some(b=>b.cfg.date===x.id)).length}회`:''}</p>`;
   const people=byName(Object.keys(st.games).map(k=>({key:k,name:keyName(k),g:!S.members.some(m=>m.id===k),u:String(k).startsWith('n:')})).filter((p,i,arr)=>arr.findIndex(q=>q.name===p.name)===i));
   if(!statP||!people.some(p=>p.key===statP))statP=(people.find(p=>!p.g)||people[0]||{}).key||'';
   const me=statP;const pr=st.pair[me]||{},op=st.opp[me]||{};const gm=k=>S.members.some(m=>m.id===k)?'':' <span class="gmark">G</span>';
@@ -2089,6 +2092,16 @@ async function archiveImport(list,people={}){const ix=nameIndex();const plan=[],
     try{await put('brackets','arch-'+e.date,{cfg:{title:'SBPB 정기모임',date:e.date,place:REG.place,start,end:'12:00',mins:30,courtList:[1,2,3].map(i=>({name:`코트 ${i}`,pref:''}))},players,rounds,status:'확정',archive:true,allowBlank:!!e.blank,createdBy:myId||null});done++}catch(err){}}
   alert(`대진 기록 가져오기 완료 ${done}건${skipRain.length?`\n우천 취소일 제외: ${skipRain.join(', ')}`:''}${skipHas.length?`\n이미 대진표가 있어 제외: ${skipHas.join(', ')}`:''}${unknown.size?`\n\n회원·게스트 목록에 없는 이름 ${unknown.size}명 (대진표 › 대진 히스토리 › 미등록 이름에서 확인)`:''}`);render()}
 /* 회원 정보(생년월일 · 거주지) 파일: 이름으로 찾아 빈 칸은 채우고, 이미 다른 값이 있으면 목록으로 보여주고 고른 것만 변경 */
+/* 대진표가 없는 정기모임: 출석 투표 기록으로 출석만 저장 (attend 컬렉션, 문서 id = 날짜) */
+function attendImport(days){const ix=nameIndex();const plan=[],skipB=[],skipCx=[],unknown=new Set();
+  days.forEach(d=>{const rs=regStat(d.date);if(rs&&(rs.status==='취소'||rs.status==='삭제')){skipCx.push(d.date);return}
+    if(pastBrackets().some(b=>b.cfg.date===d.date)){skipB.push(d.date);return}
+    const keys=[...new Set(d.names.map(n=>{const p=ix[n];if(!p)unknown.add(n);return p?p.key:'n:'+n}))];plan.push({date:d.date,keys,names:d.names})});
+  const body=`${plan.length?`<div class="mi-list">${plan.map(p=>`<div><b>${fmtD(p.date)}</b> 출석 ${p.keys.length}명</div>`).join('')}</div>`:'<p class="small muted">저장할 날짜 없음</p>'}
+    ${skipB.length?`<p class="small muted" style="margin:12px 0 0">대진 기록이 있어 제외(대진 기록 사용): ${skipB.map(fmtD).join(', ')}</p>`:''}
+    ${skipCx.length?`<p class="small muted" style="margin:8px 0 0">취소된 날이라 제외: ${skipCx.map(fmtD).join(', ')}</p>`:''}
+    ${unknown.size?`<p class="small" style="margin:8px 0 0">회원 · 게스트 목록에 없는 이름 (미등록으로 저장): ${[...unknown].map(h).join(', ')}</p>`:''}`;
+  openModal('출석 기록 가져오기',body,async()=>{let n=0;for(const p of plan){try{await put('attend',p.date,{date:p.date,keys:p.keys,names:p.names,src:'vote',at:Date.now()});n++}catch(e){}}toast(`출석 기록 ${n}일 저장`);render()})}
 function memberInfoImport(rows){const F={birth:'생년월일',district:'거주지'};const fmt=(k,v)=>k==='birth'?fmtBirth(v):areaLabel(v);
   const fill=[],diff=[],same=[],miss=[];
   rows.forEach(r=>{const m=S.members.find(x=>x.name===r.name);if(!m){miss.push(r.name);return}
@@ -2106,6 +2119,7 @@ ACT['data-import']=()=>{const inp=document.createElement('input');inp.type='file
   inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;let j;try{j=JSON.parse(await f.text())}catch(e){toast('JSON 파일 읽기 실패');return}
     if(j&&Array.isArray(j.archive)){closeModal();await archiveImport(j.archive,j.people||{});return}
     if(j&&j.kind==='memberinfo'&&Array.isArray(j.members)){closeModal();memberInfoImport(j.members);return}
+    if(j&&j.kind==='attendance'&&Array.isArray(j.days)){closeModal();attendImport(j.days);return}
     const data=j&&j.data?j.data:j;const cols=COLS.filter(c=>Array.isArray(data[c]));const n=cols.reduce((s,c)=>s+data[c].length,0);
     if(!n){toast('가져올 데이터 없음');return}
     if(!confirm(`${n}건을 가져옵니다. 같은 항목은 파일 내용으로 덮어씀. 진행할까요?`))return;
