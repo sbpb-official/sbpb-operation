@@ -979,6 +979,15 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .p-teams{display:flex;gap:16px;flex-wrap:wrap;margin:-4px 0 12px;font-size:14px;color:#2B302D}.p-teams .p-gd{font-size:12px;color:#5B615D}
 .m .vs.sc{font-size:13px;letter-spacing:0;color:#5B615D}.m .vs.sc b{font-weight:800}.m .vs.sc b.w{color:#1D5A3B}
 
+.tr{display:flex;flex-direction:column;gap:12px}
+.tr-champ{padding:10px 14px;border-radius:10px;background:color-mix(in srgb,var(--ball) 22%,var(--surface));font-size:15px}
+.tr-groups{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tr-g{display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:10px;background:var(--surface-2);font-size:14px}
+.tr-gt{display:grid;grid-template-columns:32px 1fr;gap:6px;color:var(--muted)}.tr-gt.adv{color:var(--ink);font-weight:600}
+.tr-ko{display:flex;flex-direction:column;gap:10px}.tr-m{display:flex;flex-direction:column;gap:6px}.tr-st{font-size:12px;font-weight:700}
+.tr-side{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;text-align:left;cursor:pointer}
+.tr-side.w{border-color:var(--court);background:color-mix(in srgb,var(--court) 12%,var(--surface));font-weight:700}.tr-side.l{color:var(--muted)}.tr-side:disabled{cursor:default}
+@media (max-width:520px){.tr-groups{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -1104,7 +1113,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=de65294a10';
+const CUR_APP = 'app.js?v=e13b6b623a';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1132,7 +1141,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=de65294a10';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=e13b6b623a';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
