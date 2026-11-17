@@ -105,6 +105,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'unregreview',t:'미등록 이름 검수: 목록만 표시(검수는 대화로 요청) → 이름마다 게스트로 등록(지난 기록 자동 연결) · 다른 이름과 합치기 · 일회성으로 표시, 일회성 게스트는 별도 묶음에 기록 보관 · 다시 오면 "N회째 방문" 표시'},
     {k:'bracketcopy',t:'지난 대진 활용: 불러와서 수정만 가능(날짜를 바꾸면 원래 기록이 그 날짜로 옮겨짐) → "새 대진으로 복사"로 원본은 두고 다음 정기모임 새 초안 생성, 불러온 기록의 날짜를 바꾸면 "새 대진으로 복사 · 원본 날짜 수정" 중 선택 (테마 선택 창)'},
     {k:'blank',t:'대진표 확정 · 이미지 다운로드: 빈자리가 있으면 불가 → 기본은 그대로, "공란 허용"을 켜면 빈자리를 – 로 두고 확정 · 다운로드 가능 (현장에서 채우는 날용)'},
     {k:'archive',t:'대진표 기록: 참석자 섹션에 붙은 "대진표 기록" · 앱에서 만든 대진표만 → 대진표 탭의 별도 섹션 "대진 히스토리", 지난 대진표(이미지) 기록 가져오기 · "이전 기록" 표시, 대시보드 캘린더 정기모임 날짜에서도 보기, 회원 · 게스트 목록에 없는 이름은 "미등록 이름"(횟수 · 날짜 · 페어)으로 정리, 나중에 같은 이름으로 등록하면 지난 기록에 자동 연결'},
@@ -329,8 +330,8 @@ ACT['area-pick']=t=>{const wrap=t.closest('.areaf');const btn=wrap.querySelector
   inp.value=v;btn.classList.toggle('ph',!v);btn.innerHTML=h(v||wrap.dataset.ph)+'<span class="lv-caret" aria-hidden="true">▾</span>';
   wrap.querySelectorAll('.lv-pop [data-act="area-pick"]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.v===v)));btn.focus()};
 /* ---------- store ---------- */
-const COLS=['members','events','notes','courts','brackets','guests','regstat','rentals','dues','ledger'];
-const S={members:[],events:[],notes:[],courts:[],brackets:[],guests:[],regstat:[],rentals:[],dues:[],ledger:[]};
+const COLS=['members','events','notes','courts','brackets','guests','regstat','rentals','dues','ledger','names'];
+const S={members:[],events:[],notes:[],courts:[],brackets:[],guests:[],regstat:[],rentals:[],dues:[],ledger:[],names:[]};
 const CANCEL_REASONS=['우천 취소','코트 측 취소','행사 대체','기타'];
 const regStat=ds=>S.regstat.find(x=>x.id===ds);
 const COURT_CX='코트 측 취소';
@@ -1161,10 +1162,37 @@ function unregList(){const ix=nameIndex();const map={};
     const touch=n=>{const o=map[n]||(map[n]={name:n,dates:[],pairs:{}});if(!o.dates.includes(b.cfg.date))o.dates.push(b.cfg.date);return o};
     (b.rounds||[]).forEach(R=>{(R.matches||[]).forEach(m=>{if(!m)return;['a','b'].forEach(s=>{const [x,y]=m[s]||[];[[x,y],[y,x]].forEach(([p,q])=>{if(isU(p)){const o=touch(nm(p));if(q){const qn=nm(q);o.pairs[qn]=(o.pairs[qn]||0)+1}}})})});(R.rest||[]).forEach(k=>{if(isU(k))touch(nm(k))})})});
   return Object.values(map).sort((x,y)=>y.dates.length-x.dates.length||x.name.localeCompare(y.name,'ko'))}
+const nameMark=n=>(S.names||[]).find(x=>x.name===n);
 function unregHtml(){const L=unregList();if(!L.length)return '';
-  return `<details class="due-yr unreg" id="unreg"${lsGet('sbpb-unreg-open',false)?' open':''}><summary><h3>미등록 이름 <span class="num muted" style="font-size:14px">${L.length}</span></h3><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
-    <p class="small muted" style="margin:0 0 8px">회원 · 게스트 목록에 없는 이름 (닉네임으로 왔다가 이름이 바뀐 사람 포함 · 확인 후 게스트 등록)</p>
-    <div class="unreg-list">${L.map(o=>`<div class="ur"><div class="ur-h"><b>${h(o.name)}</b><span>${o.dates.length}회</span></div><div class="ur-d">${o.dates.map(d=>fmtD(d)).join(', ')}</div>${Object.keys(o.pairs).length?`<div class="ur-p">페어 ${Object.entries(o.pairs).sort((x,y)=>y[1]-x[1]).map(([n,c])=>h(n)+(c>1?` ×${c}`:'')).join(', ')}</div>`:''}</div>`).join('')}</div></details>`}
+  const one=[],pend=[];L.forEach(o=>{const mk=nameMark(o.name);if(mk&&mk.status==='oneoff'&&o.dates.length<=(mk.n||1))one.push(o);else{o.again=mk&&mk.status==='oneoff'?o.dates.length:0;pend.push(o)}});
+  const row=(o,isOne)=>`<div class="ur"><div class="ur-h"><b>${h(o.name)}</b>${o.again?`<span class="chip warn">${o.again}회째 방문</span>`:''}<span>${o.dates.length}회</span></div><div class="ur-d">${o.dates.map(d=>fmtD(d)).join(', ')}</div>${Object.keys(o.pairs).length?`<div class="ur-p">페어 ${Object.entries(o.pairs).sort((x,y)=>y[1]-x[1]).map(([n,c])=>h(n)+(c>1?` ×${c}`:'')).join(', ')}</div>`:''}
+    ${RO?'':`<div class="ur-acts">${isOne?`<button type="button" class="btn sm ghost" data-act="nm-undo" data-n="${h(o.name)}">일회성 해제</button>`:`<button type="button" class="btn sm" data-act="nm-reg" data-n="${h(o.name)}">게스트로 등록</button><button type="button" class="btn sm" data-act="nm-merge" data-n="${h(o.name)}">다른 이름과 합치기</button><button type="button" class="btn sm ghost" data-act="nm-one" data-n="${h(o.name)}">일회성으로 표시</button>`}</div>`}</div>`;
+  return `<details class="due-yr unreg" id="unreg"${lsGet('sbpb-unreg-open',false)?' open':''}><summary><h3>미등록 이름 <span class="num muted" style="font-size:14px">${pend.length}</span></h3><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
+    <p class="small muted" style="margin:0 0 8px">회원 · 게스트 목록에 없는 이름 · 게스트로 등록 / 같은 사람이면 합치기 / 한 번 온 사람은 일회성으로 표시</p>
+    ${pend.length?`<div class="unreg-list">${pend.map(o=>row(o,false)).join('')}</div>`:'<p class="small muted">검수할 이름 없음</p>'}
+    ${one.length?`<details class="oneoff" id="oneoff"${lsGet('sbpb-oneoff-open',false)?' open':''}><summary>일회성 게스트 ${one.length} <span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary><div class="unreg-list">${one.map(o=>row(o,true)).join('')}</div></details>`:''}</details>`}
+/* 이름 바꾸기 · 합치기: 모든 대진 기록에서 from 키를 to 키로 */
+async function rekeyBrackets(fromKey,toKey,pl){for(const b of S.brackets){if(!b.players||!b.players[fromKey])continue;const players={...b.players};delete players[fromKey];if(!players[toKey])players[toKey]=pl;
+  const f=k=>k===fromKey?toKey:k;const rounds=b.rounds.map(R=>({...R,matches:R.matches.map(m=>m&&{...m,a:m.a.map(f),b:m.b.map(f)}),rest:R.rest.map(f)}));const {id,...rest}=b;try{await put('brackets',b.id,{...rest,players,rounds})}catch(e){}}}
+const nmPlayer=n=>{for(const b of S.brackets){const p=b.players&&b.players['n:'+n];if(p)return p}return null};
+ACT['nm-one']=async t=>{const n=t.dataset.n;const o=unregList().find(x=>x.name===n);const mk=nameMark(n);try{await put('names',mk?mk.id:uid(),{name:n,status:'oneoff',n:o?o.dates.length:1,at:Date.now()})}catch(e){return}toast(`${n} 일회성 게스트로 표시`);render()};
+ACT['nm-undo']=async t=>{const mk=nameMark(t.dataset.n);if(mk){try{await del('names',mk.id)}catch(e){return}}toast('일회성 해제 · 미등록 이름으로 이동');render()};
+ACT['nm-reg']=t=>{const n=t.dataset.n;const p=nmPlayer(n)||{};const o=unregList().find(x=>x.name===n);
+  openModal('게스트로 등록',guestForm({name:n,gender:p.gender||'M'},'members')+`<p class="small muted" style="margin:0">지난 대진 기록 ${o?o.dates.length:0}회가 이 게스트로 연결됨</p>`,async fd=>{const id=uid();
+    const dates=o?o.dates:[];await put('guests',id,{...guestFromFd(fd),createdAt:Date.now(),visits:dates.length,lastDate:dates[dates.length-1]||''});
+    const g={name:fd.name.trim(),gender:fd.gender,level:fd.level===''?3:Number(fd.level),guest:true};await rekeyBrackets('n:'+n,id,g);
+    const mk=nameMark(n);if(mk){try{await del('names',mk.id)}catch(e){}}toast(`${g.name} 게스트 등록 · 대진 기록 ${dates.length}회 연결`);render()})};
+ACT['nm-merge']=t=>{const n=t.dataset.n;const people=byName(S.members.filter(isCur).map(m=>({key:m.id,name:m.name,sub:'회원',gender:m.gender,level:m.level,guest:false})).concat(S.guests.map(g=>({key:g.id,name:g.name,sub:'게스트'+(g.nick?` · ${g.nick}`:''),gender:g.gender,level:g.level,guest:true})),unregList().filter(o=>o.name!==n).map(o=>({key:'n:'+o.name,name:o.name,sub:'미등록',unreg:true}))));
+  const ov=document.createElement('div');ov.className='me-ov';ov.id='cfxpick';
+  ov.innerHTML=`<div class="me-box cfx-box" role="dialog" aria-modal="true" aria-label="합칠 이름 선택"><div class="me-bar"><span></span><b>${h(n)} → 합칠 이름</b><button type="button" class="btn ghost" data-act="cfx-close">닫기</button></div>
+    <div class="cfx-new"><input class="in" id="nm-q" placeholder="이름 검색"></div><div class="cfx-list" id="nm-list">${people.map(p=>`<button type="button" data-act="nm-merge-to" data-from="${h(n)}" data-key="${h(p.key)}" data-name="${h(p.name)}"><b>${h(p.name)}</b> <span class="muted small">${h(p.sub)}</span></button>`).join('')}</div></div>`;
+  document.body.appendChild(ov);const q=ov.querySelector('#nm-q');q.addEventListener('input',()=>{const v=q.value.trim();ov.querySelectorAll('#nm-list button').forEach(b=>b.hidden=!!v&&!b.dataset.name.includes(v))})};
+ACT['nm-merge-to']=t=>{const from=t.dataset.from,key=t.dataset.key,to=t.dataset.name;
+  choiceDialog({title:`${from} → ${to}`,msg:'지난 대진 기록의 이름을 하나로 합침',choices:[{key:'go',label:`${to}(으)로 합치기`,sub:`${from} 기록이 모두 ${to} 기록으로 바뀜`,cls:'pri'}]}).then(async ch=>{if(ch!=='go')return;
+    const o=$('#cfxpick');if(o)o.remove();
+    let pl;if(key.startsWith('n:'))pl=nmPlayer(to)||{name:to,gender:'',level:3,guest:true,unreg:true};else{const m=S.members.find(x=>x.id===key),g=S.guests.find(x=>x.id===key);const p=m||g;pl={name:p.name,gender:p.gender,level:Number(p.level)||3,guest:!m}}
+    await rekeyBrackets('n:'+from,key,pl);const mk=nameMark(from);if(mk){try{await del('names',mk.id)}catch(e){}}toast(`${from} → ${to} 합치기 완료`);render()})};
+document.addEventListener('toggle',e=>{if(e.target.id==='oneoff')lsSet('sbpb-oneoff-open',e.target.open)},true);
 document.addEventListener('toggle',e=>{if(e.target.id==='unreg')lsSet('sbpb-unreg-open',e.target.open)},true);
 function viewDrawRO(){
   const list=S.brackets.slice().sort((a,b)=>(b.cfg?.date||'').localeCompare(a.cfg?.date||''));

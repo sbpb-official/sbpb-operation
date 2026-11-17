@@ -827,6 +827,9 @@ details[open]>summary .led-tg i{transform:rotate(180deg)}
 .unreg-list{display:flex;flex-direction:column;max-height:320px;overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--line);border-radius:10px}
 .ur{padding:9px 12px;border-bottom:1px solid var(--line)}.ur:last-child{border-bottom:0}
 .ur-h{display:flex;justify-content:space-between;align-items:baseline}.ur-h b{font-size:14px}.ur-h span{font-size:12px;font-weight:700;color:var(--court)}
+.ur-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ur-h .chip{margin-left:auto;margin-right:8px}
+.oneoff{margin-top:10px}.oneoff>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:700;padding:8px 0}.oneoff>summary::-webkit-details-marker{display:none}
 .ur-d,.ur-p{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5;word-break:keep-all}
 
 .poster.blank-ok .nm.empty,.poster.blank-ok .nm-s.empty{border-color:transparent;background:none;color:#8A908C;box-shadow:none}
