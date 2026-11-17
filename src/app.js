@@ -1698,7 +1698,7 @@ function tourneyImport(j){const ev=S.events.find(e=>j.eventTitle&&e.title.includ
   const ix=nameIndex();const unknown=new Set();const kof=n=>{const p=ix[n];if(p)return p.key;unknown.add(n);return 'n:'+n};
   const tr={title:j.title||'토너먼트',groups:j.groups.map(g=>({name:g.name,teams:g.teams.map(t=>({p:t.p.map(kof),rank:t.rank||null}))})),ko:(j.ko||[{stage:'4강',a:'A1',b:'B2'},{stage:'4강',a:'B1',b:'A2'},{stage:'결승',a:'W0',b:'W1'}]).map(m=>({...m,w:m.w||null}))};
   openModal('토너먼트 가져오기',`<div class="mi-list"><div><b>${h(ev.title)}</b> ${fmtD(ev.date)} · ${h(tr.title)}</div>${tr.groups.map(g=>`<div>${h(g.name)}: ${g.teams.map(t=>h(t.p.map(k=>keyName(k)).join('/'))).join(', ')}</div>`).join('')}</div>${unknown.size?`<p class="small" style="margin:8px 0 0">회원 · 게스트 목록에 없는 이름: ${[...unknown].map(h).join(', ')}</p>`:''}`,
-    async()=>{const {id,...rest}=ev;await put('events',ev.id,{...rest,tourney:tr});evSel=ev.id;toast('토너먼트 등록');render()})}
+    async()=>{const {id,...rest}=ev;const aw=(ev.awards||[]).slice();(j.awards||[]).forEach(x=>{if(!aw.some(y=>y.t===x.t&&y.w===x.w))aw.push({t:x.t,w:x.w})});await put('events',ev.id,{...rest,tourney:tr,awards:aw});evSel=ev.id;toast('토너먼트 등록');render()})}
 function viewEvents(){
   const sorted=S.events.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   // 예정: 가까운 날짜부터 · 지난 이벤트: 최근 것부터
