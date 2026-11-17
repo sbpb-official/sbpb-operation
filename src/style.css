@@ -794,9 +794,9 @@ details[open]>summary .led-tg i{transform:rotate(180deg)}
 
 /* chip followed by text in list rows: keep breathing room */
 .li .sub .chip{margin:0 4px 0 0}
-/* 행사 목록: 종류 배지를 같은 폭으로 맞춰 진행 상태가 한 줄로 정렬되게 */
-.li .sub:has(.ttag){display:flex;align-items:center;gap:8px;margin-top:4px}
-.li .sub .ttag{margin:0;min-width:68px;justify-content:center;box-sizing:border-box}
+/* 행사 목록: 배지는 글자 길이대로, 진행 상태는 고정 칸에서 시작해 줄마다 정렬 */
+.li .sub:has(.ttag){display:grid;grid-template-columns:68px auto;justify-content:start;align-items:center;column-gap:8px;margin-top:4px}
+.li .sub .ttag{margin:0;justify-self:start}
 
 .gmark{font-style:normal;font-size:9px;font-weight:700;color:var(--muted);border:1px solid currentColor;border-radius:4px;width:14px;height:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;margin-left:3px;vertical-align:1px}
 
