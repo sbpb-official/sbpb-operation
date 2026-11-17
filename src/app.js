@@ -112,6 +112,8 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'fmtsync',t:'대회 형식 변경: 형식만 바뀌고 아래 대진은 그대로 → 형식을 바꾸면 대진도 새 형식으로 다시 만들지 선택 (참가자가 준비되면 바로 생성, 아니면 기존 대진 정리 후 안내)'},
+    {k:'pecell',t:'페어 칸: 끌어다 놓기만 → 채워진 칸을 누르면 빠짐 · 빈 칸을 누르면 남은 인원 목록에서 선택'},
     {k:'pairsave',t:'페어 설정 저장: "저장 실패 (invalid-argument)" 오류 → 정상 저장'},
     {k:'evsetup',t:'이벤트 행사 상세 › 행사 대진 · 결과: 결과 기록만 → 대회 형식 선택(프리셋 · 옵션) → 팀 설정 또는 페어 설정(확정 인원 이름을 페어 칸에 끌어다 놓기 · 누르고 칸 누르기 · 무작위 남녀 혼합) → 대진 만들기 (타임표는 대진표 화면으로 이어짐, 리그 · 토너먼트는 행사에 바로 생성) · 끝난 행사의 토너먼트는 대진 히스토리에도 표시'},
     {k:'areaall',t:'회원 거주지 · 직장 선택 목록: 경기 12개 시 · 직접 입력 후 목록으로 돌아갈 수 없음 → 경기도 시 · 군 31곳 전체(가나다순), 직접 입력 칸 옆 "목록" 버튼으로 다시 선택'},
@@ -1828,7 +1830,18 @@ ACT['ev-fmt']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const P
   openModal('대회 형식',`<div class="ev-fmt">${PS.map(p=>`<label class="check"><input type="radio" name="preset" value="${p.id}"${(ev.fmt&&ev.fmt.preset===p.id)||(!ev.fmt&&p===PS[0])?' checked':''}> <span><b>${h(p.name)}</b> <span class="small muted">${h(fmtLine(p))}</span></span></label>`).join('')}</div>
     <details class="ps-opt"${ev.fmt&&!ev.fmt.preset?' open':''}><summary class="small">옵션 직접 조정</summary>${optSelects(cur,'o_')}</details><div class="row" style="margin-top:8px"><button type="button" class="btn sm ghost" data-act="ps-manage">프리셋 관리</button></div>`,
     async fd=>{const o=optFrom(fd,'o_');const p=PS.find(x=>x.id===fd.preset);const same=p&&['unit','prog','teams','groups','adv'].every(k=>String(p[k]??(k==='adv'?2:0))===String(o[k]));
-      const {id,...rest}=ev;await put('events',ev.id,{...rest,fmt:{...o,preset:same?p.id:'',name:same?p.name:'직접 조합'}});toast('대회 형식 저장');render()})};
+      const nf={...o,preset:same?p.id:'',name:same?p.name:'직접 조합'};const tf=ev.tourney&&ev.tourney.fmt;
+      const changed=ev.tourney&&(!tf||['unit','prog','groups','adv'].some(k=>String(tf[k]??'')!==String(nf[k]??''))||nf.prog==='time');
+      const {id,...rest}=ev;await put('events',ev.id,{...rest,fmt:nf});toast('대회 형식 저장');render();
+      if(changed)setTimeout(async()=>{const ch=await choiceDialog({title:'대진도 새 형식으로',msg:`형식이 바뀌어 지금 대진(${ev.tourney.title||''})과 맞지 않음`,choices:[{key:'go',label:'새 형식으로 다시 만들기',sub:'기존 대진의 순위 · 승자 · 점수는 지워짐',cls:'pri'},{key:'keep',label:'기존 대진 유지',sub:'형식만 저장'}]});
+        if(ch==='go')await evRemake(S.events.find(e=>e.id===ev.id)||{...ev,fmt:nf},true)},80)})};
+/* 형식대로 대진 다시 만들기: 참가자가 모자라면 기존 대진만 지우고 안내 */
+async function evRemake(ev,fromFmt){const o=ev.fmt;const {id,...rest}=ev;
+  if(o.prog==='time'){await put('events',ev.id,{...rest,tourney:null});toast('타임표 형식 · "대진 만들기"로 대진표 화면에서 생성');render();return}
+  const teams=o.unit==='single'?evPeople(ev).map(k=>({p:[k],rank:null})):o.unit==='pair'?evPairs(ev).map(p=>({p:p.slice(),rank:null})):[];
+  if(teams.length<2){await put('events',ev.id,{...rest,tourney:null});toast(o.unit==='pair'?'페어 설정 후 "대진 만들기"':o.unit==='single'?'확정 인원 체크 후 "대진 만들기"':'리그 · 토너먼트는 고정 페어 또는 단식');render();return}
+  const tr=trMake(teams,o,{title:o.name&&o.name!=='직접 조합'?o.name.replace(/\s*\(.*\)$/,''):PROG_L[o.prog],groups:o.groups,adv:o.adv,mix:'rand'});
+  await put('events',ev.id,{...rest,tourney:tr});toast(fromFmt?'새 형식으로 대진 다시 만듦':'대진 만듦');render()}
 /* 페어 설정: 확정 인원 버튼을 페어 칸(2칸씩)에 끌어다 놓기 · 누르고 칸 누르기로도 가능 · 무작위(남녀 혼합) */
 let PE=null;
 function peHtml(){const chip=(k,sel)=>`<button type="button" class="pe-chip g-${pGender(k)||'x'}${PE.sel===k?' on':''}" data-pk="${h(k)}">${h(keyName(k))}</button>`;
@@ -1847,7 +1860,7 @@ ACT['ev-pairs']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const
   evPairs(ev).slice(0,N).forEach((p,i)=>p.forEach((k,j)=>{if(ppl.includes(k)&&j<2){slots[i][j]=k;used.add(k)}}));
   PE={pool:ppl.filter(k=>!used.has(k)),slots,sel:null};
   openModal('페어 설정',`<div class="pe-top"><span class="small muted">확정 인원 ${ppl.length}명 · <b id="pe-count"></b></span><div class="row"><button type="button" class="btn sm" data-act="ev-pairs-rand">무작위 (남녀 혼합)</button><button type="button" class="btn sm ghost" data-act="ev-pairs-clear">모두 비우기</button></div></div>
-    <p class="small muted" style="margin:0 0 8px">이름을 페어 칸으로 끌어다 놓기 · 또는 이름을 누른 뒤 칸 누르기 · 칸의 이름을 목록으로 끌면 빼기</p><div id="pe">${peHtml()}</div>`,
+    <p class="small muted" style="margin:0 0 8px">이름을 페어 칸으로 끌어다 놓기 · 빈 칸을 누르면 목록에서 선택 · 칸의 이름을 누르면 빼기</p><div id="pe">${peHtml()}</div>`,
     async()=>{const bad=PE.slots.filter(s=>(s[0]?1:0)+(s[1]?1:0)===1);if(bad.length){toast('한 명만 들어간 페어가 있음');throw new Error('keep')}
       const pairs=PE.slots.filter(s=>s[0]&&s[1]).map(s=>({p:[s[0],s[1]]}));const {id,...rest}=ev;await put('events',ev.id,{...rest,pairs});toast(`페어 ${pairs.length}팀 저장`);render()});
   peDraw()};
@@ -1862,18 +1875,20 @@ document.addEventListener('pointerdown',e=>{const c=e.target.closest('.pe-chip')
     ghost.style.left=ev.clientX+'px';ghost.style.top=ev.clientY+'px';document.querySelectorAll('.pe-cell.over').forEach(x=>x.classList.remove('over'));const t=target(ev);if(t&&t!=='pool'){const cell=document.querySelector(`[data-pe-cell="${t}"]`);if(cell)cell.classList.add('over')}};
   const up=ev=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);
     if(ghost){const t=target(ev);ghost.remove();c.classList.remove('dragging');if(t)peDrop(k,t);else peDraw();return}
-    if(PE.sel&&PE.sel!==k){const loc=peWhere(k);if(loc){peDrop(PE.sel,loc.join('_'));return}}PE.sel=PE.sel===k?null:k;peDraw()};
+    PE.tapAt=Date.now();const loc=peWhere(k);if(PE.sel&&PE.sel!==k&&loc){peDrop(PE.sel,loc.join('_'));return}if(loc&&!PE.sel){peDrop(k,'pool');return}PE.sel=PE.sel===k?null:k;peDraw()};
   document.addEventListener('pointermove',move);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)});
-document.addEventListener('click',e=>{if(!PE||!PE.sel||!$('#pe')||e.target.closest('.pe-chip'))return;const cell=e.target.closest('[data-pe-cell]');if(cell){peDrop(PE.sel,cell.dataset.peCell);return}if(e.target.closest('[data-pe-pool]'))peDrop(PE.sel,'pool')});
+document.addEventListener('click',e=>{if(!PE||!$('#pe'))return;if(PE.tapAt&&Date.now()-PE.tapAt<500&&!e.target.closest('[data-pe-pick]'))return;const dd=e.target.closest('[data-pe-pick]');if(dd){const c=dd.closest('.pe-dd');peDrop(dd.dataset.pePick,c.dataset.cell);return}
+  const old=$('.pe-dd');if(old&&!e.target.closest('.pe-dd'))old.remove();if(e.target.closest('.pe-chip'))return;const cell=e.target.closest('[data-pe-cell]');
+  if(PE.sel){if(cell){peDrop(PE.sel,cell.dataset.peCell);return}if(e.target.closest('[data-pe-pool]'))peDrop(PE.sel,'pool');return}
+  /* 빈 칸 누르기: 아직 배치 안 된 인원 목록에서 선택 */
+  if(cell&&cell.classList.contains('empty')){if(!PE.pool.length){toast('남은 인원 없음');return}const box=document.createElement('div');box.className='pe-dd';box.dataset.cell=cell.dataset.peCell;
+    box.innerHTML=PE.pool.map(k=>`<button type="button" data-pe-pick="${h(k)}"><i class="pe-g g-${pGender(k)||'x'}"></i>${h(keyName(k))}</button>`).join('');cell.appendChild(box)}});
 /* 대진 만들기: 타임표는 대진표 화면으로, 리그 · 토너먼트는 이 행사에 바로 생성 */
 ACT['ev-make']=async()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const o=ev.fmt;if(!o){ACT['ev-fmt']();return}
   if(o.prog==='time'){Object.assign(cfg,{eventId:ev.id,title:ev.title,date:ev.date,place:ev.place||cfg.place});const roster=new Set(rosterAll().map(p=>p.key));const tm=(ev.teams||[]).flatMap(t=>t.members||[]);
     const want=tm.length?tm:evPeople(ev);if(want.length)cfg.picked=want.filter(k=>roster.has(k));saveCfg();location.hash='#draw';toast('대진표 화면에서 생성 · 저장하면 이 행사에 연결');return}
-  let teams;if(o.unit==='single')teams=evPeople(ev).map(k=>({p:[k],rank:null}));else teams=evPairs(ev).map(p=>({p:p.slice(),rank:null}));
-  if(teams.length<2){toast(o.unit==='single'?'확정 인원 2명 이상 필요':'페어 설정 먼저 (2팀 이상)');return}
   if(ev.tourney){const ch=await choiceDialog({title:'대진 다시 만들기',msg:'이미 만든 대진이 있음',choices:[{key:'go',label:'새로 만들기',sub:'기존 순위 · 승자 · 점수 기록은 지워짐',cls:'danger'}]});if(ch!=='go')return}
-  const tr=trMake(teams,o,{title:ev.fmt.name&&ev.fmt.name!=='직접 조합'?ev.fmt.name.replace(/\s*\(.*\)$/,''):PROG_L[o.prog],groups:o.groups,adv:o.adv,mix:'rand'});
-  const {id,...rest}=ev;await put('events',ev.id,{...rest,tourney:tr});toast('대진 만듦');render()};
+  await evRemake(ev,false)};
 function evSetupHtml(ev){const o=ev.fmt;const ppl=evPeople(ev);const need=o?(o.teams>=2?'teams':o.unit==='pair'?'pairs':o.unit==='single'?'single':'rot'):null;
   const st=need==='teams'?`팀 ${(ev.teams||[]).length}개`:need==='pairs'?`페어 ${evPairs(ev).length}팀`:`참가 ${ppl.length}명`;
   return `<div class="ev-setup"><div><b>대회 형식</b> <span>${o?h(o.name||'')+' · '+h(fmtLine(o)):'<span class="muted">미정</span>'}</span></div>${o?`<div class="small muted">${st}${need==='pairs'&&evPairs(ev).length?` · ${h(evPairs(ev).map(p=>p.map(k=>keyName(k)).join('/')).join(', '))}`:''}</div>`:''}

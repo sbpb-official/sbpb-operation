@@ -1001,3 +1001,6 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .pe-pair{display:grid;grid-template-columns:24px 1fr 1fr;gap:8px;align-items:center}.pe-n{font-size:12px;color:var(--muted);text-align:right}
 .pe-cell{min-height:48px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;padding:4px}.pe-cell.empty{border-style:dashed}.pe-cell.over{border-color:var(--court);background:color-mix(in srgb,var(--court) 12%,transparent)}
 .pe-cell .pe-chip{width:100%}
+.pe-cell{position:relative}.pe-dd{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;max-height:240px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.3);display:flex;flex-direction:column;padding:4px}
+.pe-dd button{display:flex;align-items:center;gap:8px;min-height:40px;padding:8px 10px;border:0;background:none;color:var(--ink);font:inherit;font-size:14px;text-align:left;border-radius:8px;cursor:pointer}.pe-dd button:hover{background:var(--surface-2)}
+.pe-g{width:6px;height:6px;border-radius:50%;background:var(--muted)}.pe-g.g-M{background:var(--male)}.pe-g.g-F{background:var(--female)}
