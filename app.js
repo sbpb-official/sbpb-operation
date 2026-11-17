@@ -111,6 +111,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'evbtn',t:'이벤트 상단 버튼: 대회 출전 기록 · 행사 추가 → 행사 추가만 (대회 출전 기록은 행사 추가에서 종류를 개인 대회로 선택)'},
     {k:'statpick',t:'페어 통계 사람 선택: 기록에 나온 모든 사람(게스트 · 미등록 포함) → 현 회원만'},
     {k:'attendvote',t:'대진표 없는 정기모임 출석: 모두 결석으로 계산 → 출석 투표 기록 파일을 가져오면 그날 출석으로 반영 (대진 기록이 있는 날 · 취소된 날은 제외)'},
     {k:'drawstats',t:'대진 통계: 없음 → 대진표 탭에 "대진 통계" 섹션 (정기모임 출석률: 취소되지 않은 정기모임 기준 · 가입일 이후 · 기록 없는 모임 표시 / 페어 통계: 전체 기록 기준 페어 많이 한 순 · 아직 페어 못 한 회원 · 1회만 한 회원 · 맞대결 많이 한 순)'},
@@ -1661,7 +1662,7 @@ function viewEvents(){
       </details>
     </section>`;
   }
-  return `<div class="page-head"><div><h1>이벤트</h1><p>내부대회 · 교류전 · MT 일정과 기획 메모, 멤버 개인 대회 출전 기록</p></div><div class="row"><button class="btn" data-act="ev-new" data-type="개인대회">대회 출전 기록</button><button class="btn pri" data-act="ev-new">행사 추가</button></div></div><div class="evwrap">${left}<div style="min-width:0">${right}</div></div>`;
+  return `<div class="page-head"><div><h1>이벤트</h1><p>내부대회 · 교류전 · MT 일정과 기획 메모, 멤버 개인 대회 출전 기록</p></div><div class="row"><button class="btn pri" data-act="ev-new">행사 추가</button></div></div><div class="evwrap">${left}<div style="min-width:0">${right}</div></div>`;
 }
 document.addEventListener('input',e=>{if(e.target.dataset.notedraft)lsSet('sbpb-notedraft',e.target.value)});
 
