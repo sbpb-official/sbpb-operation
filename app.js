@@ -111,6 +111,8 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'drawstats',t:'대진 통계: 없음 → 대진표 탭에 "대진 통계" 섹션 (정기모임 출석률: 취소되지 않은 정기모임 기준 · 가입일 이후 · 기록 없는 모임 표시 / 페어 통계: 전체 기록 기준 페어 많이 한 순 · 아직 페어 못 한 회원 · 1회만 한 회원 · 맞대결 많이 한 순)'},
+    {k:'genhist',t:'대진 자동 생성: 그날 안에서만 같은 페어 반복을 피함 → 최근 10회 정기모임에서 덜 붙은 페어를 조금 우선 (실력 밸런스가 항상 1순위)'},
     {k:'mergepick',t:'미등록 이름 › 다른 이름과 합치기 목록: 회원 · 게스트 · 미등록 이름이 가나다순으로 섞여 표시 → 게스트(가나다순) 다음 미등록 이름(가나다순)만 표시, 회원 제외'},
     {k:'mcard2',t:'휴대폰 회원 명단 카드: 나이 · 구력 · 거주지 · 직장 · 전화번호 · 상태가 한 줄에 이어져 줄바꿈 위치가 제각각 → 첫 줄 나이 · 구력 · 상태, 둘째 줄 거주지 · 직장 · 전화번호'},
     {k:'phone',t:'회원 전화번호: 없음 → 회원 정보에 입력(010-0000-0000 형태로 자동 정리), 회원 명단에서 번호를 누르면 휴대폰 전화 연결, 엑셀 백업에 포함'},
@@ -1016,6 +1018,53 @@ function assignCourts(ms,types,courts){
   for(const p of perms){let c=0;p.forEach((ii,ci)=>{const it=items[ii];c+=it.m?courtCost(it.t,courts[ci].pref):(C-ci)*0.01});if(c<bc){bc=c;best=p}}
   return best.map(ii=>items[ii].m);
 }
+
+/* ---------- 대진 통계: 전체 기록 기준 페어 · 맞대결 · 정기모임 출석률 ---------- */
+/* 지난 정기모임 대진(확정 · 이전 기록)만, 같은 날짜가 여럿이면 직접 만든 대진 우선 */
+function pastBrackets(){const today=ymd(today0());const by={};
+  S.brackets.filter(b=>b.cfg&&b.cfg.date&&b.cfg.date<=today&&(b.archive||b.status==='확정')).forEach(b=>{const o=by[b.cfg.date];if(!o||(o.archive&&!b.archive))by[b.cfg.date]=b});
+  return Object.values(by).sort((x,y)=>x.cfg.date.localeCompare(y.cfg.date))}
+const keyName=(k,b)=>{const m=S.members.find(x=>x.id===k),g=S.guests.find(x=>x.id===k);return (m||g||{}).name||(b&&b.players&&b.players[k]&&b.players[k].name)||String(k).replace(/^n:/,'')};
+/* 실제 모임이 열린 날: CLUB_Y 1월부터 지난 토요일 중 취소 · 삭제가 아닌 날 + 대진 기록이 있는 날 */
+function meetDates(){const out=new Set();const n=new Date();const endMin=REG.end.split(':').reduce((h,m)=>h*60+ +m,0);
+  const d=new Date(CLUB_Y,0,1);while(d.getDay()!==REG.weekday)d.setDate(d.getDate()+1);
+  for(;;d.setDate(d.getDate()+7)){const ds=ymd(d);const past=d<today0()||(ds===ymd(today0())&&n.getHours()*60+n.getMinutes()>=endMin);if(!past)break;
+    const rs=regStat(ds);if(rs&&(rs.status==='취소'||rs.status==='삭제'))continue;out.add(ds)}
+  pastBrackets().forEach(b=>out.add(b.cfg.date));return [...out].sort()}
+function drawStats(){const B=pastBrackets();const pair={},opp={},att={},games={},last={};const add=(o,k,j,ds)=>{(o[k]=o[k]||{})[j]=(o[k][j]||0)+1};
+  B.forEach(b=>{const ds=b.cfg.date;const seen=new Set();
+    (b.rounds||[]).forEach(R=>{(R.matches||[]).forEach(m=>{if(!m)return;const A=(m.a||[]).filter(Boolean),Bb=(m.b||[]).filter(Boolean);
+      [A,Bb].forEach(t=>{t.forEach(k=>{games[k]=(games[k]||0)+1;seen.add(k)});if(t.length===2){add(pair,t[0],t[1]);add(pair,t[1],t[0]);(last[t[0]]=last[t[0]]||{})[t[1]]=ds;(last[t[1]]=last[t[1]]||{})[t[0]]=ds}});
+      A.forEach(x=>Bb.forEach(y=>{add(opp,x,y);add(opp,y,x)}))});(R.rest||[]).forEach(k=>k&&seen.add(k))});
+    seen.forEach(k=>(att[k]=att[k]||new Set()).add(ds))});
+  return {B,pair,opp,att,games,last}}
+const memStart=m=>m.joined||`${Math.min(...yearsOf(m))}-01-01`;
+let statP=lsGet('sbpb-stat-p','');
+function statsPanel(){const st=drawStats();const MD=meetDates();const recD=new Set(st.B.map(b=>b.cfg.date));const noRec=MD.filter(d=>!recD.has(d));
+  const mem=S.members.filter(isCur);
+  const rows=mem.map(m=>{const ds=MD.filter(d=>d>=memStart(m));const n=ds.filter(d=>st.att[m.id]&&st.att[m.id].has(d)).length;return {m,n,d:ds.length,r:ds.length?n/ds.length:0}}).sort((x,y)=>y.r-x.r||y.n-x.n||x.m.name.localeCompare(y.m.name,'ko'));
+  const attHtml=`<div class="st-att">${rows.map(o=>`<div class="st-row"><b>${h(o.m.name)}</b><span class="st-bar"><i style="width:${Math.round(o.r*100)}%"></i></span><span class="num">${o.d?Math.round(o.r*100)+'%':'–'}</span><span class="muted small num">${o.n}/${o.d}</span></div>`).join('')}</div>
+    <p class="small muted" style="margin:8px 0 0">분모: ${CLUB_Y}년 정기모임 중 취소되지 않은 날 ${MD.length}회 (회원별 가입일 이후)${noRec.length?` · 대진 기록 없는 모임 ${noRec.length}회(모두 결석으로 계산): ${noRec.map(fmtD).join(', ')}`:''}</p>`;
+  const people=byName(Object.keys(st.games).map(k=>({key:k,name:keyName(k),g:!S.members.some(m=>m.id===k),u:String(k).startsWith('n:')})).filter((p,i,arr)=>arr.findIndex(q=>q.name===p.name)===i));
+  if(!statP||!people.some(p=>p.key===statP))statP=(people.find(p=>!p.g)||people[0]||{}).key||'';
+  const me=statP;const pr=st.pair[me]||{},op=st.opp[me]||{};const gm=k=>S.members.some(m=>m.id===k)?'':' <span class="gmark">G</span>';
+  const list=(o,withLast)=>Object.entries(o).sort((x,y)=>y[1]-x[1]||keyName(x[0]).localeCompare(keyName(y[0]),'ko')).map(([k,n])=>`<span class="st-chip">${h(keyName(k))}${gm(k)} <b class="num">${n}</b>${withLast&&st.last[me]&&st.last[me][k]?` <span class="muted">${fmtD(st.last[me][k]).replace(/ \(.\)$/,'')}</span>`:''}</span>`).join('')||'<span class="muted small">기록 없음</span>';
+  const zero=byName(mem.filter(m=>m.id!==me&&!pr[m.id]));const one=byName(mem.filter(m=>m.id!==me&&pr[m.id]===1));
+  const myAtt=st.att[me]?st.att[me].size:0;
+  const pairHtml=people.length?`<label class="f" style="max-width:280px">사람 선택<select class="in" data-statp="1">${people.map(p=>`<option value="${h(p.key)}"${p.key===me?' selected':''}>${h(p.name)}${p.u?' (미등록)':p.g?' (게스트)':''}</option>`).join('')}</select></label>
+    <p class="small muted" style="margin:8px 0 12px">참석 ${myAtt}회 · 경기 ${st.games[me]||0}회</p>
+    <h4 class="st-h">페어 많이 한 순 <span class="muted small">횟수 · 마지막 날짜</span></h4><div class="st-chips">${list(pr,true)}</div>
+    <h4 class="st-h">아직 페어 못 한 회원 ${zero.length}</h4><div class="st-chips">${zero.map(m=>`<span class="st-chip">${h(m.name)}</span>`).join('')||'<span class="muted small">없음</span>'}</div>
+    ${one.length?`<h4 class="st-h">1회만 한 회원 ${one.length}</h4><div class="st-chips">${one.map(m=>`<span class="st-chip">${h(m.name)}</span>`).join('')}</div>`:''}
+    <h4 class="st-h">맞대결 많이 한 순</h4><div class="st-chips">${list(op,false)}</div>`:'<p class="muted small">대진 기록 없음</p>';
+  return `<section class="panel stats"><div class="panel-h"><h2>대진 통계</h2><span class="small muted">전체 기록 ${st.B.length}회</span></div>
+    <details class="due-yr" id="st-att"${lsGet('sbpb-st-att',true)?' open':''}><summary><h3>정기모임 출석률</h3><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>${attHtml}</details>
+    <details class="due-yr" id="st-pair"${lsGet('sbpb-st-pair',true)?' open':''}><summary><h3>페어 통계</h3><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>${pairHtml}</details></section>`}
+document.addEventListener('change',e=>{if(e.target.dataset&&e.target.dataset.statp){statP=e.target.value;lsSet('sbpb-stat-p',statP);render()}});
+document.addEventListener('toggle',e=>{if(e.target.id==='st-att')lsSet('sbpb-st-att',e.target.open);if(e.target.id==='st-pair')lsSet('sbpb-st-pair',e.target.open)},true);
+/* 대진 생성용: 최근 정기모임에서 함께 페어한 정도 (최근일수록 크게, 최근 10회) */
+function recentPairWeight(before){const B=pastBrackets().filter(b=>b.cfg.date<before).slice(-10).reverse();const w={};const pk=(a,b)=>a<b?a+'|'+b:b+'|'+a;
+  B.forEach((b,i)=>{const d=Math.pow(.8,i);(b.rounds||[]).forEach(R=>(R.matches||[]).forEach(m=>{if(!m)return;[m.a,m.b].forEach(t=>{if(t&&t.length===2&&t[0]&&t[1]){const k=pk(t[0],t[1]);w[k]=(w[k]||0)+d}})}))});return w}
 function generate(){
   const pool=rosterAll().filter(p=>cfg.picked.includes(p.key));
   if(pool.length<4){toast('참석자 4명 이상 선택 필요');return}
@@ -1023,6 +1072,8 @@ function generate(){
   const courts=cfg.courtList,C=courts.length,R=roundsOf(cfg);
   const st={};pool.forEach(p=>st[p.key]={games:0,bench:0,last:null});
   const partner={},opp={};const pk=(a,b)=>a<b?a+'|'+b:b+'|'+a;
+  /* 최근에 많이 붙은 페어는 약하게 피함: 팀당 최대 0.9점 (실력 차 0.5 = 2점보다 작게 → 실력 밸런스가 항상 우선) */
+  const RW=recentPairWeight(cfg.date||ymd(today0()));const hist=t=>Math.min(1,(RW[pk(t[0],t[1])]||0)/3)*0.9;
   const rounds=[];
   for(let r=0;r<R;r++){
     const nC=Math.min(C,Math.floor(pool.length/4)),N=nC*4;
@@ -1042,7 +1093,7 @@ function generate(){
     for(let x=0;x<=nC;x++)for(let w=0;w+x<=nC;w++){const m=nC-w-x;if(4*m+2*x===Ms.length&&4*w+2*x===Fs.length)comps.push({m,w,x})}
     const generic=!comps.length;if(generic)comps.push({generic:true});
     const scoreMatch=(a,b,type,g4)=>{
-      let s=(partner[pk(a[0],a[1])]||0)*12+(partner[pk(b[0],b[1])]||0)*12;
+      let s=(partner[pk(a[0],a[1])]||0)*12+(partner[pk(b[0],b[1])]||0)*12+hist(a)+hist(b);
       for(const x of a)for(const y of b)s+=(opp[pk(x,y)]||0)*2;
       s+=Math.abs(P[a[0]].level+P[a[1]].level-P[b[0]].level-P[b[1]].level)*4;
       if(cfg.mode==='tier'){const ls=g4.map(k=>P[k].level);s+=(Math.max(...ls)-Math.min(...ls))*3}
@@ -1306,7 +1357,8 @@ function viewDrawRO(){
   const list=S.brackets.slice().sort((a,b)=>(b.cfg?.date||'').localeCompare(a.cfg?.date||''));
   const latest=list.find(b=>b.status==='확정')||list[0];
   return `<div class="page-head"><div><h1>대진표</h1><p>공개된 대진표 조회 및 이미지 다운로드</p></div></div>
-  <div class="draw"><div>${historyPanel(list)}</div><div style="min-width:0">${latest?`<div class="stage-bar"><div class="hint"><b>${fmtFull(latest.cfg.date)}</b> ${h(latest.status)}</div><button class="btn ball" data-act="bv-img" data-id="${latest.id}" data-inline="1">이미지 다운로드</button></div><div class="stage" id="stage">${posterHtml(normB(latest),false)}</div>`:'<div class="empty" style="padding:60px 16px"><b>공개된 대진표 없음</b>대진표 확정 및 공개본 갱신 후 표시</div>'}</div></div>`;
+  <div class="draw"><div>${historyPanel(list)}</div><div style="min-width:0">${latest?`<div class="stage-bar"><div class="hint"><b>${fmtFull(latest.cfg.date)}</b> ${h(latest.status)}</div><button class="btn ball" data-act="bv-img" data-id="${latest.id}" data-inline="1">이미지 다운로드</button></div><div class="stage" id="stage">${posterHtml(normB(latest),false)}</div>`:'<div class="empty" style="padding:60px 16px"><b>공개된 대진표 없음</b>대진표 확정 및 공개본 갱신 후 표시</div>'}</div></div>
+  <div class="draw-hist">${statsPanel()}</div>`;
 }
 let bvCtx=null;
 /* 지난 대진을 원본은 그대로 두고 다음 정기모임 날짜의 새 초안으로 복사 */
@@ -1373,7 +1425,7 @@ function viewDraw(){
   return `<div class="page-head"><div><h1>대진표</h1><p>매주 토요일 정기모임 대진 자동 생성, 수정 후 이미지 다운로드 및 카톡방 공지</p></div></div>
   ${logicHtml()}
   <div class="draw"><div>${settings}</div><div style="min-width:0">${stage}</div></div>
-  <div class="draw-hist">${historyPanel(saved)}</div>`;
+  <div class="draw-hist">${historyPanel(saved)}${statsPanel()}</div>`;
 }
 document.addEventListener('input',e=>{
   const t=e.target;
