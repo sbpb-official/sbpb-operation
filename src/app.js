@@ -111,6 +111,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'statpick',t:'페어 통계 사람 선택: 기록에 나온 모든 사람(게스트 · 미등록 포함) → 현 회원만'},
     {k:'attendvote',t:'대진표 없는 정기모임 출석: 모두 결석으로 계산 → 출석 투표 기록 파일을 가져오면 그날 출석으로 반영 (대진 기록이 있는 날 · 취소된 날은 제외)'},
     {k:'drawstats',t:'대진 통계: 없음 → 대진표 탭에 "대진 통계" 섹션 (정기모임 출석률: 취소되지 않은 정기모임 기준 · 가입일 이후 · 기록 없는 모임 표시 / 페어 통계: 전체 기록 기준 페어 많이 한 순 · 아직 페어 못 한 회원 · 1회만 한 회원 · 맞대결 많이 한 순)'},
     {k:'genhist',t:'대진 자동 생성: 그날 안에서만 같은 페어 반복을 피함 → 최근 10회 정기모임에서 덜 붙은 페어를 조금 우선 (실력 밸런스가 항상 1순위)'},
@@ -1048,13 +1049,13 @@ function statsPanel(){const st=drawStats();const MD=meetDates();const recD=new S
   const rows=mem.map(m=>{const ds=MD.filter(d=>d>=memStart(m));const n=ds.filter(d=>st.att[m.id]&&st.att[m.id].has(d)).length;return {m,n,d:ds.length,r:ds.length?n/ds.length:0}}).sort((x,y)=>y.r-x.r||y.n-x.n||x.m.name.localeCompare(y.m.name,'ko'));
   const attHtml=`<div class="st-att">${rows.map(o=>`<div class="st-row"><b>${h(o.m.name)}</b><span class="st-bar"><i style="width:${Math.round(o.r*100)}%"></i></span><span class="num">${o.d?Math.round(o.r*100)+'%':'–'}</span><span class="muted small num">${o.n}/${o.d}</span></div>`).join('')}</div>
     <p class="small muted" style="margin:8px 0 0">분모: ${CLUB_Y}년 정기모임 중 취소되지 않은 날 ${MD.length}회 (회원별 가입일 이후)${noRec.length?` · 대진 기록 없는 모임 ${noRec.length}회(모두 결석으로 계산): ${noRec.map(fmtD).join(', ')}`:''}${(S.attend||[]).length?` · 출석 투표로 대신한 날 ${S.attend.filter(x=>!st.B.some(b=>b.cfg.date===x.id)).length}회`:''}</p>`;
-  const people=byName(Object.keys(st.games).map(k=>({key:k,name:keyName(k),g:!S.members.some(m=>m.id===k),u:String(k).startsWith('n:')})).filter((p,i,arr)=>arr.findIndex(q=>q.name===p.name)===i));
+  const people=byName(mem.map(m=>({key:m.id,name:m.name})));
   if(!statP||!people.some(p=>p.key===statP))statP=(people.find(p=>!p.g)||people[0]||{}).key||'';
   const me=statP;const pr=st.pair[me]||{},op=st.opp[me]||{};const gm=k=>S.members.some(m=>m.id===k)?'':' <span class="gmark">G</span>';
   const list=(o,withLast)=>Object.entries(o).sort((x,y)=>y[1]-x[1]||keyName(x[0]).localeCompare(keyName(y[0]),'ko')).map(([k,n])=>`<span class="st-chip">${h(keyName(k))}${gm(k)} <b class="num">${n}</b>${withLast&&st.last[me]&&st.last[me][k]?` <span class="muted">${fmtD(st.last[me][k]).replace(/ \(.\)$/,'')}</span>`:''}</span>`).join('')||'<span class="muted small">기록 없음</span>';
   const zero=byName(mem.filter(m=>m.id!==me&&!pr[m.id]));const one=byName(mem.filter(m=>m.id!==me&&pr[m.id]===1));
   const myAtt=st.att[me]?st.att[me].size:0;
-  const pairHtml=people.length?`<label class="f" style="max-width:280px">사람 선택<select class="in" data-statp="1">${people.map(p=>`<option value="${h(p.key)}"${p.key===me?' selected':''}>${h(p.name)}${p.u?' (미등록)':p.g?' (게스트)':''}</option>`).join('')}</select></label>
+  const pairHtml=people.length?`<label class="f" style="max-width:280px">사람 선택<select class="in" data-statp="1">${people.map(p=>`<option value="${h(p.key)}"${p.key===me?' selected':''}>${h(p.name)}</option>`).join('')}</select></label>
     <p class="small muted" style="margin:8px 0 12px">참석 ${myAtt}회 · 경기 ${st.games[me]||0}회</p>
     <h4 class="st-h">페어 많이 한 순 <span class="muted small">횟수 · 마지막 날짜</span></h4><div class="st-chips">${list(pr,true)}</div>
     <h4 class="st-h">아직 페어 못 한 회원 ${zero.length}</h4><div class="st-chips">${zero.map(m=>`<span class="st-chip">${h(m.name)}</span>`).join('')||'<span class="muted small">없음</span>'}</div>
