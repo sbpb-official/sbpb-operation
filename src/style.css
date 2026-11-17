@@ -844,7 +844,8 @@ details[open]>summary .led-tg i{transform:rotate(180deg)}
 .ch-btns{display:flex;flex-direction:column;gap:10px;margin-top:16px}
 .ch-btns .btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px 14px;text-align:left;width:100%}
 .ch-btns .btn b{font-size:15px}
-.ch-btns .btn span{font-size:12px;font-weight:500;opacity:.8}
+.ch-btns .btn span{font-size:12px;font-weight:500;opacity:.8;line-height:1.45}
+.ch-btns .btn,.ch-btns .btn b,.ch-btns .btn span{white-space:normal;word-break:keep-all;overflow-wrap:anywhere;max-width:100%;height:auto;min-width:0}
 
 /* modal */
 .ov{position:fixed;left:0;right:0;top:0;bottom:0;height:auto;   /* full screen, not the area above the keyboard: the keyboard covers the modal instead of shrinking it */
