@@ -105,6 +105,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'memberinfo',t:'회원 생년월일 · 거주지 일괄 입력: 한 명씩 수정 → 설정 › 데이터 백업 › 데이터 가져오기에 회원 정보 파일을 넣으면 이름으로 찾아 빈 칸 입력, 앱 값과 다른 항목은 목록으로 보여주고 체크한 것만 변경'},
     {k:'mixfix',t:'지난 대진 기록 경기 종류: 캡처 · PDF에 적힌 종류 그대로(남남 대 여여도 혼복 등) → 선수 성별을 모두 알면 성별로 판단(남남 대 여여 · 남남 대 남여는 잡복, 넷 다 여자면 여복)'},
     {k:'singles',t:'대진표 단식 경기: 표시 불가(복식만) → 남단 · 여단 · 혼단 경기 한 명씩 표시(지난 대진 기록용), 색은 같은 성별 복식과 같은 계열'},
     {k:'resbox',t:'코트 카드 오픈 상자 색: 주민 우선 · 일반 모두 초록, 하루 안으로 다가오면 주황 → 주민 우선 오픈은 항상 주황(테두리 · 이름 · D-day · 배경), 일반 오픈은 항상 초록'},
@@ -2022,9 +2023,24 @@ async function archiveImport(list,people={}){const ix=nameIndex();const plan=[],
     const first=(e.rounds[0]||{}).time;const start=first?first.split('–')[0].padStart(5,'0'):'09:30';
     try{await put('brackets','arch-'+e.date,{cfg:{title:'SBPB 정기모임',date:e.date,place:REG.place,start,end:'12:00',mins:30,courtList:[1,2,3].map(i=>({name:`코트 ${i}`,pref:''}))},players,rounds,status:'확정',archive:true,allowBlank:!!e.blank,createdBy:myId||null});done++}catch(err){}}
   alert(`대진 기록 가져오기 완료 ${done}건${skipRain.length?`\n우천 취소일 제외: ${skipRain.join(', ')}`:''}${skipHas.length?`\n이미 대진표가 있어 제외: ${skipHas.join(', ')}`:''}${unknown.size?`\n\n회원·게스트 목록에 없는 이름 ${unknown.size}명 (대진표 › 대진 히스토리 › 미등록 이름에서 확인)`:''}`);render()}
+/* 회원 정보(생년월일 · 거주지) 파일: 이름으로 찾아 빈 칸은 채우고, 이미 다른 값이 있으면 목록으로 보여주고 고른 것만 변경 */
+function memberInfoImport(rows){const F={birth:'생년월일',district:'거주지'};const fmt=(k,v)=>k==='birth'?fmtBirth(v):v;
+  const fill=[],diff=[],same=[],miss=[];
+  rows.forEach(r=>{const m=S.members.find(x=>x.name===r.name);if(!m){miss.push(r.name);return}
+    Object.keys(F).forEach(k=>{const v=String(r[k]||'').trim();if(!v)return;const cur=String(m[k]||'').trim();
+      if(!cur)fill.push({m,k,v});else if(cur!==v)diff.push({m,k,v,cur});else same.push(1)})});
+  const body=`${diff.length?`<h3 style="font-size:14px;margin:0 0 6px">앱 값과 다른 항목 ${diff.length}건</h3><p class="small muted" style="margin:0 0 8px">체크한 항목만 파일 값으로 변경 · 체크하지 않으면 앱 값 유지</p>
+      <div class="mi-list">${diff.map((x,i)=>`<label class="check"><input type="checkbox" data-mi="${i}"> <span><b>${h(x.m.name)}</b> ${F[x.k]}: 앱 ${h(fmt(x.k,x.cur))} <span class="muted">→</span> 파일 ${h(fmt(x.k,x.v))}</span></label>`).join('')}</div>`:'<p class="small muted" style="margin:0">앱 값과 다른 항목 없음</p>'}
+    ${miss.length?`<h3 style="font-size:14px;margin:16px 0 6px">회원 목록에 없는 이름 ${miss.length}명</h3><p class="small" style="margin:0">${miss.map(h).join(', ')}</p>`:''}
+    <details class="mi-fill" style="margin-top:16px"><summary class="small"><b>빈 칸 입력 ${fill.length}건</b> <span class="muted">· 이미 같은 값 ${same.length}건 · 저장 시 입력</span></summary>${fill.length?`<div class="mi-list" style="margin-top:8px">${fill.map(x=>`<div><b>${h(x.m.name)}</b> ${F[x.k]} <span class="muted">→</span> ${h(fmt(x.k,x.v))}</div>`).join('')}</div>`:''}</details>`;
+  openModal('회원 정보 가져오기',body,async()=>{const pick=[...document.querySelectorAll('#mform [data-mi]:checked')].map(e=>diff[+e.dataset.mi]);
+    const by={};fill.concat(pick).forEach(x=>{(by[x.m.id]=by[x.m.id]||{m:x.m,ch:{}}).ch[x.k]=x.v});
+    let n=0;for(const {m,ch} of Object.values(by)){const {id,...rest}=m;try{await put('members',id,{...rest,...ch});n++}catch(e){}}
+    toast(`회원 ${n}명 정보 반영 · 입력 ${fill.length}건${pick.length?` · 변경 ${pick.length}건`:''}`);render()})}
 ACT['data-import']=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='application/json,.json';
   inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;let j;try{j=JSON.parse(await f.text())}catch(e){toast('JSON 파일 읽기 실패');return}
     if(j&&Array.isArray(j.archive)){closeModal();await archiveImport(j.archive,j.people||{});return}
+    if(j&&j.kind==='memberinfo'&&Array.isArray(j.members)){closeModal();memberInfoImport(j.members);return}
     const data=j&&j.data?j.data:j;const cols=COLS.filter(c=>Array.isArray(data[c]));const n=cols.reduce((s,c)=>s+data[c].length,0);
     if(!n){toast('가져올 데이터 없음');return}
     if(!confirm(`${n}건을 가져옵니다. 같은 항목은 파일 내용으로 덮어씀. 진행할까요?`))return;
