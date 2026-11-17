@@ -105,6 +105,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+    {k:'bracketcopy',t:'지난 대진 활용: 불러와서 수정만 가능(날짜를 바꾸면 원래 기록이 그 날짜로 옮겨짐) → "새 대진으로 복사"로 원본은 두고 다음 정기모임 새 초안 생성, 불러온 기록의 날짜를 바꾸면 새 대진으로 저장할지 확인'},
     {k:'blank',t:'대진표 확정 · 이미지 다운로드: 빈자리가 있으면 불가 → 기본은 그대로, "공란 허용"을 켜면 빈자리를 – 로 두고 확정 · 다운로드 가능 (현장에서 채우는 날용)'},
     {k:'archive',t:'대진표 기록: 참석자 섹션에 붙은 "대진표 기록" · 앱에서 만든 대진표만 → 대진표 탭의 별도 섹션 "대진 히스토리", 지난 대진표(이미지) 기록 가져오기 · "이전 기록" 표시, 대시보드 캘린더 정기모임 날짜에서도 보기, 회원 · 게스트 목록에 없는 이름은 "미등록 이름"(횟수 · 날짜 · 페어)으로 정리, 나중에 같은 이름으로 등록하면 지난 기록에 자동 연결'},
     {k:'historyui',t:'업데이트 기록: 11.14부터 · 배포마다 잘게 나뉜 버전 · 긴 목록 → 최초 요청(11.12 Claude 아티팩트 시기)부터 실제 배포 날짜 · 시간대 기준 기록, 같은 날 배포는 한 버전으로 묶음(하루 20개 안팎을 넘으면 나눔), 고정 높이 상자 안에서 페이지 넘겨 보기'},
@@ -1172,9 +1173,16 @@ function viewDrawRO(){
   <div class="draw"><div>${historyPanel(list)}</div><div style="min-width:0">${latest?`<div class="stage-bar"><div class="hint"><b>${fmtFull(latest.cfg.date)}</b> ${h(latest.status)}</div><button class="btn ball" data-act="bv-img" data-id="${latest.id}" data-inline="1">이미지 다운로드</button></div><div class="stage" id="stage">${posterHtml(normB(latest),false)}</div>`:'<div class="empty" style="padding:60px 16px"><b>공개된 대진표 없음</b>대진표 확정 및 공개본 갱신 후 표시</div>'}</div></div>`;
 }
 let bvCtx=null;
+/* 지난 대진을 원본은 그대로 두고 다음 정기모임 날짜의 새 초안으로 복사 */
+ACT['br-copy']=t=>{const b=S.brackets.find(x=>x.id===t.dataset.id);if(!b)return;
+  if(draft&&!draft.id&&!confirm('작성 중인 초안을 이 복사본으로 바꿉니다. 진행할까요?'))return;
+  closeModal();const bc={...normB(b).cfg,date:nextRegNow(),title:REG.title,place:REG.place};const roster=new Set(rosterAll().map(p=>p.key));
+  draft={id:null,cfg:bc,players:JSON.parse(JSON.stringify(b.players||{})),rounds:JSON.parse(JSON.stringify(b.rounds)).map(R=>{delete R.time;return R}),status:'초안',allowBlank:!!b.allowBlank};
+  Object.assign(cfg,{title:bc.title,date:bc.date,place:bc.place,start:bc.start,end:bc.end||cfg.end,mins:bc.mins,courtList:JSON.parse(JSON.stringify(bc.courtList)),picked:Object.keys(b.players||{}).filter(k=>roster.has(k))});
+  saveCfg();saveDraft();sel=null;if(route!=='draw')location.hash='#draw';render();window.scrollTo(0,0);toast(`${fmtD(b.cfg.date)} 대진을 ${fmtD(bc.date)} 새 초안으로 복사`)};
 function openBracketView(id){
   const b=S.brackets.find(x=>x.id===id);if(!b)return;const d=normB(b);bvCtx=d;
-  $('#modal-root').innerHTML=`<div class="ov" data-act="ov-close"><div class="modal wide" role="dialog" aria-modal="true" aria-label="대진표 보기"><div class="m-head"><h2>${fmtFull(b.cfg.date)} <span class="chip ${b.status==='확정'?'ball':''}">${h(b.status)}</span></h2><button type="button" class="modal-x" data-act="close-modal" aria-label="닫기">×</button></div><div class="stage" id="bv-stage">${posterHtml(d,false)}</div><div class="row" style="justify-content:flex-end;margin-top:12px">${mode!=='ro'?`<button class="btn danger" data-act="bv-del" data-id="${id}">삭제</button><button class="btn" data-act="br-load" data-id="${id}">불러와서 수정</button>`:''}<button class="btn ball" data-act="bv-img" data-id="${id}">이미지 다운로드</button></div></div></div>`;
+  $('#modal-root').innerHTML=`<div class="ov" data-act="ov-close"><div class="modal wide" role="dialog" aria-modal="true" aria-label="대진표 보기"><div class="m-head"><h2>${fmtFull(b.cfg.date)} <span class="chip ${b.status==='확정'?'ball':''}">${h(b.status)}</span></h2><button type="button" class="modal-x" data-act="close-modal" aria-label="닫기">×</button></div><div class="stage" id="bv-stage">${posterHtml(d,false)}</div><div class="row" style="justify-content:flex-end;margin-top:12px">${mode!=='ro'?`<button class="btn danger" data-act="bv-del" data-id="${id}">삭제</button><button class="btn" data-act="br-copy" data-id="${id}">새 대진으로 복사</button><button class="btn" data-act="br-load" data-id="${id}">불러와서 수정</button>`:''}<button class="btn ball" data-act="bv-img" data-id="${id}">이미지 다운로드</button></div></div></div>`;
   lockPage();fitIn($('#bv-stage'));
 }
 ACT['bv-open']=t=>{closeDayPop();openBracketView(t.dataset.id)};
@@ -1229,7 +1237,9 @@ document.addEventListener('input',e=>{
   const t=e.target;
   if(t.dataset.cfg){let v=t.value;if(t.dataset.cfg==='mins')v=Number(v)||0;cfg[t.dataset.cfg]=v;saveCfg();
     if(['start','end','mins'].includes(t.dataset.cfg)){const ri=$('#c-rinfo');if(ri)ri.textContent=toMin(cfg.end)>toMin(cfg.start)?`총 ${roundsOf(cfg)}타임 · 쉬는 시간 없음`:'종료 시각은 첫 게임 이후로 입력 필요'}
-    if(draft&&['title','date','place'].includes(t.dataset.cfg)){draft.cfg[t.dataset.cfg]=v;saveDraft();const st=$('#stage');if(st){st.innerHTML=posterHtml();fitPoster()}}}
+    if(draft&&['title','date','place'].includes(t.dataset.cfg)){if(t.dataset.cfg==='date'&&v&&v!==draft.cfg.date&&draft.id&&S.brackets.some(b=>b.id===draft.id)){const old=draft.cfg.date;
+      if(confirm(`날짜를 ${fmtD(v)}로 바꿉니다.\n\n확인: ${fmtD(old)} 기록은 그대로 두고 새 대진으로 저장\n취소: ${fmtD(old)} 기록의 날짜를 변경`)){draft.id=null;draft.status='초안';setTimeout(render,0);toast(`${fmtD(old)} 기록 유지 · 새 대진 초안`)}}
+      draft.cfg[t.dataset.cfg]=v;saveDraft();const st=$('#stage');if(st){st.innerHTML=posterHtml();fitPoster()}}}
   if(t.dataset.court!==undefined&&t.dataset.k==='name'){cfg.courtList[+t.dataset.court].name=t.value;saveCfg();if(draft&&draft.cfg.courtList&&draft.cfg.courtList[+t.dataset.court]){draft.cfg.courtList[+t.dataset.court].name=t.value;saveDraft();const st=$('#stage');if(st)st.innerHTML=posterHtml()}}
   if(t.dataset.plq){plq=t.value;render()}
 });
