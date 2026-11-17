@@ -967,3 +967,14 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .tr-side.w{border-color:var(--court);background:color-mix(in srgb,var(--court) 12%,var(--surface));font-weight:700}.tr-side.l{color:var(--muted)}.tr-side:disabled{cursor:default}
 @media (max-width:520px){.tr-groups{grid-template-columns:1fr}}
 .tr-sec{font-size:13px;font-weight:700;margin:4px 0 0;color:var(--muted)}
+
+.evdraw-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 12px;padding:8px 12px;border-radius:10px;background:color-mix(in srgb,var(--court) 12%,var(--surface));font-size:14px}
+.ev-fmt{display:flex;flex-direction:column;gap:8px;margin-top:6px}.ev-fmt .check{align-items:flex-start}
+.tr-tree{display:flex;gap:20px;overflow-x:auto;padding-bottom:6px}
+.tr-col{display:flex;flex-direction:column;min-width:150px;flex:1}.tr-col .tr-st{margin-bottom:6px}
+.tr-cm{display:flex;flex-direction:column;justify-content:space-around;gap:14px;flex:1}
+.tr-tree .tr-m{position:relative;gap:4px}.tr-tree .tr-side{min-height:40px;padding:6px 10px;font-size:13px}
+.tr-col.to .tr-m::after{content:'';position:absolute;right:-20px;top:50%;width:20px;border-top:2px solid var(--line)}
+.tr-col:not(:first-child) .tr-m::before{content:'';position:absolute;left:-10px;top:25%;bottom:25%;border-left:2px solid var(--line)}
+.tr-seed{font-size:11px}
+.tr-col.win .tr-side{justify-content:center;text-align:center}
