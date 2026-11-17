@@ -109,7 +109,7 @@ const NEWS=[
     {k:'choicewrap',t:'선택 창 버튼 설명: 긴 문구가 창 밖으로 넘쳐 잘림 → 버튼 안에서 줄바꿈'},
     {k:'mergenick',t:'미등록 이름 합치기: 합친 이름은 사라짐 · 되돌릴 수 없음 → 합칠 때 본명 선택(게스트는 이름 변경 가능), 나머지 이름은 닉네임으로 저장(여러 개는 쉼표로) · 방문 횟수 · 마지막 방문일 반영, 미등록 이름 › 합친 이름에서 되돌리기(대진 기록 · 게스트 정보 복원)'},
     {k:'tabs7',t:'휴대폰 탭: 6개 → 설정 탭 추가로 7개, 한 화면에 모두 보이게 간격 조정'},
-    {k:'unregreview',t:'미등록 이름 검수: 목록만 표시(검수는 대화로 요청) → 이름마다 게스트로 등록(지난 기록 자동 연결) · 다른 이름과 합치기 · 일회성으로 표시, 일회성 게스트는 별도 묶음에 기록 보관 · 다시 오면 "N회째 방문" 표시'},
+    {k:'unregreview',t:'미등록 이름 검수: 목록만 표시(검수는 대화로 요청) → 이름마다 게스트로 등록(지난 기록 자동 연결) · 다른 이름과 합치기 · 임시 게스트로 표시, 임시 게스트는 별도 묶음에 기록 보관 · 다시 오면 "N회째 방문" 표시'},
     {k:'bracketcopy',t:'지난 대진 활용: 불러와서 수정만 가능(날짜를 바꾸면 원래 기록이 그 날짜로 옮겨짐) → "새 대진으로 복사"로 원본은 두고 다음 정기모임 새 초안 생성, 불러온 기록의 날짜를 바꾸면 "새 대진으로 복사 · 원본 날짜 수정" 중 선택 (테마 선택 창)'},
     {k:'blank',t:'대진표 확정 · 이미지 다운로드: 빈자리가 있으면 불가 → 기본은 그대로, "공란 허용"을 켜면 빈자리를 – 로 두고 확정 · 다운로드 가능 (현장에서 채우는 날용)'},
     {k:'archive',t:'대진표 기록: 참석자 섹션에 붙은 "대진표 기록" · 앱에서 만든 대진표만 → 대진표 탭의 별도 섹션 "대진 히스토리", 지난 대진표(이미지) 기록 가져오기 · "이전 기록" 표시, 대시보드 캘린더 정기모임 날짜에서도 보기, 회원 · 게스트 목록에 없는 이름은 "미등록 이름"(횟수 · 날짜 · 페어)으로 정리, 나중에 같은 이름으로 등록하면 지난 기록에 자동 연결'},
@@ -1208,11 +1208,11 @@ const mergeLogs=()=>(S.names||[]).filter(x=>x.type==='merge').sort((x,y)=>(y.at|
 function unregHtml(){const L=unregList();const MG=mergeLogs();if(!L.length&&!MG.length)return '';
   const one=[],pend=[];L.forEach(o=>{const mk=nameMark(o.name);if(mk&&mk.status==='oneoff'&&o.dates.length<=(mk.n||1))one.push(o);else{o.again=mk&&mk.status==='oneoff'?o.dates.length:0;pend.push(o)}});
   const row=(o,isOne)=>`<div class="ur"><div class="ur-h"><b>${h(o.name)}</b>${o.again?`<span class="chip warn">${o.again}회째 방문</span>`:''}<span>${o.dates.length}회</span></div><div class="ur-d">${o.dates.map(d=>fmtD(d)).join(', ')}</div>${Object.keys(o.pairs).length?`<div class="ur-p">페어 ${Object.entries(o.pairs).sort((x,y)=>y[1]-x[1]).map(([n,c])=>h(n)+(c>1?` ×${c}`:'')).join(', ')}</div>`:''}
-    ${RO?'':`<div class="ur-acts">${isOne?`<button type="button" class="btn sm ghost" data-act="nm-undo" data-n="${h(o.name)}">일회성 해제</button>`:`<button type="button" class="btn sm" data-act="nm-reg" data-n="${h(o.name)}">게스트로 등록</button><button type="button" class="btn sm" data-act="nm-merge" data-n="${h(o.name)}">다른 이름과 합치기</button><button type="button" class="btn sm ghost" data-act="nm-one" data-n="${h(o.name)}">일회성으로 표시</button>`}</div>`}</div>`;
+    ${RO?'':`<div class="ur-acts">${isOne?`<button type="button" class="btn sm ghost" data-act="nm-undo" data-n="${h(o.name)}">임시 게스트 해제</button>`:`<button type="button" class="btn sm" data-act="nm-reg" data-n="${h(o.name)}">게스트로 등록</button><button type="button" class="btn sm" data-act="nm-merge" data-n="${h(o.name)}">다른 이름과 합치기</button><button type="button" class="btn sm ghost" data-act="nm-one" data-n="${h(o.name)}">임시 게스트로 표시</button>`}</div>`}</div>`;
   return `<details class="due-yr unreg" id="unreg"${lsGet('sbpb-unreg-open',false)?' open':''}><summary><h3>미등록 이름 <span class="num muted" style="font-size:14px">${pend.length}</span></h3><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
-    <p class="small muted" style="margin:0 0 8px">회원 · 게스트 목록에 없는 이름 · 게스트로 등록 / 같은 사람이면 합치기 / 한 번 온 사람은 일회성으로 표시</p>
+    <p class="small muted" style="margin:0 0 8px">회원 · 게스트 목록에 없는 이름 · 게스트로 등록 / 같은 사람이면 합치기 / 정규 게스트가 아니면 임시 게스트로 표시</p>
     ${pend.length?`<div class="unreg-list">${pend.map(o=>row(o,false)).join('')}</div>`:'<p class="small muted">검수할 이름 없음</p>'}
-    ${one.length?`<details class="oneoff" id="oneoff"${lsGet('sbpb-oneoff-open',false)?' open':''}><summary>일회성 게스트 ${one.length} <span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary><div class="unreg-list">${one.map(o=>row(o,true)).join('')}</div></details>`:''}
+    ${one.length?`<details class="oneoff" id="oneoff"${lsGet('sbpb-oneoff-open',false)?' open':''}><summary>임시 게스트 ${one.length} <span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary><div class="unreg-list">${one.map(o=>row(o,true)).join('')}</div></details>`:''}
     ${MG.length?`<details class="oneoff" id="merged"${lsGet('sbpb-merged-open',false)?' open':''}><summary>합친 이름 ${MG.length} <span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary><div class="unreg-list">${MG.map(L=>`<div class="ur"><div class="ur-h"><b>${h(L.from)} + ${h(L.with||L.toName)}</b><span>${fmtD(new Date(L.at||0).toISOString().slice(0,10))}</span></div><div class="ur-d">본명 ${h(L.toName)} · 대진 기록 ${Object.values(L.slots||{}).filter(x=>x.length).length}회 합침</div>${RO?'':`<div class="ur-acts"><button type="button" class="btn sm ghost" data-act="mg-undo" data-id="${h(L.id)}">되돌리기</button></div>`}</div>`).join('')}</div></details>`:''}</details>`}
 /* 이름 바꾸기 · 합치기: 모든 대진 기록에서 from 키를 to 키로 · 바뀐 자리(라운드.m.경기.편.순번 / 라운드.r.순번)를 돌려줌 → 되돌리기에 사용 */
 async function rekeyBrackets(fromKey,toKey,pl){const slots={};for(const b of S.brackets){if(!b.players||!b.players[fromKey])continue;const players={...b.players};delete players[fromKey];if(!players[toKey])players[toKey]=pl;
@@ -1253,8 +1253,8 @@ ACT['mg-undo']=async t=>{const L=mergeLogs().find(x=>x.id===t.dataset.id);if(!L)
   for(const M of mergeLogs().filter(x=>x.repointedBy===L.id)){const {id,...rest}=M;try{await put('names',id,{...rest,toKey:fk,toName:L.from,repointedBy:''})}catch(e){}}
   try{await del('names',L.id)}catch(e){}toast(`${L.from} 합치기 되돌림 · 미등록 이름으로 복원`);render()};
 const nmPlayer=n=>{for(const b of S.brackets){const p=b.players&&b.players['n:'+n];if(p)return p}return null};
-ACT['nm-one']=async t=>{const n=t.dataset.n;const o=unregList().find(x=>x.name===n);const mk=nameMark(n);try{await put('names',mk?mk.id:uid(),{name:n,status:'oneoff',n:o?o.dates.length:1,at:Date.now()})}catch(e){return}toast(`${n} 일회성 게스트로 표시`);render()};
-ACT['nm-undo']=async t=>{const mk=nameMark(t.dataset.n);if(mk){try{await del('names',mk.id)}catch(e){return}}toast('일회성 해제 · 미등록 이름으로 이동');render()};
+ACT['nm-one']=async t=>{const n=t.dataset.n;const o=unregList().find(x=>x.name===n);const mk=nameMark(n);try{await put('names',mk?mk.id:uid(),{name:n,status:'oneoff',n:o?o.dates.length:1,at:Date.now()})}catch(e){return}toast(`${n} 임시 게스트로 표시`);render()};
+ACT['nm-undo']=async t=>{const mk=nameMark(t.dataset.n);if(mk){try{await del('names',mk.id)}catch(e){return}}toast('임시 게스트 해제 · 미등록 이름으로 이동');render()};
 ACT['nm-reg']=t=>{const n=t.dataset.n;const p=nmPlayer(n)||{};const o=unregList().find(x=>x.name===n);
   const fromNk=mergeLogs().filter(x=>x.toKey==='n:'+n).map(x=>x.from);
   openModal('게스트로 등록',guestForm({name:n,gender:p.gender||'M',nick:fromNk.join(', ')},'members')+`<p class="small muted" style="margin:0">지난 대진 기록 ${o?o.dates.length:0}회가 이 게스트로 연결됨</p>`,async fd=>{const id=uid();
