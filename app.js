@@ -112,6 +112,8 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
+    {k:'eggames',t:'행사 상세 › 행사 대진 · 결과: 팀 성적은 점수 입력 뒤에만 표시 · 경기 목록 없음 → 팀 성적 항상 표시(점수 입력 N/전체 경기), 타임 · 코트별 경기 현황과 점수, 점수 입력 버튼'},
+    {k:'fperr',t:'저장 실패 (failed-precondition): 원인 안내 없음 → 저장 연결 끊김 안내와 새로고침 버튼'},
     {k:'areanogun',t:'회원 거주지 · 직장 선택 목록: 경기도 시 · 군 31곳 → 경기도 시 28곳 (군은 직접 입력)'},
     {k:'subsep',t:'행사 목록 줄: 이름 · G 표시 · 가운데 점 · 결과 사이가 모두 같은 큰 간격이라 점이 따로 떠 보임 → 이름과 G 표시는 붙이고, 가운데 점은 양옆 같은 간격으로 앞뒤 항목을 구분'},
     {k:'logictime',t:'대진표 생성 로직 안내: 운영 시간 · 코트별 설정값까지 나열 · 최근 페어 분산 누락 → 운영 시간 항목 삭제(모임 설정에서 확인), 코트 배정은 규칙만 설명, 최근 페어 분산 항목 추가(직전 10회 정기모임 기준 동일 파트너 편성 빈도가 낮은 조합 우선 편성, 레벨 균형 기준에 우선하지 않음)'},
@@ -430,7 +432,8 @@ const loaded=new Set();
 const names={};
 function loadLocal(){const d=lsGet('sbpb-local',null);if(d)COLS.forEach(c=>S[c]=d[c]||[])}
 function saveLocal(){const o={};COLS.forEach(c=>o[c]=S[c]);lsSet('sbpb-local',o)}
-function errMsg(e){const c=e&&e.code;if(WEB){const why=String(c||e&&e.message||'').replace(/^firestore\//,'');return why==='permission-denied'?'저장 권한 없음. 로그아웃 후 다시 로그인 필요 ('+why+')':why==='unavailable'?'인터넷 연결 확인 필요 ('+why+')':'저장 실패 ('+(why||'원인 미상')+')'}return c==='quota_exceeded'?'저장 공간 부족. 오래된 항목 삭제 후 재시도 필요':c==='invalid_argument'?'저장 권한 없음. 아티팩트 소유자에게 편집 권한 요청 필요':'저장 실패. 잠시 후 재시도 필요'}
+function errMsg(e){const c=e&&e.code;if(WEB){const why=String(c||e&&e.message||'').replace(/^firestore\//,'');
+  if(why==='failed-precondition'&&!errMsg._ask){errMsg._ask=1;setTimeout(async()=>{const ch=await choiceDialog({title:'저장 연결 끊김',msg:'앱이 오래 백그라운드에 있으면 휴대폰이 저장 연결을 끊음 · 새로고침하면 복구',choices:[{key:'go',label:'새로고침',sub:'입력 중이던 창은 닫힘 · 다시 저장 필요',cls:'pri'}]});errMsg._ask=0;if(ch==='go')location.reload()},50);return '저장 연결 끊김 · 새로고침 필요'}return why==='permission-denied'?'저장 권한 없음. 로그아웃 후 다시 로그인 필요 ('+why+')':why==='unavailable'?'인터넷 연결 확인 필요 ('+why+')':'저장 실패 ('+(why||'원인 미상')+')'}return c==='quota_exceeded'?'저장 공간 부족. 오래된 항목 삭제 후 재시도 필요':c==='invalid_argument'?'저장 권한 없음. 아티팩트 소유자에게 편집 권한 요청 필요':'저장 실패. 잠시 후 재시도 필요'}
 async function put(col,id,data){
   if(RO){toast('보기 전용 화면에서는 수정 불가');throw new Error('read-only')}
   const body={...data,updatedAt:Date.now()};delete body.id;
@@ -1668,9 +1671,15 @@ const tdot=(ev,k)=>{if(!ev||!k)return '';const i=teamMap(ev)[k];return i==null?'
 function evGames(ev){if(ev.type==='개인대회')return '';const bs=S.brackets.filter(b=>b.cfg&&b.cfg.eventId===ev.id).sort((x,y)=>(x.cfg.start||'').localeCompare(y.cfg.start||''));
   const T=ev.teams||[];const tl=teamTally(ev);const aw=ev.awards||[];
   const teamsHtml=T.length?`<div class="eg-teams">${T.map((t,i)=>`<div class="eg-team"><b><i class="tdot" style="background:${tcol(ev,i)}"></i>${h(t.name)}</b><span class="small muted">${h((t.members||[]).map(k=>keyName(k)).join(', '))}</span></div>`).join('')}</div>`:'<p class="small muted" style="margin:0">팀 없음 · 팀전이면 팀 설정</p>';
-  const res=tl&&tl.played?`<div class="eg-res">${tl.rank.map((x,j)=>`<span class="eg-sc${j===0&&(tl.rank[0].w!==tl.rank[1].w||(tl.rank[0].gf-tl.rank[0].ga)!==(tl.rank[1].gf-tl.rank[1].ga))?' win':''}"><i class="tdot" style="background:${tcol(ev,x.i)}"></i>${h(x.name)} <b class="num">${x.w}승</b> <span class="muted small">${x.l}패 · 득실 ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}</span></span>`).join('')}<span class="small muted">점수 입력 ${tl.played}경기</span></div>`:'';
+  const nMatch=bs.reduce((s,b)=>s+(b.rounds||[]).reduce((t,R)=>t+(R.matches||[]).filter(m=>m&&(m.a||[]).some(Boolean)).length,0),0);
+  const res=tl&&bs.length?`<div class="eg-res">${tl.rank.map((x,j)=>`<span class="eg-sc${j===0&&(tl.rank[0].w!==tl.rank[1].w||(tl.rank[0].gf-tl.rank[0].ga)!==(tl.rank[1].gf-tl.rank[1].ga))?' win':''}"><i class="tdot" style="background:${tcol(ev,x.i)}"></i>${h(x.name)} <b class="num">${x.w}승</b> <span class="muted small">${x.l}패 · 득실 ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}</span></span>`).join('')}<span class="small muted">점수 입력 ${tl.played}/${nMatch}경기</span></div>`:'';
+  /* 경기 현황: 타임 · 코트마다 대결과 점수 */
+  const nmK=(b,k)=>k?keyName(k,b):'–';
+  const games=bs.map(b=>`<div class="eg-games"><div class="eg-h"><h4 class="st-h" style="margin:0">경기 현황 <span class="small muted" style="font-weight:500">${h(b.cfg.title||'')}</span></h4>${RO?'':`<button class="btn sm" data-act="bv-score" data-id="${b.id}">점수 입력</button>`}</div>
+    ${(b.rounds||[]).map((R,ri)=>`<div class="eg-rd"><span class="eg-t num">${ri+1}<small>${h((R.time||'').split('–')[0])}</small></span><div class="eg-ms">${(R.matches||[]).map((m,ci)=>{if(!m||!(m.a||[]).some(Boolean))return '';const sc=m.sc&&m.sc[0]!==''&&m.sc[1]!==''&&m.sc[0]!=null;const wa=sc&&+m.sc[0]>+m.sc[1],wb=sc&&+m.sc[1]>+m.sc[0];
+      return `<div class="eg-m"><span class="eg-c">${h(((b.cfg.courtList||[])[ci]||{}).name||'')}</span><span class="eg-p${wa?' w':''}">${tdot(ev,m.a.find(Boolean))}<span>${m.a.map(k=>h(nmK(b,k))).join('<br>')}</span></span><span class="eg-s num">${sc?`${m.sc[0]} : ${m.sc[1]}`:'vs'}</span><span class="eg-p r${wb?' w':''}"><span>${m.b.map(k=>h(nmK(b,k))).join('<br>')}</span>${tdot(ev,m.b.find(Boolean))}</span></div>`}).join('')}</div></div>`).join('')}</div>`).join('');
   return `<div class="evgames"><div class="eg-h"><h3>행사 대진 · 결과</h3>${RO?'':`<div class="row"><button class="btn sm" data-act="eg-award">시상 추가</button></div>`}</div>
-    ${evSetupHtml(ev)}${ev.tourney||!T.length?'':teamsHtml}${res}${tourHtml(ev)}
+    ${evSetupHtml(ev)}${ev.tourney||!T.length?'':teamsHtml}${res}${tourHtml(ev)}${T.length>=2?games:''}
     ${bs.length?`<div class="list">${bs.map(b=>`<div class="li click" data-act="bv-open" data-id="${b.id}"><div class="grow"><div class="ttl">${h(b.cfg.title||ev.title)}</div><div class="sub">${h(b.cfg.start||'')}${b.rounds?` · ${b.rounds.length}타임`:''} · ${(b.cfg.courtList||[]).map(c=>h(c.name)).join(' · ')}</div></div><span class="chip">대진 보기</span></div>`).join('')}</div>`:ev.tourney?'':'<p class="small muted" style="margin:8px 0 0">등록된 행사 대진 없음</p>'}
     ${aw.length?`<div class="eg-aw"><h4 class="st-h">시상</h4>${aw.map((x,i)=>`<div class="eg-awr"><b>${h(x.t)}</b><span>${h(x.w)}</span>${RO?'':`<button class="x" data-act="eg-award-del" data-i="${i}" aria-label="시상 삭제">×</button>`}</div>`).join('')}</div>`:''}</div>`}
 ACT['eg-award']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;
