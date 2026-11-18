@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
+    {k:'sttabs',t:'대진표 탭 대진 통계: 대진 히스토리 상자와 붙어 있음 · 출석률 · 페어 통계가 세로로 이어짐 → 상자 사이 16px, 탭(정기모임 출석률 · 페어 통계)으로 하나씩 보기, 통계 상자 전체 접기 · 펼치기'},
     {k:'evmobile',t:'휴대폰 이벤트 페이지: 행사를 누르면 목록 아래쪽 상세만 바뀌어 반응이 안 보임 → 이벤트 페이지 안에서 상세 화면으로 전체 전환, "← 행사 목록" · 휴대폰 뒤로 가기로 목록 복귀(보던 위치 유지), 상세 주소가 따로 있어 새로고침해도 유지'},
     {k:'topfade',t:'맨 위로 버튼: 스크롤에 따라 갑자기 나타나고 사라짐 → 서서히 나타나고 흐려지며 사라짐'},
     {k:'fabsize',t:'화면 모드 · 맨 위로 버튼 크기: 38px → 44px (누르기 쉬운 크기)'},
@@ -1121,11 +1122,14 @@ function statsPanel(){const st=drawStats();const MD=meetDates();const recD=new S
     <h4 class="st-h">아직 페어 못 한 회원 ${zero.length}</h4><div class="st-chips">${zero.map(m=>`<span class="st-chip">${h(m.name)}</span>`).join('')||'<span class="muted small">없음</span>'}</div>
     ${one.length?`<h4 class="st-h">1회만 한 회원 ${one.length}</h4><div class="st-chips">${one.map(m=>`<span class="st-chip">${h(m.name)}</span>`).join('')}</div>`:''}
     <h4 class="st-h">맞대결 많이 한 순</h4><div class="st-chips">${list(op,false)}</div>`:'<p class="muted small">대진 기록 없음</p>';
-  return `<section class="panel stats"><div class="panel-h"><h2>대진 통계</h2><span class="small muted">전체 기록 ${st.B.length}회</span></div>
-    <details class="due-yr" id="st-att"${lsGet('sbpb-st-att',true)?' open':''}><summary><h3>정기모임 출석률</h3><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>${attHtml}</details>
-    <details class="due-yr" id="st-pair"${lsGet('sbpb-st-pair',true)?' open':''}><summary><h3>페어 통계</h3><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>${pairHtml}</details></section>`}
+  /* 탭으로 출석률 · 페어 통계 중 하나만 표시 · 통계 상자 전체는 접기 · 펼치기 */
+  const tab=lsGet('sbpb-st-tab','att')==='pair'?'pair':'att';
+  return `<section class="panel stats"><details class="due-yr st-fold" id="st-box"${lsGet('sbpb-st-box',true)?' open':''}><summary><h2 style="margin:0">대진 통계 <span class="small muted" style="font-weight:500">전체 기록 ${st.B.length}회</span></h2><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
+    <div class="seg st-tabs" role="tablist">${[['att','정기모임 출석률'],['pair','페어 통계']].map(([k,l])=>`<button type="button" role="tab" aria-selected="${tab===k}" class="${tab===k?'on':''}" data-act="st-tab" data-v="${k}">${l}</button>`).join('')}</div>
+    <div class="st-pane">${tab==='att'?attHtml:pairHtml}</div></details></section>`}
+ACT['st-tab']=t=>{lsSet('sbpb-st-tab',t.dataset.v);render()};
 document.addEventListener('change',e=>{if(e.target.dataset&&e.target.dataset.statp){statP=e.target.value;lsSet('sbpb-stat-p',statP);render()}});
-document.addEventListener('toggle',e=>{if(e.target.id==='st-att')lsSet('sbpb-st-att',e.target.open);if(e.target.id==='st-pair')lsSet('sbpb-st-pair',e.target.open)},true);
+document.addEventListener('toggle',e=>{if(e.target.id==='st-box')lsSet('sbpb-st-box',e.target.open)},true);
 /* 대진 생성용: 최근 정기모임에서 함께 페어한 정도 (최근일수록 크게, 최근 10회) */
 function recentPairWeight(before){const B=pastBrackets().filter(b=>b.cfg.date<before).slice(-10).reverse();const w={};const pk=(a,b)=>a<b?a+'|'+b:b+'|'+a;
   B.forEach((b,i)=>{const d=Math.pow(.8,i);(b.rounds||[]).forEach(R=>(R.matches||[]).forEach(m=>{if(!m)return;[m.a,m.b].forEach(t=>{if(t&&t.length===2&&t[0]&&t[1]){const k=pk(t[0],t[1]);w[k]=(w[k]||0)+d}})}))});return w}
