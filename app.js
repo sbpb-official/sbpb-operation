@@ -112,7 +112,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
-    {k:'koname',t:'토너먼트 라운드 이름: 참가 수와 상관없이 8강 · 4강 (6명이면 8강 칸에 4명만) → 참가 수가 2 · 4 · 8 · 16…이면 8강 · 4강 · 결승, 아니면 1차전 · 2차전 · 결승, 바로 다음 라운드로 가는 선수에 "부전승" 표시 · 매치 카드 안의 중복 형식 줄 삭제'},
+    {k:'koname',t:'토너먼트 구성 · 라운드 이름: 2 · 4 · 8명 단위가 아니면 1라운드에서 상위 선수 부전승 · 8강 · 4강 이름 그대로 (6명이면 8강에 4명만) → 1라운드는 전원 경기, 라운드마다 남은 인원이 홀수일 때만 한 명 부전승 (6명: 1차전 3경기 → 2차전 1경기 + 부전승 1명 → 결승), 2 · 4 · 8 · 16…명이면 8강 · 4강 · 결승, 아니면 1차전 · 2차전 · 결승, 부전승 선수 표시 · 매치 카드 안의 중복 형식 줄 삭제'},
     {k:'mform2',t:'매치 추가 · 수정: 형식과 상관없이 조 · 본선 진출 옵션 표시 → 리그가 들어가는 형식에만 조, 리그 → 토너먼트에만 본선 진출 표시 · 참가자 선택 이름에 성별 색 점'},
     {k:'teambox',t:'행사 팀 표시: 팀 멤버 상자와 성적 줄이 따로 → 팀마다 한 상자에 팀명 · 성적(승 · 패 · 득실) · 멤버'},
     {k:'mpick',t:'매치 참가자 선택: 눌러도 선택 표시가 안 보이고 버튼끼리 붙어 있음 → 응원단처럼 개별 선택 · 선택 시 색 표시, 버튼 간격 8px'},
@@ -1768,9 +1768,8 @@ ACT['ps-del']=async t=>{const id=t.dataset.id;const p=presets().find(x=>x.id===i
 const KO_STAGE=n=>n===2?'결승':n===4?'4강':n+'강';
 function rrPairs(n){const out=[];const ids=[...Array(n).keys()];if(n%2)ids.push(-1);const m=ids.length;for(let r=0;r<m-1;r++){for(let i=0;i<m/2;i++){const x=ids[i],y=ids[m-1-i];if(x>=0&&y>=0)out.push([x,y])}ids.splice(1,0,ids.pop())}return out}
 function koFromRefs(refs){const ko=[];let n=refs.length;let cur=refs;while(cur.length>1){const nx=[];for(let i=0;i<cur.length;i+=2){if(cur[i+1]==null){nx.push(cur[i]);continue}ko.push({stage:KO_STAGE(n),a:cur[i],b:cur[i+1],w:null});nx.push('W'+(ko.length-1))}cur=nx;n/=2}return ko}
-function seedRefs(list){let P=2;while(P<list.length)P*=2;let so=[0,1];while(so.length<P){const L=so.length*2;so=so.flatMap(s=>[s,L-1-s])}
-  const ko=[];const refs=[];for(let i=0;i<P;i+=2){const x=list[so[i]],y=list[so[i+1]];if(x&&y){ko.push({stage:KO_STAGE(P),a:x,b:y,w:null});refs.push('W'+(ko.length-1))}else refs.push(x||y)}
-  let n=P/2,cur=refs;while(cur.length>1){const nx=[];for(let i=0;i<cur.length;i+=2){ko.push({stage:KO_STAGE(n),a:cur[i],b:cur[i+1],w:null});nx.push('W'+(ko.length-1))}cur=nx;n/=2}return ko}
+/* 토너먼트: 매 라운드 남은 인원을 앞에서부터 둘씩 대결, 홀수면 마지막 한 명만 다음 라운드로 (부전승) */
+function seedRefs(list){return koFromRefs(list.slice())}
 function trBuild(ev,o){const T=ev.tourney;o=o||(T&&T.fmt)||{unit:'pair',prog:'ko',groups:0,adv:2};const lines=T?(T.groups&&T.groups.length?T.groups.flatMap(g=>g.teams):T.teams||[]).map(t=>t.p.map(k=>keyName(k)).join('/')).join('\n'):'';
   const single=o.unit==='single';
   openModal('행사 대진 만들기',`<p class="small muted" style="margin:0 0 8px">${h(ev.title)} · ${h(fmtD(ev.date))} · ${h(UNIT_L[o.unit])} · ${h(PROG_L[o.prog])}</p><label class="f">이름<input class="in" name="title" value="${h(T?T.title:'')}" placeholder="예: 혼복 대전 · 단식 토너먼트"></label>
@@ -1816,7 +1815,7 @@ function koRounds(tr){const ko=tr.ko||[];const rd=[];const rof=r=>r&&r[0]==='W'?
 function tourHtml(ev,mm){const tr=mm?mm.tr:ev.tourney;if(!tr)return '';tr.groups=tr.groups||[];tr.lg=tr.lg||[];tr.ko=tr.ko||[];
   const fin=tr.ko[tr.ko.length-1];let champ=fin&&fin.w?trTeam(tr,fin.w==='a'?fin.a:fin.b):null;
   if(!tr.ko.length&&tr.groups.length===1&&tr.lg.length&&tr.lg.every(m=>m.w))champ=grpStand(tr,0).rows[0].t;
-  const side=(m,i,s,act)=>{const t=act==='tr-win'?trTeam(tr,m[s]):tr.groups[m.g].teams[m[s]];const won=m.w===s;const bye=act==='tr-win'&&m[s]&&m[s][0]==='T'&&koRounds(tr).rd[i]>1;return `<button type="button" class="tr-side${won?' w':''}${m.w&&!won?' l':''}" ${RO||!t?'disabled':''} data-act="${act}" data-i="${i}" data-s="${s}"><span>${h(trName(t))}${bye?' <span class="tr-bye">부전승</span>':''}</span>${hasSc(m)?`<b class="num">${m.sc[s==='a'?0:1]}</b>`:''}</button>`};
+  const side=(m,i,s,act)=>{const t=act==='tr-win'?trTeam(tr,m[s]):tr.groups[m.g].teams[m[s]];const won=m.w===s;const KRb=act==='tr-win'?koRounds(tr):null;const ref=m[s]||'';const bye=!!KRb&&KRb.rd[i]>1&&(/^[A-DT]/.test(ref)||(ref[0]==='W'&&KRb.rd[+ref.slice(1)]+1<KRb.rd[i]));return `<button type="button" class="tr-side${won?' w':''}${m.w&&!won?' l':''}" ${RO||!t?'disabled':''} data-act="${act}" data-i="${i}" data-s="${s}"><span>${h(trName(t))}${bye?' <span class="tr-bye">부전승</span>':''}</span>${hasSc(m)?`<b class="num">${m.sc[s==='a'?0:1]}</b>`:''}</button>`};
   const KR=koRounds(tr);const cols=[];tr.ko.forEach((m,i)=>{const st=KR.name(i);let c=cols.find(x=>x.r===KR.rd[i]);if(!c){c={r:KR.rd[i],st,ms:[]};cols.push(c)}c.ms.push([m,i])});cols.sort((x,y)=>x.r-y.r);
   const ko=tr.ko.length?`<h4 class="tr-sec">본선</h4><div class="tr-tree">${cols.map((c,ci)=>`<div class="tr-col${ci<cols.length-1?' to':''}"><span class="tr-st">${h(c.st)}</span><div class="tr-cm">${c.ms.map(([m,i])=>`<div class="tr-m">${/^[A-D]\d/.test(m.a)?`<span class="tr-seed muted">${m.a} vs ${m.b}</span>`:''}${side(m,i,'a','tr-win')}${side(m,i,'b','tr-win')}</div>`).join('')}</div></div>`).join('')}<div class="tr-col win"><span class="tr-st">우승</span><div class="tr-cm"><div class="tr-m"><div class="tr-side${champ?' w':''}" style="cursor:default">${champ?h(trName(champ)):'<span class="muted">미정</span>'}</div></div></div></div></div>`:'';
   const multi=tr.groups.length>1;
@@ -1942,7 +1941,7 @@ function seDrop(i,t){if(i==null)return;const from=seWhere(i);if(t==='pool'){if(f
 function trManual(items,o,save){if(!Array.isArray(items)){const ev=items;o=ev.fmt;items=o.unit==='single'?evPeople(ev).map(k=>({p:[k]})):evPairs(ev).map(p=>({p:p.slice()}));save=async tr=>{const {id,...rest}=ev;await put('events',ev.id,{...rest,tourney:tr});toast('대진 저장');render()}}
   if(items.length<2){toast('2팀 이상 필요');return}
   const n=items.length;let boxes,mode;
-  if(o.prog==='ko'){mode='ko';let P=2;while(P<n)P*=2;boxes=Array.from({length:P/2},(_,i)=>({label:`${KO_STAGE(P)} ${i+1}경기`,cap:2,slots:[null,null]}))}
+  if(o.prog==='ko'){mode='ko';boxes=Array.from({length:Math.ceil(n/2)},(_,i)=>({label:`1차전 ${i+1}경기`,cap:2,slots:[null,null]}))}
   else{mode='group';const G=Math.max(1,+o.groups||0);const cap=Math.ceil(n/G);boxes=Array.from({length:G},(_,i)=>({label:G>1?'ABCD'[i]+'조':'리그',cap,slots:Array(cap).fill(null)}))}
   SE={items,pool:items.map((_,i)=>i),boxes,sel:null,mode};
   openModal('대진 직접 입력',`<p class="small muted" style="margin:0 0 8px">${h(o.name||'')} · ${mode==='ko'?'1라운드 대진 칸에':'조 칸에'} 끌어다 놓기 · 빈 칸을 누르면 목록에서 선택 · 칸의 이름을 누르면 빼기${mode==='group'?' · 리그 경기는 조 안에서 모두 한 번씩 자동 구성':''}</p><div id="se">${seHtml()}</div>`,
