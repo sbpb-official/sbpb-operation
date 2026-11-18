@@ -112,6 +112,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
+    {k:'mform2',t:'매치 추가 · 수정: 형식과 상관없이 조 · 본선 진출 옵션 표시 → 리그가 들어가는 형식에만 조, 리그 → 토너먼트에만 본선 진출 표시 · 참가자 선택 이름에 성별 색 점'},
     {k:'teambox',t:'행사 팀 표시: 팀 멤버 상자와 성적 줄이 따로 → 팀마다 한 상자에 팀명 · 성적(승 · 패 · 득실) · 멤버'},
     {k:'mpick',t:'매치 참가자 선택: 눌러도 선택 표시가 안 보이고 버튼끼리 붙어 있음 → 응원단처럼 개별 선택 · 선택 시 색 표시, 버튼 간격 8px'},
     {k:'mview',t:'대진 히스토리 행사 매치: 행사 화면으로 이동만 → 매치마다 따로 보기 · 매치 2개 이상인 행사는 "통합본"(모든 매치를 한 장에) · 이미지 다운로드, 행사 상세에도 통합본 버튼'},
@@ -2020,9 +2021,10 @@ function gamesHtml(ev,b){const nmK=k=>k?keyName(k,b):'–';
 function matchForm(m){return `<label class="f">이름<input class="in" name="name" value="${h(m.name||'')}" placeholder="비우면 종목 이름 (예: 남자단식)"></label>
   <div class="grid2"><label class="f">종목<select class="in" name="kind">${Object.entries(MK_L).map(([v,l])=>`<option value="${v}"${m.kind===v?' selected':''}>${l}</option>`).join('')}</select></label>
   <label class="f">형식<select class="in" name="fmt">${Object.entries(MF_L).map(([v,l])=>`<option value="${v}"${m.fmt===v?' selected':''}>${l}</option>`).join('')}</select></label>
-  <label class="f">조 (리그)<select class="in" name="groups">${[[0,'없음 · 단일 리그'],[2,'2개 조'],[3,'3개 조'],[4,'4개 조']].map(([n,l])=>`<option value="${n}"${(+m.groups||0)===n?' selected':''}>${l}</option>`).join('')}</select></label>
-  <label class="f">조별 본선 진출<select class="in" name="adv">${[1,2].map(n=>`<option value="${n}"${(+m.adv||2)===n?' selected':''}>${n}팀</option>`).join('')}</select></label></div>
-  <p class="small muted" style="margin:0">로테이션 타임표: 매 타임 페어가 바뀌는 방식(정기모임 · 팀전) · 순위 기록: 이벤트 게임처럼 참가자 순위 · 기록만 남김 · 조 · 진출은 리그 형식에만 적용</p>`}
+  <label class="f mf-lg"${m.fmt==='league'||m.fmt==='league-ko'?'':' hidden'}>조 (리그)<select class="in" name="groups">${[[0,'없음 · 단일 리그'],[2,'2개 조'],[3,'3개 조'],[4,'4개 조']].map(([n,l])=>`<option value="${n}"${(+m.groups||0)===n?' selected':''}>${l}</option>`).join('')}</select></label>
+  <label class="f mf-ko"${m.fmt==='league-ko'?'':' hidden'}>조별 본선 진출<select class="in" name="adv">${[1,2].map(n=>`<option value="${n}"${(+m.adv||2)===n?' selected':''}>${n}팀</option>`).join('')}</select></label></div>
+  <p class="small muted" style="margin:0">로테이션 타임표: 매 타임 페어가 바뀌는 방식(정기모임 · 팀전) · 순위 기록: 이벤트 게임처럼 참가자 순위 · 기록만 남김 · 참가자 목록은 종목 성별에 맞춰 표시</p>`}
+document.addEventListener('change',e=>{if(e.target.name!=='fmt'&&e.target.name!=='kind'||!e.target.closest('#mform'))return;const f=e.target.closest('#mform');const v=(f.querySelector('[name=fmt]')||{}).value;const lg=f.querySelector('.mf-lg'),ko=f.querySelector('.mf-ko');if(lg)lg.hidden=!(v==='league'||v==='league-ko');if(ko)ko.hidden=v!=='league-ko'});
 const mFromFd=fd=>({name:(fd.name||'').trim()||MK_L[fd.kind],kind:fd.kind,fmt:fd.fmt,groups:+fd.groups||0,adv:+fd.adv||2});
 ACT['m-add']=()=>{const ev=curEv();if(!ev)return;openModal('매치 추가',matchForm({kind:'XD',fmt:'league-ko',groups:2,adv:2}),async fd=>{const m={id:'m-'+uid(),...mFromFd(fd),entries:[]};if(m.kind==='EV'&&fd.fmt==='rot')m.fmt='rank';
   await mSaveAll(ev,evMatches(ev).concat(m));toast(`${m.name} 추가`)})};
@@ -2037,7 +2039,7 @@ function mPeople(ev,m){let ppl=evPeople(ev);if(!ppl.length)ppl=activeMembers().m
 ACT['m-entries']=t=>{const ev=curEv(),mid=midOf(t);const m=ev&&mGet(ev,mid);if(!m)return;const ppl=mPeople(ev,m);
   if(m.fmt==='rot'||mSingle(m)){const on=new Set((m.entries||[]).flatMap(e=>e.p));
     openModal(`${m.name} 참가자`,`<p class="small muted" style="margin:0 0 8px">${evPeople(ev).length?'행사 확정 인원':'활동 회원'} 중 선택${m.kind==='MS'||m.kind==='MD'?' · 남자만':m.kind==='WS'||m.kind==='WD'?' · 여자만':''}</p><div class="row" style="margin-bottom:8px"><button type="button" class="btn sm" data-act="m-pick-all">모두 선택</button><button type="button" class="btn sm ghost" data-act="m-pick-none">모두 해제</button></div>
-      <div class="toggle m-pick">${ppl.map(k=>`<button type="button" data-act="m-pick" data-k="${h(k)}" aria-pressed="${on.has(k)}">${h(keyName(k))}</button>`).join('')}</div>`,
+      <div class="toggle m-pick">${ppl.map(k=>`<button type="button" data-act="m-pick" data-k="${h(k)}" aria-pressed="${on.has(k)}"><i class="pe-g g-${pGender(k)||'x'}"></i>${h(keyName(k))}</button>`).join('')}</div>`,
       async()=>{const ks=[...document.querySelectorAll('#mform .m-pick [aria-pressed="true"]')].map(b=>b.dataset.k);const old={};(m.entries||[]).forEach(e=>{if(e.p.length===1)old[e.p[0]]=e});
         await mSave(ev,mid,{entries:ks.map(k=>({p:[k],...(old[k]&&old[k].rank?{rank:old[k].rank}:{}),...(old[k]&&old[k].rec?{rec:old[k].rec}:{})}))});toast(`참가 ${ks.length}명 저장`)});return}
   if(ppl.length<2){toast('행사 확정 인원 먼저 체크 (수정 › 확정 인원)');return}

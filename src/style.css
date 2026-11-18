@@ -1050,3 +1050,4 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .mv-head{display:flex;align-items:center;gap:12px}.mv-sec{display:flex;flex-direction:column;gap:12px}.mv-t{margin:0;font-size:16px}
 .mv-sheet .btn,.mv-sheet .lg-grip,.mv-sheet .eg-h .row{display:none}.mv-sheet .tr-side{pointer-events:none}
 .mv-sheet .poster .p-logo,.mv-sheet .poster .p-foot{display:none}.mv-sheet .poster .p-title{font-size:18px}
+.m-pick button{display:inline-flex;align-items:center;gap:6px}.mf-lg[hidden],.mf-ko[hidden]{display:none}
