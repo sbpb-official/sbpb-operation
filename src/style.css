@@ -1020,3 +1020,22 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .eg-c{font-size:11px;color:var(--muted)}.eg-p{min-width:0;display:flex;align-items:center;gap:4px;line-height:1.4}.eg-p.r{justify-content:flex-end;text-align:right}.eg-m{padding:4px 0}.eg-p.w{font-weight:700}
 .eg-s{min-width:40px;text-align:center;color:var(--muted)}
 .eg-p .tdot{margin:0}
+
+:root{--gold:#B8901C;--silver:#7F8A92;--bronze:#A86A3D}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--gold:#E3BE4F;--silver:#BCC5CC;--bronze:#D89A6A}}
+:root[data-theme="dark"]{--gold:#E3BE4F;--silver:#BCC5CC;--bronze:#D89A6A}
+.md{display:inline-flex;align-items:center;gap:4px;font-size:13px;white-space:nowrap}.md b{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:22px;padding:0 6px;border-radius:999px;font-size:11px;color:#fff}
+.md1 b{background:var(--gold)}.md2 b{background:var(--silver)}.md3 b{background:var(--bronze)}
+.mboard{padding:12px;border-radius:10px;background:var(--surface-2)}.mb-row{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-top:1px solid var(--line)}.mb-row:first-of-type{border-top:0}.mb-p{display:flex;flex-wrap:wrap;gap:8px 12px}
+.mcard2{display:flex;flex-direction:column;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px}.mc-t{font-size:15px}
+.rk-list{display:flex;flex-direction:column;gap:6px}.rk-row{display:flex;align-items:center;gap:8px;font-size:14px}.rk-n{min-width:44px;font-size:12px;color:var(--muted);text-align:center}.rk-name{flex:1;min-width:0}
+.rk-edit{display:flex;flex-direction:column;gap:8px}.rk-er{display:grid;grid-template-columns:1fr 88px 1fr;gap:8px;align-items:center;font-size:14px}
+.m-pick{flex-wrap:wrap}
+.mcard2>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.mcard2>summary::-webkit-details-marker{display:none}
+.mc-h{display:flex;flex-direction:column;gap:4px;min-width:0}.mc-b{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.mcard2 .led-tg i{display:inline-block;transition:transform .15s}.mcard2[open] .led-tg i{transform:rotate(180deg)}.mcard2 .tg-c{display:none}.mcard2[open] .tg-c{display:inline}.mcard2[open] .tg-o{display:none}
+.evgames .mcard2+.mcard2{margin-top:0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .md b{color:#1B1F1C}}
+:root[data-theme="dark"] .md b{color:#1B1F1C}
+.mcard2{gap:0}
