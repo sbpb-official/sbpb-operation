@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
+    {k:'topfade',t:'맨 위로 버튼: 스크롤에 따라 갑자기 나타나고 사라짐 → 서서히 나타나고 흐려지며 사라짐'},
     {k:'fabsize',t:'화면 모드 · 맨 위로 버튼 크기: 38px → 44px (누르기 쉬운 크기)'},
     {k:'topfab',t:'맨 위로 이동: 없음 → 모든 탭 오른쪽 아래 둥근 ^ 버튼 (화면을 어느 정도 내리면 표시, 누르면 최상단으로)'},
     {k:'kpigo',t:'대시보드 숫자 카드: 누를 수 없음 → 활동 회원 · 평균 레벨은 회원 개요, 다가오는 행사는 다가오는 행사, 7일 내 예약 오픈은 예약 오픈 임박 섹션으로 이동 (헤더 아래 화면 가운데에 도착 · 도착 섹션 잠깐 강조)'},
@@ -744,7 +745,7 @@ document.addEventListener('click',e=>{
 ACT['ov-close']=closeModal;
 /* 맨 위로 버튼: 화면 한 높이 이상 내려가면 표시 · 누르면 최상단으로 */
 ACT['to-top']=()=>window.scrollTo({top:0,behavior:'smooth'});
-(()=>{const upd=()=>{const b=document.getElementById('top-fab');if(b)b.hidden=window.scrollY<window.innerHeight*0.6};window.addEventListener('scroll',upd,{passive:true});window.addEventListener('hashchange',()=>setTimeout(upd,50));setTimeout(upd,500)})();
+(()=>{const upd=()=>{const b=document.getElementById('top-fab');if(!b)return;const on=window.scrollY>=window.innerHeight*0.6;b.classList.toggle('show',on);b.tabIndex=on?0:-1;b.setAttribute('aria-hidden',String(!on))};window.addEventListener('scroll',upd,{passive:true});window.addEventListener('hashchange',()=>setTimeout(upd,50));setTimeout(upd,500)})();
 /* 대시보드 숫자 카드 → 해당 섹션으로 이동 (고정 헤더 높이만큼 띄움) · 도착 섹션 잠깐 강조 */
 ACT['dash-go']=t=>{const el=document.getElementById(t.dataset.to);if(!el)return;const hd=document.querySelector('.top');const H=hd?hd.getBoundingClientRect().height:0;const avail=window.innerHeight-H,eh=el.getBoundingClientRect().height;
   /* 헤더 아래 남은 화면의 가운데 · 섹션이 더 길면 헤더 바로 아래 */const off=H+(eh<avail?(avail-eh)/2:12);

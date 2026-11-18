@@ -1083,5 +1083,5 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .kpi.go{cursor:pointer;transition:border-color .15s,transform .1s}.kpi.go:hover{border-color:var(--court)}.kpi.go:active{transform:scale(.98)}
 .panel.flash{animation:flashp 1.4s ease}@keyframes flashp{0%,60%{box-shadow:0 0 0 2px var(--court)}100%{box-shadow:0 0 0 0 transparent}}
 .top-fab{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:15;width:44px;height:44px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.14)}
-.top-fab[hidden]{display:none}.top-fab:hover{color:var(--ink);border-color:var(--muted)}
+.top-fab{opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .35s ease,transform .35s ease}.top-fab.show{opacity:1;transform:none;pointer-events:auto}.top-fab:hover{color:var(--ink);border-color:var(--muted)}
 .top-fab svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
