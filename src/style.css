@@ -973,7 +973,7 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .tr-tree{display:flex;flex-direction:column-reverse;gap:24px;overflow-x:auto;padding:4px 0 6px}
 .tr-col{display:flex;flex-direction:column;align-items:stretch;min-width:100%;width:max-content}.tr-col .tr-st{margin-bottom:8px;text-align:center}
 .tr-cm{display:flex;flex-direction:row;justify-content:space-around;gap:8px}
-.tr-tree .tr-m{position:relative;gap:4px;flex:1 1 0;min-width:62px;max-width:180px;padding:3px;border-radius:12px;background:var(--surface-2)}.tr-tree .tr-side{min-height:40px;padding:6px 8px;font-size:13px;flex-wrap:wrap;row-gap:2px}
+.tr-tree .tr-m{position:relative;gap:4px;flex:1 1 0;min-width:62px;max-width:360px;container-type:inline-size;padding:3px;border-radius:12px;background:var(--surface-2)}.tr-tree .tr-side{min-height:40px;padding:6px 8px;font-size:13px;flex-wrap:wrap;row-gap:2px}
 @media (max-width:520px){.tr-tree .tr-side{padding:6px 5px;font-size:12px}.tr-cm{gap:4px}}
 .tr-seed{font-size:11px;text-align:center}
 .tr-col.win .tr-side{justify-content:center;text-align:center;border-color:var(--gold);background:color-mix(in srgb,var(--gold) 14%,var(--surface))}
@@ -1054,3 +1054,12 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .tr-bye{display:inline-block;margin-left:4px;padding:0 6px;border-radius:999px;font-size:11px;font-weight:600;background:var(--surface-2);color:var(--muted)}
 .tr-byebtn{margin-left:6px;border:1px solid var(--line);background:var(--surface);color:var(--court);border-radius:999px;padding:2px 8px;font:inherit;font-size:11px;font-weight:600;cursor:pointer;min-height:24px}
 .tr-col.win .tr-m{background:none;padding:0}
+
+/* 본선 매치 카드: 칸 폭 240px 이상이면 좌우 배치 + VS (점수는 VS 쪽) */
+.tr-row{display:flex;flex-direction:column;gap:4px}
+.tr-vs{display:none}
+@container (min-width:240px){
+  .tr-tree .tr-row{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:stretch;gap:8px}
+  .tr-tree .tr-vs{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--muted)}
+  .tr-tree .tr-row>.tr-side:last-child{flex-direction:row-reverse;text-align:right}
+}
