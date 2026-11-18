@@ -1051,3 +1051,4 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .mv-sheet .btn,.mv-sheet .lg-grip,.mv-sheet .eg-h .row{display:none}.mv-sheet .tr-side{pointer-events:none}
 .mv-sheet .poster .p-logo,.mv-sheet .poster .p-foot{display:none}.mv-sheet .poster .p-title{font-size:18px}
 .m-pick button{display:inline-flex;align-items:center;gap:6px}.mf-lg[hidden],.mf-ko[hidden]{display:none}
+.tr-bye{display:inline-block;margin-left:4px;padding:0 6px;border-radius:999px;font-size:11px;font-weight:600;background:var(--surface-2);color:var(--muted)}

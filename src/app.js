@@ -112,6 +112,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
+    {k:'koname',t:'토너먼트 라운드 이름: 참가 수와 상관없이 8강 · 4강 (6명이면 8강 칸에 4명만) → 참가 수가 2 · 4 · 8 · 16…이면 8강 · 4강 · 결승, 아니면 1차전 · 2차전 · 결승, 바로 다음 라운드로 가는 선수에 "부전승" 표시 · 매치 카드 안의 중복 형식 줄 삭제'},
     {k:'mform2',t:'매치 추가 · 수정: 형식과 상관없이 조 · 본선 진출 옵션 표시 → 리그가 들어가는 형식에만 조, 리그 → 토너먼트에만 본선 진출 표시 · 참가자 선택 이름에 성별 색 점'},
     {k:'teambox',t:'행사 팀 표시: 팀 멤버 상자와 성적 줄이 따로 → 팀마다 한 상자에 팀명 · 성적(승 · 패 · 득실) · 멤버'},
     {k:'mpick',t:'매치 참가자 선택: 눌러도 선택 표시가 안 보이고 버튼끼리 붙어 있음 → 응원단처럼 개별 선택 · 선택 시 색 표시, 버튼 간격 8px'},
@@ -1808,17 +1809,21 @@ function trTeam(tr,ref){if(!ref)return null;if(ref[0]==='T')return (tr.teams||[]
   const gi=(tr.groups||[]).findIndex(x=>x.name[0]===ref[0]||(ref[0]==='A'&&x.name==='리그'));if(gi<0)return null;const r=grpStand(tr,gi).rows.find(x=>x.rank===+ref.slice(1));return r?r.t:null}
 const trName=t=>t?t.p.map(k=>keyName(k)).join(' / '):'미정';
 const hasSc=m=>m.sc&&m.sc[0]!==''&&m.sc[1]!==''&&m.sc[0]!=null&&m.sc[1]!=null;
+/* 본선 라운드 이름: 참가 수가 2 · 4 · 8 · 16…이면 8강 · 4강 · 결승, 아니면 1차전 · 2차전 · 결승 (부전승 있음) */
+function koRounds(tr){const ko=tr.ko||[];const rd=[];const rof=r=>r&&r[0]==='W'?rd[+r.slice(1)]||0:0;ko.forEach((m,i)=>{rd[i]=1+Math.max(rof(m.a),rof(m.b))});
+  const R=Math.max(0,...rd);const ents=new Set();ko.forEach(m=>[m.a,m.b].forEach(r=>{if(r&&r[0]!=='W')ents.add(r)}));const n=ents.size;const pow=n>1&&(n&(n-1))===0;
+  const name=r=>r===R?'결승':pow?KO_STAGE(Math.pow(2,R-r+1)):`${r}차전`;return {rd,name:i=>name(rd[i]),R}}
 function tourHtml(ev,mm){const tr=mm?mm.tr:ev.tourney;if(!tr)return '';tr.groups=tr.groups||[];tr.lg=tr.lg||[];tr.ko=tr.ko||[];
   const fin=tr.ko[tr.ko.length-1];let champ=fin&&fin.w?trTeam(tr,fin.w==='a'?fin.a:fin.b):null;
   if(!tr.ko.length&&tr.groups.length===1&&tr.lg.length&&tr.lg.every(m=>m.w))champ=grpStand(tr,0).rows[0].t;
-  const side=(m,i,s,act)=>{const t=act==='tr-win'?trTeam(tr,m[s]):tr.groups[m.g].teams[m[s]];const won=m.w===s;return `<button type="button" class="tr-side${won?' w':''}${m.w&&!won?' l':''}" ${RO||!t?'disabled':''} data-act="${act}" data-i="${i}" data-s="${s}"><span>${h(trName(t))}</span>${hasSc(m)?`<b class="num">${m.sc[s==='a'?0:1]}</b>`:''}</button>`};
-  const cols=[];tr.ko.forEach((m,i)=>{let c=cols.find(x=>x.st===m.stage);if(!c){c={st:m.stage,ms:[]};cols.push(c)}c.ms.push([m,i])});
+  const side=(m,i,s,act)=>{const t=act==='tr-win'?trTeam(tr,m[s]):tr.groups[m.g].teams[m[s]];const won=m.w===s;const bye=act==='tr-win'&&m[s]&&m[s][0]==='T'&&koRounds(tr).rd[i]>1;return `<button type="button" class="tr-side${won?' w':''}${m.w&&!won?' l':''}" ${RO||!t?'disabled':''} data-act="${act}" data-i="${i}" data-s="${s}"><span>${h(trName(t))}${bye?' <span class="tr-bye">부전승</span>':''}</span>${hasSc(m)?`<b class="num">${m.sc[s==='a'?0:1]}</b>`:''}</button>`};
+  const KR=koRounds(tr);const cols=[];tr.ko.forEach((m,i)=>{const st=KR.name(i);let c=cols.find(x=>x.r===KR.rd[i]);if(!c){c={r:KR.rd[i],st,ms:[]};cols.push(c)}c.ms.push([m,i])});cols.sort((x,y)=>x.r-y.r);
   const ko=tr.ko.length?`<h4 class="tr-sec">본선</h4><div class="tr-tree">${cols.map((c,ci)=>`<div class="tr-col${ci<cols.length-1?' to':''}"><span class="tr-st">${h(c.st)}</span><div class="tr-cm">${c.ms.map(([m,i])=>`<div class="tr-m">${/^[A-D]\d/.test(m.a)?`<span class="tr-seed muted">${m.a} vs ${m.b}</span>`:''}${side(m,i,'a','tr-win')}${side(m,i,'b','tr-win')}</div>`).join('')}</div></div>`).join('')}<div class="tr-col win"><span class="tr-st">우승</span><div class="tr-cm"><div class="tr-m"><div class="tr-side${champ?' w':''}" style="cursor:default">${champ?h(trName(champ)):'<span class="muted">미정</span>'}</div></div></div></div></div>`:'';
   const multi=tr.groups.length>1;
   const stand=tr.groups.length?`<div class="tr-groups">${tr.groups.map((g,gi)=>{const s=grpStand(tr,gi);return `<div class="tr-g"><b>${h(g.name)}${s.auto?' <span class="small muted" style="font-weight:500">결과로 자동 계산</span>':''}</b>${s.rows.map(x=>`<div class="tr-gt${x.rank&&tr.ko.length&&x.rank<=(tr.fmt&&tr.fmt.adv||2)?' adv':''}"><span class="num">${x.rank?x.rank+'위':'–'}</span><span>${h(trName(x.t))}</span>${s.auto?`<span class="num small">${x.w}승 ${x.l}패${x.gf||x.ga?` · ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}`:''}</span>`:''}</div>`).join('')}</div>`}).join('')}</div>`:'';
   const lg=tr.lg.length?`<div class="lg-list" data-lg="1">${tr.lg.map((m,i)=>`<div class="lg-row" data-i="${i}">${RO?'':'<span class="lg-grip" aria-label="순서 바꾸기" title="끌어서 순서 바꾸기">⋮⋮</span>'}<span class="lg-n num">${i+1}</span>${multi?`<span class="lg-g">${h(tr.groups[m.g].name)}</span>`:''}<div class="lg-ms">${side(m,i,'a','lg-win')}${side(m,i,'b','lg-win')}</div></div>`).join('')}</div>`:'';
   return `<div class="tr"><div class="eg-h"><h4 class="st-h" style="margin:0">${h(tr.title||'토너먼트')}</h4>${RO?'':'<button class="btn sm" data-act="tr-score">점수 입력</button>'}</div>
-    ${tr.fmt?`<p class="small muted" style="margin:0">${h(UNIT_L[tr.fmt.unit]||'')} · ${h(PROG_L[tr.fmt.prog]||'')}</p>`:''}
+    ${tr.fmt&&!mm?`<p class="small muted" style="margin:0">${h(UNIT_L[tr.fmt.unit]||'')} · ${h(PROG_L[tr.fmt.prog]||'')}</p>`:''}
     ${champ?`<div class="tr-champ">우승 <b>${h(trName(champ))}</b></div>`:''}${ko}
     ${tr.groups.length?`<div class="eg-h"><h4 class="tr-sec">${tr.ko.length?'조별 예선':'리그'}</h4>${RO||tr.lg.length?'':'<button class="btn sm" data-act="tr-rank">조 순위 입력</button>'}</div>${stand}`:''}
     ${lg?`<h4 class="tr-sec">리그 경기 <span class="small muted" style="font-weight:500">${RO?'':'⋮⋮을 끌어 순서 변경 · '}</span></h4>${lg}`:''}
@@ -1830,7 +1835,7 @@ ACT['tr-win']=async t=>{const c=trCtx(t),ev=c.ev;if(!ev||!c.tr)return;const tr=J
 ACT['lg-win']=async t=>{const c=trCtx(t),ev=c.ev;if(!ev||!c.tr)return;const tr=JSON.parse(JSON.stringify(c.tr));const m=tr.lg[+t.dataset.i];m.w=m.w===t.dataset.s?null:t.dataset.s;await saveTr(ev,tr,c.mid)};
 ACT['tr-score']=t=>{const c=trCtx(t),ev=c.ev;if(!ev||!c.tr)return;const tr=c.tr;const lgN=t=>trName(t);
   const row=(key,label,A,B,m)=>`<div class="sc-row"><span class="sc-t">${h(label)}</span><span class="sc-p">${h(A)}</span><input class="in num" name="${key}_0" inputmode="numeric" value="${m.sc?h(m.sc[0]??''):''}" aria-label="점수"><span class="muted">:</span><input class="in num" name="${key}_1" inputmode="numeric" value="${m.sc?h(m.sc[1]??''):''}" aria-label="점수"><span class="sc-p">${h(B)}</span></div>`;
-  openModal('점수 입력',`<div class="sc-list">${(tr.lg||[]).map((m,i)=>row('l'+i,`리그 ${i+1}${tr.groups.length>1?' · '+tr.groups[m.g].name:''}`,lgN(tr.groups[m.g].teams[m.a]),lgN(tr.groups[m.g].teams[m.b]),m)).join('')}${tr.ko.map((m,i)=>row('k'+i,m.stage,trName(trTeam(tr,m.a)),trName(trTeam(tr,m.b)),m)).join('')}</div><p class="small muted" style="margin:8px 0 0">점수를 넣으면 높은 쪽이 승자로 기록 · 비워 두면 기존 승자 유지</p>`,
+  openModal('점수 입력',`<div class="sc-list">${(tr.lg||[]).map((m,i)=>row('l'+i,`리그 ${i+1}${tr.groups.length>1?' · '+tr.groups[m.g].name:''}`,lgN(tr.groups[m.g].teams[m.a]),lgN(tr.groups[m.g].teams[m.b]),m)).join('')}${tr.ko.map((m,i)=>row('k'+i,koRounds(tr).name(i),trName(trTeam(tr,m.a)),trName(trTeam(tr,m.b)),m)).join('')}</div><p class="small muted" style="margin:8px 0 0">점수를 넣으면 높은 쪽이 승자로 기록 · 비워 두면 기존 승자 유지</p>`,
     async fd=>{const t2=JSON.parse(JSON.stringify(tr));const ap=(m,k)=>{const x=(fd[k+'_0']||'').trim(),y=(fd[k+'_1']||'').trim();if(x===''&&y===''){delete m.sc;return}m.sc=[x===''?'':+x,y===''?'':+y];if(x!==''&&y!==''&&+x!==+y)m.w=+x>+y?'a':'b'};
       (t2.lg||[]).forEach((m,i)=>ap(m,'l'+i));t2.ko.forEach((m,i)=>ap(m,'k'+i));await saveTr(ev,t2,c.mid);toast('점수 저장')})};
 ACT['tr-rank']=t=>{const c=trCtx(t),ev=c.ev;if(!ev||!c.tr)return;const tr=c.tr;
