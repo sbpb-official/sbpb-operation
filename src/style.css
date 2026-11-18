@@ -1076,3 +1076,4 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .bk-c>.bk-box.leaf{width:100%}
 @media (max-width:520px){.bk-box.tr-side{padding:6px 4px;font-size:12px}}
 .bk-c>.bk-box.leaf{min-width:0}
+.bk-byeln{position:relative;min-height:28px}
