@@ -1071,7 +1071,7 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .bk-c::before{content:'';position:absolute;top:0;border-top:1.5px solid var(--bk-ln)}
 .bk-c:first-child::before{left:50%;right:0}.bk-c:last-child::before{left:0;right:50%}
 .bk-c.on::before{border-top-color:var(--court);z-index:1}
-.bk-up{flex:1 0 16px;width:0;border-left:1.5px solid var(--bk-ln)}
+.bk-up{flex:0 0 12px;width:0;border-left:1.5px solid var(--bk-ln)}.bk-down{flex:1 0 0;width:0;border-left:1.5px solid var(--bk-ln)}.bk-down.on{border-left-color:var(--court)}
 .bk-c.on>.bk-up{border-left-color:var(--court)}
-.bk-c>.bk-box{width:100%}
+.bk-c>.bk-box.leaf{width:100%}
 @media (max-width:520px){.bk-box.tr-side{padding:6px 4px;font-size:12px}}
