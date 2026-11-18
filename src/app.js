@@ -112,7 +112,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
-    {k:'trvs',t:'토너먼트 본선 매치 카드: 두 선수 위아래 배치 → 칸 폭이 충분한 라운드(2차전 · 결승 등)는 두 선수 좌우 배치 + 가운데 VS 표시, 점수는 VS 쪽에 표시 · 폭이 좁은 라운드(1차전 등)는 위아래 배치 유지'},
+    {k:'trvs',t:'토너먼트 본선 매치 카드: 두 선수 위아래 배치 · 라운드 사이 연결선 없음 → 두 선수 사이 VS 표시, 칸 폭이 충분한 라운드(2차전 · 결승 등)는 두 선수 좌우 배치 · 점수는 VS 쪽에 표시, 이전 경기에서 다음 경기 진출 칸까지 꺾은선 연결 (결과가 나온 경기는 초록 선, 부전승 진출은 대진표 가장자리로 우회)'},
     {k:'trvert',t:'토너먼트 대진표 방향: 왼쪽에서 오른쪽으로 진행 → 아래에서 위로 올라가는 형태 (1차전 · 8강이 아래, 우승이 맨 위 · 우승 칸 금색)'},
     {k:'byepick',t:'토너먼트 부전승: 자동으로 마지막 경기 승자 → 라운드 이름 옆 "부전승 지정"으로 직접 선택 (아직 경기 전이면 "1차전 2경기 승자"처럼 선택), 나머지는 순서대로 대결'},
     {k:'koname',t:'토너먼트 구성 · 라운드 이름: 2 · 4 · 8명 단위가 아니면 1라운드에서 상위 선수 부전승 · 8강 · 4강 이름 그대로 (6명이면 8강에 4명만) → 1라운드는 전원 경기, 라운드마다 남은 인원이 홀수일 때만 한 명 부전승 (6명: 1차전 3경기 → 2차전 1경기 + 부전승 1명 → 결승), 2 · 4 · 8 · 16…명이면 8강 · 4강 · 결승, 아니면 1차전 · 2차전 · 결승, 부전승 선수 표시 · 매치 카드 안의 중복 형식 줄 삭제'},
@@ -1824,13 +1824,36 @@ ACT['tr-bye']=t=>{const c=trCtx(t),ev=c.ev;if(!ev||!c.tr)return;const tr=c.tr;co
     async fd=>{const x=cands[+fd.bye];if(x===by.ref)return;const rest=cands.filter((_,j)=>j!==+fd.bye);const t2=JSON.parse(JSON.stringify(tr));
       ms.forEach((o,k)=>{t2.ko[o.i].a=rest[2*k];t2.ko[o.i].b=rest[2*k+1];delete t2.ko[o.i].sc});t2.ko[by.i][by.s]=x;
       t2.ko.forEach((m,i)=>{if(K.rd[i]>=r){m.w=null;if(K.rd[i]>r)delete m.sc}});await saveTr(ev,t2,c.mid);toast('부전승 지정')})};
+/* 본선 대진 연결선: 이전 경기 → 다음 경기 진출 칸을 꺾은선으로 연결 (부전승은 바깥 통로로 우회, 결과가 나온 경기는 초록) */
+const trFrom=r=>r&&r[0]==='W'?r.slice(1):'';
+function drawTrLines(){document.querySelectorAll('.tr-tree').forEach(tree=>{const NS='http://www.w3.org/2000/svg';
+  let svg=tree.querySelector(':scope>svg.tr-lines');if(!svg){svg=document.createElementNS(NS,'svg');svg.setAttribute('class','tr-lines');svg.setAttribute('aria-hidden','true');tree.prepend(svg)}
+  if(!tree.offsetWidth){svg.innerHTML='';return}
+  const T=tree.getBoundingClientRect(),ox=tree.scrollLeft-T.left,oy=tree.scrollTop-T.top,W=tree.scrollWidth,H=tree.scrollHeight;
+  const R=el=>{const r=el.getBoundingClientRect();return{l:r.left+ox,r:r.right+ox,t:r.top+oy,b:r.bottom+oy,cx:(r.left+r.right)/2+ox}};
+  const ms={};tree.querySelectorAll('.tr-m[data-i]').forEach(e=>ms[e.dataset.i]=e);
+  const seg=[];const link=(src,tgt,tx,on)=>{const S=R(src),sc=R(src.closest('.tr-col')),tc=R(tgt.closest('.tr-col')),ty=R(tgt).b,gy=sc.t-16;
+    if(tc.b<sc.t-36){const lx=tx>W/2?W-6:6,gy2=tc.b+12;seg.push([`M${S.cx} ${S.t}V${sc.t-8}H${lx}V${gy2}H${tx}V${ty}`,on])}
+    else seg.push([`M${S.cx} ${S.t}V${gy}H${tx}V${ty}`,on])};
+  Object.values(ms).forEach(el=>{const row=el.querySelector('.tr-row');const wide=row&&getComputedStyle(row).display==='grid';const M=R(el);
+    ['a','b'].forEach(s=>{const src=ms[el.dataset['f'+s]];if(!src)return;const sd=row&&row.querySelector(`.tr-side[data-s="${s}"]`);
+      const tx=wide&&sd?R(sd).cx:M.l+(M.r-M.l)*(s==='a'?.4:.6);link(src,el,tx,!!src.dataset.done)})});
+  const fin=tree.querySelector('.tr-m[data-final]'),ch=tree.querySelector('.tr-champ');if(fin&&ch)link(fin,ch,R(ch).cx,!!fin.dataset.done);
+  const holes=[...tree.querySelectorAll('.tr-st')].map(e=>{const r=R(e);return `<rect x="${r.l-6}" y="${r.t-2}" width="${r.r-r.l+12}" height="${r.b-r.t+4}" fill="#000"/>`}).join('');
+  const mid='trlm'+(tree.dataset.lid||(tree.dataset.lid=Math.random().toString(36).slice(2,8)));
+  svg.setAttribute('width',W);svg.setAttribute('height',H);svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML=`<mask id="${mid}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="#fff"/>${holes}</mask><g mask="url(#${mid})">${seg.sort((x,y)=>x[1]-y[1]).map(([d,on])=>`<path class="tr-ln${on?' on':''}" d="${d}"/>`).join('')}</g>`})}
+(()=>{if(typeof MutationObserver==='undefined')return;let q=0;const go=()=>{q=0;mo.disconnect();try{drawTrLines()}catch(e){}mo.takeRecords();mo.observe(document.body,{childList:true,subtree:true})};
+  const kick=()=>{if(!q)q=requestAnimationFrame(go)};const mo=new MutationObserver(kick);
+  const start=()=>{mo.observe(document.body,{childList:true,subtree:true});kick()};if(document.body)start();else document.addEventListener('DOMContentLoaded',start);
+  window.addEventListener('resize',kick);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(kick)})();
 function tourHtml(ev,mm){const tr=mm?mm.tr:ev.tourney;if(!tr)return '';tr.groups=tr.groups||[];tr.lg=tr.lg||[];tr.ko=tr.ko||[];
   const fin=tr.ko[tr.ko.length-1];let champ=fin&&fin.w?trTeam(tr,fin.w==='a'?fin.a:fin.b):null;
   if(!tr.ko.length&&tr.groups.length===1&&tr.lg.length&&tr.lg.every(m=>m.w))champ=grpStand(tr,0).rows[0].t;
   const side=(m,i,s,act)=>{const t=act==='tr-win'?trTeam(tr,m[s]):tr.groups[m.g].teams[m[s]];const won=m.w===s;const KRb=act==='tr-win'?koRounds(tr):null;const ref=m[s]||'';const bye=!!KRb&&KRb.rd[i]>1&&(/^[A-DT]/.test(ref)||(ref[0]==='W'&&KRb.rd[+ref.slice(1)]+1<KRb.rd[i]));return `<button type="button" class="tr-side${won?' w':''}${m.w&&!won?' l':''}" ${RO||!t?'disabled':''} data-act="${act}" data-i="${i}" data-s="${s}"><span>${h(trName(t))}${bye?' <span class="tr-bye">부전승</span>':''}</span>${hasSc(m)?`<b class="num">${m.sc[s==='a'?0:1]}</b>`:''}</button>`};
   const KR=koRounds(tr);const cols=[];tr.ko.forEach((m,i)=>{const st=KR.name(i);let c=cols.find(x=>x.r===KR.rd[i]);if(!c){c={r:KR.rd[i],st,ms:[]};cols.push(c)}c.ms.push([m,i])});cols.sort((x,y)=>x.r-y.r);
   const BY=koByes(tr);
-  const ko=tr.ko.length?`<h4 class="tr-sec">본선</h4><div class="tr-tree">${cols.map((c,ci)=>`<div class="tr-col${ci<cols.length-1?' to':''}"><span class="tr-st">${h(c.st)}${BY[c.r]&&!RO?` <button type="button" class="tr-byebtn" data-act="tr-bye" data-r="${c.r}">부전승 지정</button>`:''}</span><div class="tr-cm">${c.ms.map(([m,i])=>`<div class="tr-m">${/^[A-D]\d/.test(m.a)?`<span class="tr-seed muted">${m.a} vs ${m.b}</span>`:''}<div class="tr-row">${side(m,i,'a','tr-win')}<span class="tr-vs" aria-hidden="true">VS</span>${side(m,i,'b','tr-win')}</div></div>`).join('')}</div></div>`).join('')}<div class="tr-col win"><span class="tr-st">우승</span><div class="tr-cm"><div class="tr-m"><div class="tr-side${champ?' w':''}" style="cursor:default">${champ?h(trName(champ)):'<span class="muted">미정</span>'}</div></div></div></div></div>`:'';
+  const ko=tr.ko.length?`<h4 class="tr-sec">본선</h4><div class="tr-tree">${cols.map((c,ci)=>`<div class="tr-col${ci<cols.length-1?' to':''}"><span class="tr-st">${h(c.st)}${BY[c.r]&&!RO?` <button type="button" class="tr-byebtn" data-act="tr-bye" data-r="${c.r}">부전승 지정</button>`:''}</span><div class="tr-cm">${c.ms.map(([m,i])=>`<div class="tr-m" data-i="${i}" data-fa="${trFrom(m.a)}" data-fb="${trFrom(m.b)}"${m.w?' data-done="1"':''}${i===tr.ko.length-1?' data-final="1"':''}>${/^[A-D]\d/.test(m.a)?`<span class="tr-seed muted">${m.a} vs ${m.b}</span>`:''}<div class="tr-row">${side(m,i,'a','tr-win')}<span class="tr-vs" aria-hidden="true">VS</span>${side(m,i,'b','tr-win')}</div></div>`).join('')}</div></div>`).join('')}<div class="tr-col win"><span class="tr-st">우승</span><div class="tr-cm"><div class="tr-m tr-champ"><div class="tr-side${champ?' w':''}" style="cursor:default">${champ?h(trName(champ)):'<span class="muted">미정</span>'}</div></div></div></div></div>`:'';
   const multi=tr.groups.length>1;
   const stand=tr.groups.length?`<div class="tr-groups">${tr.groups.map((g,gi)=>{const s=grpStand(tr,gi);return `<div class="tr-g"><b>${h(g.name)}${s.auto?' <span class="small muted" style="font-weight:500">결과로 자동 계산</span>':''}</b>${s.rows.map(x=>`<div class="tr-gt${x.rank&&tr.ko.length&&x.rank<=(tr.fmt&&tr.fmt.adv||2)?' adv':''}"><span class="num">${x.rank?x.rank+'위':'–'}</span><span>${h(trName(x.t))}</span>${s.auto?`<span class="num small">${x.w}승 ${x.l}패${x.gf||x.ga?` · ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}`:''}</span>`:''}</div>`).join('')}</div>`}).join('')}</div>`:'';
   const lg=tr.lg.length?`<div class="lg-list" data-lg="1">${tr.lg.map((m,i)=>`<div class="lg-row" data-i="${i}">${RO?'':'<span class="lg-grip" aria-label="순서 바꾸기" title="끌어서 순서 바꾸기">⋮⋮</span>'}<span class="lg-n num">${i+1}</span>${multi?`<span class="lg-g">${h(tr.groups[m.g].name)}</span>`:''}<div class="lg-ms">${side(m,i,'a','lg-win')}${side(m,i,'b','lg-win')}</div></div>`).join('')}</div>`:'';
