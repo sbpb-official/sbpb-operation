@@ -1096,6 +1096,9 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .bk-c.on>.bk-up{border-left-color:var(--court)}
 .bk-c>.bk-box.leaf{width:100%}
 @media (max-width:520px){.bk-box.tr-side{padding:6px 4px;font-size:12px}}
+.bk-c>.bk-box.leaf{min-width:0}
+.bk-v .bk-box.leaf{writing-mode:vertical-rl;text-orientation:upright;min-height:72px;padding:8px 2px;letter-spacing:-.02em;line-height:1.1;align-content:center}
+.bk-v .bk-box.leaf .num{margin-top:4px}
 
 </style>
 </head>
@@ -1222,7 +1225,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=1fe9d41dc0';
+const CUR_APP = 'app.js?v=afe148e564';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1250,7 +1253,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=1fe9d41dc0';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=afe148e564';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
