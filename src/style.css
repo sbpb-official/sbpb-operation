@@ -1077,3 +1077,6 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 @media (max-width:520px){.bk-box.tr-side{padding:6px 4px;font-size:12px}}
 .bk-c>.bk-box.leaf{min-width:0}
 .bk-byeln{position:relative;min-height:28px}
+.bk-wrap{position:relative;display:grid;grid-template-columns:40px 1fr;column-gap:4px;min-width:0}.bk-wrap>.tr-tree{min-width:0}
+.bk-gut{position:relative}.bk-gl{position:absolute;left:0;transform:translateY(-50%);font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;line-height:1.2}
+.bk-stem .bk-rn.bk-hide{display:none}

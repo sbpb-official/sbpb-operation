@@ -112,6 +112,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
+    {k:'trlabel',t:'토너먼트 대진표 라운드 이름: 경기마다 연결선 옆에 반복 표시 → 층마다 대진표 왼쪽 칸에 한 번만 (가로로 넘겨도 고정)'},
     {k:'trtree',t:'토너먼트 본선: 라운드별 매치 카드(VS) + 꺾은선 → 대진표 나무 그림 (첫 경기 선수 칸이 맨 아래 한 줄 · 사람이 많으면 칸 겹침 없이 옆으로 밀어서 보기, 같은 경기에서 맞붙는 두 칸은 같은 높이에 나란히 · 부전승 선수도 상대 옆에 표시, 부전승 선수는 1차전 줄에도 칸을 두고 올라간 라운드 칸까지 "부전승" 글자가 붙은 곧은 선으로 연결, 두 칸을 꺾은선으로 묶어 다음 경기 칸 · 우승 칸으로 연결, 이긴 쪽 선 초록, 라운드 이름은 갈림 지점 옆에 표시, 부전승은 긴 선으로 표시) · "부전승 지정" 버튼: 라운드 이름 옆 → 본선 제목 줄 ("2차전 부전승 지정")'},
     {k:'trvs',t:'토너먼트 본선 매치 카드: 두 선수 위아래 배치 · 라운드 사이 연결선 없음 → 두 선수 사이 VS 표시, 칸 폭이 충분한 라운드(2차전 · 결승 등)는 두 선수 좌우 배치 · 점수는 VS 쪽에 표시, 이전 경기에서 다음 경기 진출 칸까지 꺾은선 연결 (결과가 나온 경기는 초록 선, 부전승 진출은 대진표 가장자리로 우회)'},
     {k:'trvert',t:'토너먼트 대진표 방향: 왼쪽에서 오른쪽으로 진행 → 아래에서 위로 올라가는 형태 (1차전 · 8강이 아래, 우승이 맨 위 · 우승 칸 금색)'},
@@ -695,6 +696,7 @@ function render(){
   if(keep){const el=document.getElementById(keep.id);if(el){if(keep.val!==undefined)el.value=keep.val;el.focus({preventScroll:true});try{if(keep.s!=null)el.setSelectionRange(keep.s,keep.e)}catch(e){}}}
   if(typeof cz!=='undefined'&&cz!==1)v.style.zoom=String(cz);
   AFTER[route]&&AFTER[route]();
+  bkLabels(v);
   const rb=$('#renew-body');if(rb)rb.innerHTML=renewBody();
 }
 window.addEventListener('hashchange',()=>{render();window.scrollTo(0,0)});
@@ -1825,6 +1827,10 @@ ACT['tr-bye']=t=>{const c=trCtx(t),ev=c.ev;if(!ev||!c.tr)return;const tr=c.tr;co
     async fd=>{const x=cands[+fd.bye];if(x===by.ref)return;const rest=cands.filter((_,j)=>j!==+fd.bye);const t2=JSON.parse(JSON.stringify(tr));
       ms.forEach((o,k)=>{t2.ko[o.i].a=rest[2*k];t2.ko[o.i].b=rest[2*k+1];delete t2.ko[o.i].sc});t2.ko[by.i][by.s]=x;
       t2.ko.forEach((m,i)=>{if(K.rd[i]>=r){m.w=null;if(K.rd[i]>r)delete m.sc}});await saveTr(ev,t2,c.mid);toast('부전승 지정')})};
+/* 대진표 나무: 라운드 이름을 경기마다 대신 층마다 왼쪽 칸에 한 번만 (같은 이름의 첫 연결선 높이) */
+function bkLabels(root){(root||document).querySelectorAll('.bk-wrap').forEach(w=>{const tree=w.querySelector('.tr-tree.bk'),gut=w.querySelector('.bk-gut');if(!tree||!gut)return;
+  const base=w.getBoundingClientRect().top;const seen={};tree.querySelectorAll('.bk-stem .bk-rn').forEach(el=>{el.classList.add('bk-hide');const t=el.textContent;const r=el.parentElement.getBoundingClientRect();const y=r.top+r.height/2-base;if(!(t in seen)||y<seen[t])seen[t]=y});
+  gut.innerHTML=Object.entries(seen).map(([t,y])=>`<span class="bk-gl" style="top:${Math.round(y)}px">${h(t)}</span>`).join('')})}
 function tourHtml(ev,mm){const tr=mm?mm.tr:ev.tourney;if(!tr)return '';tr.groups=tr.groups||[];tr.lg=tr.lg||[];tr.ko=tr.ko||[];
   const fin=tr.ko[tr.ko.length-1];let champ=fin&&fin.w?trTeam(tr,fin.w==='a'?fin.a:fin.b):null;
   if(!tr.ko.length&&tr.groups.length===1&&tr.lg.length&&tr.lg.every(m=>m.w))champ=grpStand(tr,0).rows[0].t;
@@ -1836,7 +1842,7 @@ function tourHtml(ev,mm){const tr=mm?mm.tr:ev.tourney;if(!tr)return '';tr.groups
   const LW=60;
   const body=i=>{const m=tr.ko[i];return `<div class="bk-n"><div class="bk-stem${m.w?' on':''}"><span class="bk-rn">${h(KR.name(i))}</span></div><div class="bk-kids">${['a','b'].map(s=>{const k=fromW(m[s]);const lv=k>=0?nLeaf(k):1;return `<div class="bk-c${m.w===s?' on':''}" style="flex:${lv} 1 0;min-width:${lv*LW}px"><div class="bk-up"></div>${k<0&&KR.rd[i]>1?`${box(m,i,s,false)}<div class="bk-down on bk-byeln"><span class="bk-rn">부전승</span></div><button type="button" class="tr-side bk-box leaf" disabled><span>${h(trName(trTeam(tr,m[s])))}</span></button>`:box(m,i,s,k<0)}${k>=0?`<div class="bk-down${tr.ko[k].w?' on':''}"></div>${body(k)}`:''}</div>`}).join('')}</div></div>`};
   const byeBtns=RO?'':cols.filter(c=>BY[c.r]).map(c=>`<button type="button" class="tr-byebtn" data-act="tr-bye" data-r="${c.r}">${h(c.st)} 부전승 지정</button>`).join('');
-  const ko=tr.ko.length?`<h4 class="tr-sec">본선${byeBtns}</h4><div class="tr-tree bk"><div class="bk-root" style="min-width:${nLeaf(tr.ko.length-1)*LW}px"><span class="tr-st bk-champ-st">우승</span><div class="bk-n"><div class="tr-side bk-box bk-champ${champ?' w':''}">${champ?h(trName(champ)):'<span class="muted">미정</span>'}</div></div>${body(tr.ko.length-1)}</div></div>`:'';
+  const ko=tr.ko.length?`<h4 class="tr-sec">본선${byeBtns}</h4><div class="bk-wrap"><div class="bk-gut" aria-hidden="true"></div><div class="tr-tree bk"><div class="bk-root" style="min-width:${nLeaf(tr.ko.length-1)*LW}px"><span class="tr-st bk-champ-st">우승</span><div class="bk-n"><div class="tr-side bk-box bk-champ${champ?' w':''}">${champ?h(trName(champ)):'<span class="muted">미정</span>'}</div></div>${body(tr.ko.length-1)}</div></div></div>`:'';
   const multi=tr.groups.length>1;
   const stand=tr.groups.length?`<div class="tr-groups">${tr.groups.map((g,gi)=>{const s=grpStand(tr,gi);return `<div class="tr-g"><b>${h(g.name)}${s.auto?' <span class="small muted" style="font-weight:500">결과로 자동 계산</span>':''}</b>${s.rows.map(x=>`<div class="tr-gt${x.rank&&tr.ko.length&&x.rank<=(tr.fmt&&tr.fmt.adv||2)?' adv':''}"><span class="num">${x.rank?x.rank+'위':'–'}</span><span>${h(trName(x.t))}</span>${s.auto?`<span class="num small">${x.w}승 ${x.l}패${x.gf||x.ga?` · ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}`:''}</span>`:''}</div>`).join('')}</div>`}).join('')}</div>`:'';
   const lg=tr.lg.length?`<div class="lg-list" data-lg="1">${tr.lg.map((m,i)=>`<div class="lg-row" data-i="${i}">${RO?'':'<span class="lg-grip" aria-label="순서 바꾸기" title="끌어서 순서 바꾸기">⋮⋮</span>'}<span class="lg-n num">${i+1}</span>${multi?`<span class="lg-g">${h(tr.groups[m.g].name)}</span>`:''}<div class="lg-ms">${side(m,i,'a','lg-win')}${side(m,i,'b','lg-win')}</div></div>`).join('')}</div>`:'';
@@ -2034,7 +2040,7 @@ function matchCard(ev,m){const n=(m.entries||[]).length;const unit=m.fmt==='rot'
   else body=m.tr?tourHtml(ev,m):'<p class="small muted" style="margin:0">대진 없음 · 참가 설정 후 "대진 만들기"</p>';
   const pd=mPodium(ev,m);const op=(lsGet('sbpb-mopen',[])||[]).includes(m.id);
   return `<details class="mcard2" data-mid="${h(m.id)}"${op?' open':''}><summary><div class="mc-h"><b class="mc-t">${h(m.name)}</b><div class="small muted">${h(MK_L[m.kind]||'')} · ${h(MF_L[m.fmt]||'')}${m.fmt==='league-ko'&&m.groups?` · ${m.groups}개 조`:''}${n?` · ${n}${unit}`:''}</div>${pd[0]?`<div class="mb-p">${medal(1,pd[0])}</div>`:''}</div><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary><div class="mc-b">${acts}${body}</div></details>`}
-document.addEventListener('toggle',e=>{const d=e.target;if(!d.classList||!d.classList.contains('mcard2'))return;const s=new Set(lsGet('sbpb-mopen',[])||[]);if(d.open)s.add(d.dataset.mid);else s.delete(d.dataset.mid);lsSet('sbpb-mopen',[...s])},true);
+document.addEventListener('toggle',e=>{const d=e.target;if(d.classList&&d.classList.contains('mcard2')&&d.open)requestAnimationFrame(()=>bkLabels(d));if(!d.classList||!d.classList.contains('mcard2'))return;const s=new Set(lsGet('sbpb-mopen',[])||[]);if(d.open)s.add(d.dataset.mid);else s.delete(d.dataset.mid);lsSet('sbpb-mopen',[...s])},true);
 /* 팀전 경기 현황 (로테이션 대진 하나) */
 function gamesHtml(ev,b){const nmK=k=>k?keyName(k,b):'–';
   return `<div class="eg-games"><div class="eg-h"><h4 class="st-h" style="margin:0">경기 현황</h4>${RO?'':`<button class="btn sm" data-act="bv-score" data-id="${b.id}">점수 입력</button>`}</div>
@@ -2094,7 +2100,7 @@ function openMatchView(evId,mid){const ev=S.events.find(e=>e.id===evId);if(!ev)r
     ${!one?(()=>{const bd=ms.map(m=>({m,p:mPodium(ev,m)})).filter(x=>x.p[0]);return bd.length?`<div class="mboard">${bd.map(x=>`<div class="mb-row"><b>${h(x.m.name)}</b><div class="mb-p">${x.p.map((t,i)=>t?medal(i+1,t):'').join('')}</div></div>`).join('')}</div>`:''})():''}
     ${ms.map(m=>`<div class="mv-sec" data-mid="${h(m.id)}">${one?'':`<h3 class="mv-t">${h(m.name)} <span class="small muted">${h(MK_L[m.kind]||'')} · ${h(MF_L[m.fmt]||'')}</span></h3>`}${mvBody(ev,m)}</div>`).join('')}
     <div class="p-foot"><div class="p-sign">사방팔방 SBPB</div></div></div>`;
-  $('#modal-root').innerHTML=`<div class="ov" data-act="ov-close"><div class="modal wide" role="dialog" aria-modal="true" aria-label="매치 보기"><div class="m-head"><h2>${one?h(ms[0].name):'통합본'}</h2><button type="button" class="modal-x" data-act="close-modal" aria-label="닫기">×</button></div><div class="stage mv-wrap" id="mv-stage">${sheet}</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-act="ev-open" data-id="${ev.id}">행사로 이동</button><button class="btn ball" data-act="mv-img" data-date="${h(ev.date)}">이미지 다운로드</button></div></div></div>`;lockPage();fitIn($('#mv-stage'))}
+  $('#modal-root').innerHTML=`<div class="ov" data-act="ov-close"><div class="modal wide" role="dialog" aria-modal="true" aria-label="매치 보기"><div class="m-head"><h2>${one?h(ms[0].name):'통합본'}</h2><button type="button" class="modal-x" data-act="close-modal" aria-label="닫기">×</button></div><div class="stage mv-wrap" id="mv-stage">${sheet}</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-act="ev-open" data-id="${ev.id}">행사로 이동</button><button class="btn ball" data-act="mv-img" data-date="${h(ev.date)}">이미지 다운로드</button></div></div></div>`;lockPage();fitIn($('#mv-stage'));bkLabels($('#mv-stage'))}
 ACT['mv-open']=t=>{closeDayPop&&closeDayPop();openMatchView(t.dataset.ev,t.dataset.mid||'')};
 ACT['mv-img']=async t=>{const el=$('#mv-sheet');if(el){await exportPoster(el,{cfg:{date:t.dataset.date}});fitIn($('#mv-stage'))}};
 ACT['mv-all']=()=>{const ev=curEv();if(ev)openMatchView(ev.id,'')};
@@ -2733,3 +2739,5 @@ async function webGate(){let st={u:null,ok:false};try{st=await Promise.race([win
 if(WEB){webGate();setInterval(()=>{if(!document.body.classList.contains('locked')&&loginDay()!==ymd(new Date()))window.SBPB_WEB.logout().then(()=>location.reload())},60000);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!document.body.classList.contains('locked')&&loginDay()!==ymd(new Date()))window.SBPB_WEB.logout().then(()=>location.reload())})}
 else if(authed()&&(!PUB.snap||((lsGet('sbpb-k',null)||{}).salt===PUB.snap.salt)))unlock();else lock();
+
+window.addEventListener('resize',()=>bkLabels());
