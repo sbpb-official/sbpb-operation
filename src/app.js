@@ -112,6 +112,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
+    {k:'memtbl',t:'PC 회원 표: 전화번호가 이름 아래에 붙어 있음 · 거주지 말줄임 · 메모 칸 넓음 → 직장 다음 전화번호 칸, 그다음 상태 · 메모 칸 좁게 · 거주 · 직장 칸 넓게'},
     {k:'balls',t:'정산 › 공 재고: 없음 → 구매(몇 구짜리 몇 통 · 금액) · 사용(개봉 통 수, 쓴 공은 연습구로) · 연습구 조정 기록, 새 공 재고 · 연습구 개수 · 연간 구매 · 사용 요약'},
     {k:'manualdraw',t:'행사 대진 만들기: 자동 생성만 → 직접 입력 선택 (리그 · 토너먼트는 등록한 페어 · 선수를 조 칸 또는 1라운드 대진 칸에 끌어다 놓기 · 빈 칸 눌러 선택, 타임표 행사는 대진표 화면의 "빈 대진표로 직접 입력")'},
     {k:'fmtsync',t:'대회 형식 변경: 형식만 바뀌고 아래 대진은 그대로 → 형식을 바꾸면 대진도 새 형식으로 다시 만들지 선택 (참가자가 준비되면 바로 생성, 아니면 기존 대진 정리 후 안내)'},
@@ -882,9 +883,9 @@ function viewMembers(){
   <select class="in" id="m-y" data-mf="yr"><option value="">등록 연도 전체</option>${regYears().map(y=>`<option value="${y}"${String(mf.yr)===String(y)?' selected':''}>${y}년 등록</option>`).join('')}</select>
   <span class="muted small">${list.length}명 표시</span></div>
   <div class="mcards">${list.map((m,i)=>`<div class="mcard${ST(m)!=='활동'?' dim':''}" data-act="m-edit" data-id="${m.id}"><div class="top1"><div><span class="num muted small" style="margin-right:6px">${i+1}</span><b>${h(m.name)}</b> <span class="g-${m.gender} small">${m.gender==='M'?'남':'여'}</span>${staffChip(m)}${m.sample?' <span class="chip">예시</span>':''}</div>${stars(m.level)}</div><div class="meta">${m.birth?`<span>만 ${ageOf(m.birth)}세</span>`:''}<span>구력 ${h(career(m.since)||'–')}</span><span>${ST_LABEL[ST(m)]} ${yrsHtml(m)}</span></div><div class="meta">${`<span>${h(areaLabel(m.district)||'거주지 미입력')}</span>`}${m.work?`<span>직장 ${h(areaLabel(m.work))}</span>`:''}${m.phone?`<span>${telLink(m.phone)}</span>`:''}</div></div>`).join('')||'<div class="empty">조건에 맞는 회원 없음</div>'}</div>
-  <div class="tbl-wrap"><table class="tbl mt">${PEOPLE_COLS}<thead><tr><th style="cursor:default">No.</th>${th('name','이름')}${th('gender','성별·나이')}${th('level','레벨')}${th('since','구력')}${th('district','거주')}${th('work','직장')}${th('status','상태')}<th>메모</th></tr></thead><tbody>
-  ${list.map((m,i)=>`<tr class="${ST(m)!=='활동'?'dim':''}" data-act="m-edit" data-id="${m.id}" style="cursor:pointer"><td class="num muted">${i+1}</td><td><b>${h(m.name)}</b>${staffChip(m)}${m.sample?' <span class="chip">예시</span>':''}${m.phone?`<div class="small">${telLink(m.phone)}</div>`:''}</td><td class="g-${m.gender}">${m.gender==='M'?'남':m.gender==='F'?'여':''}${m.birth?` <span class="muted small">만 ${ageOf(m.birth)}세</span>`:''}</td><td>${stars(m.level)}</td><td><span class="num">${h(career(m.since))}</span> <span class="muted small">${m.since?h(m.since.replace('-','.')):''}</span></td><td>${h(areaLabel(m.district))}</td><td class="muted">${h(areaLabel(m.work))}</td><td>${stChip(m)}${yrsHtml(m)}</td><td class="muted small" style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${h(m.memo)}</td></tr>`).join('')}
-  ${!list.length?'<tr><td colspan="9" class="muted" style="text-align:center;padding:24px">조건에 맞는 회원 없음</td></tr>':''}</tbody></table></div>`;
+  <div class="tbl-wrap"><table class="tbl mt">${MEM_COLS}<thead><tr><th style="cursor:default">No.</th>${th('name','이름')}${th('gender','성별·나이')}${th('level','레벨')}${th('since','구력')}${th('district','거주')}${th('work','직장')}<th style="cursor:default">전화번호</th>${th('status','상태')}<th>메모</th></tr></thead><tbody>
+  ${list.map((m,i)=>`<tr class="${ST(m)!=='활동'?'dim':''}" data-act="m-edit" data-id="${m.id}" style="cursor:pointer"><td class="num muted">${i+1}</td><td><b>${h(m.name)}</b>${staffChip(m)}${m.sample?' <span class="chip">예시</span>':''}</td><td class="g-${m.gender}">${m.gender==='M'?'남':m.gender==='F'?'여':''}${m.birth?` <span class="muted small">만 ${ageOf(m.birth)}세</span>`:''}</td><td>${stars(m.level)}</td><td><span class="num">${h(career(m.since))}</span> <span class="muted small">${m.since?h(m.since.replace('-','.')):''}</span></td><td>${h(areaLabel(m.district))}</td><td class="muted">${h(areaLabel(m.work))}</td><td class="small">${m.phone?telLink(m.phone):''}</td><td>${stChip(m)}${yrsHtml(m)}</td><td class="muted small" style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${h(m.memo)}</td></tr>`).join('')}
+  ${!list.length?'<tr><td colspan="10" class="muted" style="text-align:center;padding:24px">조건에 맞는 회원 없음</td></tr>':''}</tbody></table></div>`;
   return `<div class="page-head"><div><h1>회원 관리</h1><p>현 회원 ${S.members.filter(isCur).length}명 · 활동 ${activeMembers().length}명 · 운영진 ${S.members.filter(m=>isStaff(m)&&isCur(m)).length}명 · ${regYears().map(y=>`${y}년 등록 ${S.members.filter(m=>yearsOf(m).includes(y)).length}명`).join(' · ')}. 항목 선택 시 수정 가능</p></div><div class="row"><button class="btn" data-act="renew-open">연장 관리</button>${samples?`<button class="btn danger" data-act="m-clear-sample">예시 회원 ${samples}명 삭제</button>`:''}<button class="btn pri" data-act="m-new">회원 추가</button></div></div>${body}
   ${guestSection()}
   <datalist id="areas">${SEOUL.concat(NEAR).map(a=>`<option value="${a}">`).join('')}</datalist>`;
@@ -1493,6 +1494,8 @@ ACT['recruit-copy']=async t=>{
 /* ---- guests ---- */
 const nk=s=>{s=String(s||'');return [...s].length>5?[...s].slice(0,5).join('')+'…':s};
 // 회원·게스트 표 공통 열 폭 (닉네임·배지가 길어져도 열이 밀리지 않음)
+/* 회원 표: 거주 · 직장은 남는 폭을 나눠 쓰고 메모는 좁게 */
+const MEM_COLS='<colgroup><col style="width:52px"><col style="width:130px"><col style="width:104px"><col style="width:104px"><col style="width:150px"><col><col><col style="width:136px"><col style="width:120px"><col style="width:180px"></colgroup>';
 const PEOPLE_COLS='<colgroup><col style="width:52px"><col style="width:150px"><col style="width:112px"><col style="width:110px"><col style="width:150px"><col style="width:110px"><col style="width:140px"><col style="width:132px"><col></colgroup>';
 function guestSection(){
   const q=(mf.q||'').trim();
