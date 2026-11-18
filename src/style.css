@@ -1086,3 +1086,5 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .top-fab{opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .35s ease,transform .35s ease}.top-fab.show{opacity:1;transform:none;pointer-events:auto}.top-fab:hover{color:var(--ink);border-color:var(--muted)}
 .top-fab svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ev-back{margin:0 0 12px}.ev-back .btn{padding-left:4px;min-height:40px;font-weight:600}
+.draw-hist>.panel+.panel{margin-top:16px}.st-fold>summary{align-items:center}.st-tabs{margin:12px 0 16px;display:flex;width:100%}.st-tabs button{flex:1;min-height:40px}
+.st-tabs button{text-align:center;font-size:13px}
