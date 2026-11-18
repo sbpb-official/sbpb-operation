@@ -970,11 +970,12 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 
 .evdraw-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 12px;padding:8px 12px;border-radius:10px;background:color-mix(in srgb,var(--court) 12%,var(--surface));font-size:14px}
 .ev-fmt{display:flex;flex-direction:column;gap:8px;margin-top:6px}.ev-fmt .check{align-items:flex-start}
-.tr-tree{position:relative;display:flex;flex-direction:column-reverse;gap:24px;overflow-x:auto;padding:4px 12px 6px}
-.tr-col{display:flex;flex-direction:column;align-items:stretch;min-width:100%;width:max-content}.tr-col .tr-st{margin-bottom:8px;text-align:center}
+.tr-tree{display:flex;flex-direction:column-reverse;gap:24px;overflow-x:auto;padding:4px 0 6px}
+.tr-col{display:grid;grid-template-columns:36px 1fr;align-items:center;column-gap:6px;min-width:100%;width:max-content}.tr-col .tr-st{margin:0;text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:4px;font-size:12px;line-height:1.3;word-break:keep-all}
+.tr-col .tr-byebtn{margin:0;padding:2px 6px;font-size:10px}
 .tr-cm{display:flex;flex-direction:row;justify-content:space-around;gap:8px}
-.tr-tree .tr-m{position:relative;gap:4px;flex:1 1 0;min-width:62px;max-width:360px;container-type:inline-size;padding:3px;border-radius:12px;background:var(--surface-2)}.tr-tree .tr-side{min-height:40px;padding:6px 8px;font-size:13px;flex-wrap:wrap;row-gap:2px}
-@media (max-width:520px){.tr-tree .tr-side{padding:6px 5px;font-size:12px}.tr-cm{gap:4px}}
+.tr-tree .tr-m{position:relative;gap:4px;flex:1 1 0;min-width:56px;max-width:180px;padding:3px;border-radius:12px;background:var(--surface-2)}.tr-tree .tr-side{min-height:40px;padding:6px 8px;font-size:13px;flex-wrap:wrap;row-gap:2px}
+@media (max-width:520px){.tr-tree .tr-side{padding:6px 4px;font-size:12px;justify-content:center}.tr-cm{gap:4px}}
 .tr-seed{font-size:11px;text-align:center}
 .tr-col.win .tr-side{justify-content:center;text-align:center;border-color:var(--gold);background:color-mix(in srgb,var(--gold) 14%,var(--surface))}
 .tr-col.win .tr-st{color:var(--gold)}
@@ -1054,26 +1055,3 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .tr-bye{display:inline-block;margin-left:4px;padding:0 6px;border-radius:999px;font-size:11px;font-weight:600;background:var(--surface-2);color:var(--muted)}
 .tr-byebtn{margin-left:6px;border:1px solid var(--line);background:var(--surface);color:var(--court);border-radius:999px;padding:2px 8px;font:inherit;font-size:11px;font-weight:600;cursor:pointer;min-height:24px}
 .tr-col.win .tr-m{background:none;padding:0}
-
-/* 본선 대진표 나무: 선수 칸 맨 아래 정렬, 두 칸을 꺾은선으로 묶어 위 경기 칸으로 (순수 CSS · 확대 배율과 무관) */
-.tr-tree.bk{display:block;padding:4px 0 8px}
-.tr-sec .tr-byebtn{vertical-align:middle}
-.bk-root{width:100%}.tr-tree.bk{--bk-ln:color-mix(in srgb,var(--muted) 70%,transparent)}.bk-champ-st{display:block;text-align:center;color:var(--gold);margin-bottom:8px}
-.bk-n{display:flex;flex-direction:column;align-items:center;width:100%}
-.bk-box.tr-side{position:relative;z-index:1;min-height:40px;min-width:48px;max-width:100%;padding:6px 8px;font-size:13px;justify-content:center;text-align:center;gap:4px;flex-wrap:wrap;word-break:keep-all;overflow-wrap:anywhere}
-.bk-box.tbd{color:var(--muted)}
-.bk-champ.tr-side{min-width:min(100%,160px);border-color:var(--gold);background:color-mix(in srgb,var(--gold) 14%,var(--surface))}
-.bk-stem{position:relative;width:0;height:20px;border-left:1.5px solid var(--bk-ln)}
-.bk-stem.on{border-left-color:var(--court)}
-.bk-rn{position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;line-height:1;color:var(--muted);white-space:nowrap}
-.bk-kids{display:flex;align-items:stretch;width:100%}
-.bk-c{position:relative;display:flex;flex-direction:column;align-items:center;padding:0 2px}
-.bk-c::before{content:'';position:absolute;top:0;border-top:1.5px solid var(--bk-ln)}
-.bk-c:first-child::before{left:50%;right:0}.bk-c:last-child::before{left:0;right:50%}
-.bk-c.on::before{border-top-color:var(--court);z-index:1}
-.bk-up{flex:0 0 12px;width:0;border-left:1.5px solid var(--bk-ln)}.bk-down{flex:1 0 0;width:0;border-left:1.5px solid var(--bk-ln)}.bk-down.on{border-left-color:var(--court)}
-.bk-c.on>.bk-up{border-left-color:var(--court)}
-.bk-c>.bk-box.leaf{width:100%}
-@media (max-width:520px){.bk-box.tr-side{padding:6px 4px;font-size:12px}}
-.bk-c>.bk-box.leaf{min-width:0}
-.bk-byeln{position:relative;min-height:28px}
