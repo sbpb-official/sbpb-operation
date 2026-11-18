@@ -991,14 +991,14 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 
 .evdraw-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 12px;padding:8px 12px;border-radius:10px;background:color-mix(in srgb,var(--court) 12%,var(--surface));font-size:14px}
 .ev-fmt{display:flex;flex-direction:column;gap:8px;margin-top:6px}.ev-fmt .check{align-items:flex-start}
-.tr-tree{display:flex;gap:20px;overflow-x:auto;padding-bottom:6px}
-.tr-col{display:flex;flex-direction:column;min-width:150px;flex:1}.tr-col .tr-st{margin-bottom:6px}
-.tr-cm{display:flex;flex-direction:column;justify-content:space-around;gap:14px;flex:1}
-.tr-tree .tr-m{position:relative;gap:4px}.tr-tree .tr-side{min-height:40px;padding:6px 10px;font-size:13px}
-.tr-col.to .tr-m::after{content:'';position:absolute;right:-20px;top:50%;width:20px;border-top:2px solid var(--line)}
-.tr-col:not(:first-child) .tr-m::before{content:'';position:absolute;left:-10px;top:25%;bottom:25%;border-left:2px solid var(--line)}
-.tr-seed{font-size:11px}
-.tr-col.win .tr-side{justify-content:center;text-align:center}
+.tr-tree{display:flex;flex-direction:column-reverse;gap:24px;overflow-x:auto;padding:4px 0 6px}
+.tr-col{display:flex;flex-direction:column;align-items:stretch;min-width:100%;width:max-content}.tr-col .tr-st{margin-bottom:8px;text-align:center}
+.tr-cm{display:flex;flex-direction:row;justify-content:space-around;gap:8px}
+.tr-tree .tr-m{position:relative;gap:4px;flex:1 1 0;min-width:62px;max-width:180px;padding:3px;border-radius:12px;background:var(--surface-2)}.tr-tree .tr-side{min-height:40px;padding:6px 8px;font-size:13px;flex-wrap:wrap;row-gap:2px}
+@media (max-width:520px){.tr-tree .tr-side{padding:6px 5px;font-size:12px}.tr-cm{gap:4px}}
+.tr-seed{font-size:11px;text-align:center}
+.tr-col.win .tr-side{justify-content:center;text-align:center;border-color:var(--gold);background:color-mix(in srgb,var(--gold) 14%,var(--surface))}
+.tr-col.win .tr-st{color:var(--gold)}
 
 .ps-opt{margin-top:4px}.ps-opt summary{cursor:pointer;padding:6px 0}
 .ps-list{display:flex;flex-direction:column;gap:8px}.ps-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -1074,6 +1074,7 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .m-pick button{display:inline-flex;align-items:center;gap:6px}.mf-lg[hidden],.mf-ko[hidden]{display:none}
 .tr-bye{display:inline-block;margin-left:4px;padding:0 6px;border-radius:999px;font-size:11px;font-weight:600;background:var(--surface-2);color:var(--muted)}
 .tr-byebtn{margin-left:6px;border:1px solid var(--line);background:var(--surface);color:var(--court);border-radius:999px;padding:2px 8px;font:inherit;font-size:11px;font-weight:600;cursor:pointer;min-height:24px}
+.tr-col.win .tr-m{background:none;padding:0}
 
 </style>
 </head>
@@ -1200,7 +1201,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=4dfb74c437';
+const CUR_APP = 'app.js?v=a7d25595a2';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1228,7 +1229,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=4dfb74c437';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=a7d25595a2';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
