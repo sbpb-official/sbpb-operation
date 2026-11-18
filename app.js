@@ -115,7 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
-    {k:'kpigo',t:'대시보드 숫자 카드: 누를 수 없음 → 활동 회원 · 평균 레벨은 회원 개요, 다가오는 행사는 다가오는 행사, 7일 내 예약 오픈은 예약 오픈 임박 섹션으로 이동 (도착 섹션 잠깐 강조)'},
+    {k:'kpigo',t:'대시보드 숫자 카드: 누를 수 없음 → 활동 회원 · 평균 레벨은 회원 개요, 다가오는 행사는 다가오는 행사, 7일 내 예약 오픈은 예약 오픈 임박 섹션으로 이동 (헤더 아래 화면 가운데에 도착 · 도착 섹션 잠깐 강조)'},
     {k:'mkday',t:'정기모임 취소일 · 대체일: 상단 카드는 사유가 행사 대체일 때만 행사 표시 · 코트 측 취소의 대체일은 정기모임으로 안 잡힘 → 취소된 날 행사가 있으면 그날 하루 행사 카드(정기모임 취소 사유 · 대체일 함께), 대체일은 다음 정기모임 · 대진표 기본 날짜 · 캘린더 정기모임 표시 · 출석률 분모에 포함 (취소 통계 · 대관 정산은 그대로)'},
     {k:'trlabel',t:'토너먼트 대진표 라운드 이름: 경기마다 연결선 옆에 반복 표시 → 층마다 대진표 왼쪽 칸에 한 번만 (가로로 넘겨도 고정)'},
     {k:'trtree',t:'토너먼트 본선: 라운드별 매치 카드(VS) + 꺾은선 → 대진표 나무 그림 (첫 경기 선수 칸이 맨 아래 한 줄 · 사람이 많으면 칸 겹침 없이 옆으로 밀어서 보기, 같은 경기에서 맞붙는 두 칸은 같은 높이에 나란히 · 부전승 선수도 상대 옆에 표시, 부전승 선수는 1차전 줄에도 칸을 두고 올라간 라운드 칸까지 "부전승" 글자가 붙은 곧은 선으로 연결, 두 칸을 꺾은선으로 묶어 다음 경기 칸 · 우승 칸으로 연결, 이긴 쪽 선 초록, 라운드 이름은 갈림 지점 옆에 표시, 부전승은 긴 선으로 표시) · "부전승 지정" 버튼: 라운드 이름 옆 → 본선 제목 줄 ("2차전 부전승 지정")'},
@@ -741,7 +741,8 @@ document.addEventListener('click',e=>{
 });
 ACT['ov-close']=closeModal;
 /* 대시보드 숫자 카드 → 해당 섹션으로 이동 (고정 헤더 높이만큼 띄움) · 도착 섹션 잠깐 강조 */
-ACT['dash-go']=t=>{const el=document.getElementById(t.dataset.to);if(!el)return;const hd=document.querySelector('.top');const off=(hd?hd.getBoundingClientRect().height:0)+12;
+ACT['dash-go']=t=>{const el=document.getElementById(t.dataset.to);if(!el)return;const hd=document.querySelector('.top');const H=hd?hd.getBoundingClientRect().height:0;const avail=window.innerHeight-H,eh=el.getBoundingClientRect().height;
+  /* 헤더 아래 남은 화면의 가운데 · 섹션이 더 길면 헤더 바로 아래 */const off=H+(eh<avail?(avail-eh)/2:12);
   window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-off,behavior:'smooth'});el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1400)};
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.act==='dash-go'){e.preventDefault();ACT['dash-go'](e.target)}});
 // overlays must never scroll themselves (iOS scrolls overflow:hidden ancestors when focusing inputs)
