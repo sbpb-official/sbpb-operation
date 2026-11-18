@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
+    {k:'kpigo',t:'대시보드 숫자 카드: 누를 수 없음 → 활동 회원 · 평균 레벨은 회원 개요, 다가오는 행사는 다가오는 행사, 7일 내 예약 오픈은 예약 오픈 임박 섹션으로 이동 (도착 섹션 잠깐 강조)'},
     {k:'mkday',t:'정기모임 취소일 · 대체일: 상단 카드는 사유가 행사 대체일 때만 행사 표시 · 코트 측 취소의 대체일은 정기모임으로 안 잡힘 → 취소된 날 행사가 있으면 그날 하루 행사 카드(정기모임 취소 사유 · 대체일 함께), 대체일은 다음 정기모임 · 대진표 기본 날짜 · 캘린더 정기모임 표시 · 출석률 분모에 포함 (취소 통계 · 대관 정산은 그대로)'},
     {k:'trlabel',t:'토너먼트 대진표 라운드 이름: 경기마다 연결선 옆에 반복 표시 → 층마다 대진표 왼쪽 칸에 한 번만 (가로로 넘겨도 고정)'},
     {k:'trtree',t:'토너먼트 본선: 라운드별 매치 카드(VS) + 꺾은선 → 대진표 나무 그림 (첫 경기 선수 칸이 맨 아래 한 줄 · 사람이 많으면 칸 겹침 없이 옆으로 밀어서 보기, 같은 경기에서 맞붙는 두 칸은 같은 높이에 나란히 · 부전승 선수도 상대 옆에 표시, 부전승 선수는 1차전 줄에도 칸을 두고 올라간 라운드 칸까지 "부전승" 글자가 붙은 곧은 선으로 연결, 두 칸을 꺾은선으로 묶어 다음 경기 칸 · 우승 칸으로 연결, 이긴 쪽 선 초록, 라운드 이름은 갈림 지점 옆에 표시, 부전승은 긴 선으로 표시) · "부전승 지정" 버튼: 라운드 이름 옆 → 본선 제목 줄 ("2차전 부전승 지정")'},
@@ -739,6 +740,10 @@ document.addEventListener('click',e=>{
   ACT[t.dataset.act]&&ACT[t.dataset.act](t,e);
 });
 ACT['ov-close']=closeModal;
+/* 대시보드 숫자 카드 → 해당 섹션으로 이동 (고정 헤더 높이만큼 띄움) · 도착 섹션 잠깐 강조 */
+ACT['dash-go']=t=>{const el=document.getElementById(t.dataset.to);if(!el)return;const hd=document.querySelector('.top');const off=(hd?hd.getBoundingClientRect().height:0)+12;
+  window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-off,behavior:'smooth'});el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1400)};
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.act==='dash-go'){e.preventDefault();ACT['dash-go'](e.target)}});
 // overlays must never scroll themselves (iOS scrolls overflow:hidden ancestors when focusing inputs)
 document.addEventListener('scroll',e=>{const t=e.target;if(t&&t.classList&&(t.classList.contains('ov')||t.classList.contains('wh-ov'))&&(t.scrollTop||t.scrollLeft)){t.scrollTop=0;t.scrollLeft=0}},true);
 function isDark(){const t=document.documentElement.dataset.theme;return t?t==='dark':!!(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)}
@@ -764,10 +769,10 @@ function viewHome(){
   const ops=openings(30);const opsWeek=ops.filter(o=>(o.date-new Date())/864e5<=7);
   const t=new Date();
   const kp=`<div class="kpis">
-    <div class="kpi"><div class="l">활동 회원</div><div class="v">${act.length}</div><div class="s">남 ${M} · 여 ${F} · 운영진 ${act.filter(m=>isStaff(m)).length}${S.members.filter(m=>ST(m)==='휴면').length?` · 휴면 ${S.members.filter(m=>ST(m)==='휴면').length}`:''}</div></div>
-    <div class="kpi"><div class="l">평균 레벨</div><div class="v">${act.length?avg.toFixed(1):'–'}</div><div class="s">${act.length?stars(Math.round(avg*2)/2):'회원 등록 후 표시'}</div></div>
-    <div class="kpi"><div class="l">다가오는 행사</div><div class="v">${up.length}</div><div class="s">${up[0]?`${h(up[0].title)} ${ddayLabel(up[0].date)}`:'예정된 행사 없음'}</div></div>
-    <div class="kpi"><div class="l">7일 내 예약 오픈</div><div class="v">${opsWeek.length}</div><div class="s">${opsWeek[0]?`${h(opsWeek[0].court.name)} ${opsWeek[0].date.getMonth()+1}/${opsWeek[0].date.getDate()}`:'등록된 코트 기준'}</div></div>
+    <div class="kpi go" data-act="dash-go" data-to="dash-mem" role="button" tabindex="0"><div class="l">활동 회원</div><div class="v">${act.length}</div><div class="s">남 ${M} · 여 ${F} · 운영진 ${act.filter(m=>isStaff(m)).length}${S.members.filter(m=>ST(m)==='휴면').length?` · 휴면 ${S.members.filter(m=>ST(m)==='휴면').length}`:''}</div></div>
+    <div class="kpi go" data-act="dash-go" data-to="dash-mem" role="button" tabindex="0"><div class="l">평균 레벨</div><div class="v">${act.length?avg.toFixed(1):'–'}</div><div class="s">${act.length?stars(Math.round(avg*2)/2):'회원 등록 후 표시'}</div></div>
+    <div class="kpi go" data-act="dash-go" data-to="dash-ev" role="button" tabindex="0"><div class="l">다가오는 행사</div><div class="v">${up.length}</div><div class="s">${up[0]?`${h(up[0].title)} ${ddayLabel(up[0].date)}`:'예정된 행사 없음'}</div></div>
+    <div class="kpi go" data-act="dash-go" data-to="dash-open" role="button" tabindex="0"><div class="l">7일 내 예약 오픈</div><div class="v">${opsWeek.length}</div><div class="s">${opsWeek[0]?`${h(opsWeek[0].court.name)} ${opsWeek[0].date.getMonth()+1}/${opsWeek[0].date.getDate()}`:'등록된 코트 기준'}</div></div>
   </div>`;
   // calendar
   const openSet=new Set(openings(400).map(o=>ymd(o.date)));
@@ -824,12 +829,12 @@ function viewHome(){
   return `<div class="page-head dash-head"><div class="dh-main"><div class="dh-today"><span>${t.getFullYear()}년 ${t.getMonth()+1}월 ${t.getDate()}일 ${WD[t.getDay()]}요일</span><b class="num" id="clock">${clockText()}</b></div>
     ${nrEv?`<div class="dh-next rep t-${h(nrEv.type||'기타')}" data-act="ev-open" data-id="${nrEv.id}" role="button" tabindex="0"><span class="dh-l">다음 모임 · ${nrs.reason==='행사 대체'?'행사 대체':'행사'}</span><div class="dh-v"><b>${fmtD(nr)}</b><span>${h(nrEv.title)}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${h(nrEv.place||'')}${nrEv.place?' · ':''}${nrs.reason==='행사 대체'?'정기모임 대신 행사 진행':`정기모임은 ${h(nrs.reason)}${isCourtCx(nrs)&&nrs.mkDate&&!nrs.mkUnused?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`}</span></div>`:`<div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrMk?` · 대체일 (${fmtD(nrMk.rs.id)} 코트 측 취소분)`:''}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div>`}</div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextRegNow()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>
   ${kp}<div class="dash">${cal}<div class="side">
-  <section class="panel"><div class="panel-h"><h2>다가오는 행사</h2><a href="#events">전체 보기</a></div><div class="list">${upHtml}</div></section>
+  <section class="panel" id="dash-ev"><div class="panel-h"><h2>다가오는 행사</h2><a href="#events">전체 보기</a></div><div class="list">${upHtml}</div></section>
   ${(()=>{const ts=S.events.filter(e=>e.type==='개인대회'&&e.date);if(!ts.length)return '';const up2=ts.filter(e=>diffDays(e.date)>=0).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);const past=ts.filter(e=>diffDays(e.date)<0&&e.result&&e.result!=='대기').sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
     const li=e=>`<div class="li click" data-act="ev-open" data-id="${e.id}"><div class="grow"><div class="ttl">${entLine(e)||'출전 멤버 미입력'}</div><div class="sub">${fmtD(e.date)} · ${h(e.title)}${e.division?' · '+h(e.division):''}${(e.cheer||[]).length?` · 응원 ${(e.cheer||[]).length}명`:''}</div></div>${diffDays(e.date)>=0?`<span class="dday">${ddayLabel(e.date)}</span>`:`<span class="result ${resultCls(e.result)}" style="font-size:12px">${h(e.result)}</span>`}</div>`;
     return `<section class="panel"><div class="panel-h"><h2>멤버 대회 소식</h2><a href="#events" data-act="ev-filter" data-v="all">전체 보기</a></div><div class="list">${up2.map(li).join('')}${past.map(li).join('')}</div></section>`})()}
-  <section class="panel"><div class="panel-h"><h2>예약 오픈 임박</h2><a href="#courts">코트 보기</a></div><div class="list">${opHtml}</div></section>
-  <section class="panel"><div class="panel-h"><h2>회원 개요</h2><a href="#members">회원 보기</a></div>${mo}</section>
+  <section class="panel" id="dash-open"><div class="panel-h"><h2>예약 오픈 임박</h2><a href="#courts">코트 보기</a></div><div class="list">${opHtml}</div></section>
+  <section class="panel" id="dash-mem"><div class="panel-h"><h2>회원 개요</h2><a href="#members">회원 보기</a></div>${mo}</section>
   </div></div>`;
 }
 ACT['cal-y']=t=>{const v=Number(t.dataset.v);calYear=v?calYear+v:new Date().getFullYear();render()};

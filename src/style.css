@@ -1080,3 +1080,5 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .bk-wrap{position:relative;display:grid;grid-template-columns:40px 1fr;column-gap:4px;min-width:0}.bk-wrap>.tr-tree{min-width:0}
 .bk-gut{position:relative}.bk-gl{position:absolute;left:0;transform:translateY(-50%);font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;line-height:1.2}
 .bk-stem .bk-rn.bk-hide{display:none}
+.kpi.go{cursor:pointer;transition:border-color .15s,transform .1s}.kpi.go:hover{border-color:var(--court)}.kpi.go:active{transform:scale(.98)}
+.panel.flash{animation:flashp 1.4s ease}@keyframes flashp{0%,60%{box-shadow:0 0 0 2px var(--court)}100%{box-shadow:0 0 0 0 transparent}}
