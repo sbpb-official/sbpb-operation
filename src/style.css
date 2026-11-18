@@ -1008,3 +1008,6 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .se-box{display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid var(--line);border-radius:10px}.se-l{font-size:13px}.se-vs{font-size:11px;color:var(--muted);text-align:center}
 .se-chip{white-space:normal;text-align:center}
 @media (max-width:520px){.se-boxes{grid-template-columns:1fr}}
+.ball-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}.ball-sum .bs{display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:10px;background:var(--surface-2)}.ball-sum .l{font-size:12px;color:var(--muted);font-weight:700}.ball-sum b{font-size:16px}
+@media (max-width:640px){.ball-sum{grid-template-columns:1fr}}
+.ball-dot{width:10px;height:10px;min-width:10px;max-width:10px;border-radius:50%;flex:none;align-self:center;background:var(--muted)}.bd-buy{background:var(--court)}.bd-use{background:var(--warn)}.bd-prac{background:var(--t-ex)}

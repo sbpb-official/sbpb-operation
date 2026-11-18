@@ -111,7 +111,8 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    화면·기능이 바뀌는 배포마다 맨 위에 항목 추가 (id는 겹치지 않게, 날짜순).
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
-  {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
+  {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
+    {k:'balls',t:'정산 › 공 재고: 없음 → 구매(몇 구짜리 몇 통 · 금액) · 사용(개봉 통 수, 쓴 공은 연습구로) · 연습구 조정 기록, 새 공 재고 · 연습구 개수 · 연간 구매 · 사용 요약'},
     {k:'manualdraw',t:'행사 대진 만들기: 자동 생성만 → 직접 입력 선택 (리그 · 토너먼트는 등록한 페어 · 선수를 조 칸 또는 1라운드 대진 칸에 끌어다 놓기 · 빈 칸 눌러 선택, 타임표 행사는 대진표 화면의 "빈 대진표로 직접 입력")'},
     {k:'fmtsync',t:'대회 형식 변경: 형식만 바뀌고 아래 대진은 그대로 → 형식을 바꾸면 대진도 새 형식으로 다시 만들지 선택 (참가자가 준비되면 바로 생성, 아니면 기존 대진 정리 후 안내)'},
     {k:'pecell',t:'페어 칸: 끌어다 놓기만 → 채워진 칸을 누르면 빠짐 · 빈 칸을 누르면 남은 인원 목록에서 선택'},
@@ -122,7 +123,8 @@ const NEWS=[
     {k:'trtree',t:'행사 리그 · 토너먼트: 목록 → 본선은 나뭇가지 대진표(라운드별 칸 · 우승 칸), 리그 경기 목록(⋮⋮ 끌어서 진행 순서 변경), 점수 입력 시 승수 → 득실로 조 순위 자동 계산 · 점수 없이 승자만 기록 가능(지난 행사용), 결과 없으면 조 순위 직접 입력'},
     {k:'tourney',t:'행사 토너먼트: 없음 → 우승 · 본선(4강 · 결승) · 조별 예선 순위 기록 (이긴 팀을 누르거나 점수 입력으로 승자 기록, 결승 승자는 우승으로 표시) · 파일로 조 편성 · 결과 · 시상 가져오기'},
     {k:'evgames',t:'행사(MT · 내부대회) 대진: 없음 → 이벤트 상세에 "행사 대진 · 결과" (팀 설정(이름 · 색) · 행사 대진 보기 · 점수 입력 · 팀 승수 → 동점이면 득실로 순위 · 시상 기록), 대진표에 팀 색 표시 · 점수 표시, 행사 대진은 정기모임 출석률 · 페어 통계에서 제외'},
-    {k:'attdays',t:'정기모임 출석률: 비율 · 횟수만 표시 → 줄을 누르면 출석한 날짜 · 결석한 날짜 펼침 (다시 누르면 접힘)'},
+    {k:'attdays',t:'정기모임 출석률: 비율 · 횟수만 표시 → 줄을 누르면 출석한 날짜 · 결석한 날짜 펼침 (다시 누르면 접힘)'}]},
+  {id:'2026-11-17c',alias:['2026-11-17b','2026-11-16e','2026-11-16b','2026-11-16c','2026-11-16d'],v:'1.5',date:'2026-11-17',items:[
     {k:'evbtn',t:'이벤트 상단 버튼: 대회 출전 기록 · 행사 추가 → 행사 추가만 (대회 출전 기록은 행사 추가에서 종류를 개인 대회로 선택)'},
     {k:'statpick',t:'페어 통계 사람 선택: 기록에 나온 모든 사람(게스트 · 미등록 포함) → 현 회원만'},
     {k:'attendvote',t:'대진표 없는 정기모임 출석: 모두 결석으로 계산 → 출석 투표 기록 파일을 가져오면 그날 출석으로 반영 (대진 기록이 있는 날 · 취소된 날은 제외)'},
@@ -406,8 +408,8 @@ ACT['area-pick']=t=>{const wrap=t.closest('.areaf');const btn=wrap.querySelector
   btn.hidden=false;cust.hidden=true;inp.value=v;btn.classList.toggle('ph',!v);btn.innerHTML=h(v?areaLabel(v):wrap.dataset.ph)+'<span class="lv-caret" aria-hidden="true">▾</span>';
   wrap.querySelectorAll('.lv-pop [data-act="area-pick"]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.v===v)));btn.focus()};
 /* ---------- store ---------- */
-const COLS=['members','events','notes','courts','brackets','guests','regstat','rentals','dues','ledger','names','attend','presets'];
-const S={members:[],events:[],notes:[],courts:[],brackets:[],guests:[],regstat:[],rentals:[],dues:[],ledger:[],names:[],attend:[],presets:[]};
+const COLS=['members','events','notes','courts','brackets','guests','regstat','rentals','dues','ledger','names','attend','presets','balls'];
+const S={members:[],events:[],notes:[],courts:[],brackets:[],guests:[],regstat:[],rentals:[],dues:[],ledger:[],names:[],attend:[],presets:[],balls:[]};
 const CANCEL_REASONS=['우천 취소','코트 측 취소','행사 대체','기타'];
 const regStat=ds=>S.regstat.find(x=>x.id===ds);
 const COURT_CX='코트 측 취소';
@@ -2184,6 +2186,37 @@ ACT['bank-cfg']=()=>{const Y=monY;const c=bankCfg(Y);const auto=(()=>{if(Y<=CLUB
   fd=>put('dues','bank-'+Y,{opening:String(fd.opening||'').trim()===''?null:numOf(fd.opening),actual:String(fd.actual||'').trim()===''?null:numOf(fd.actual),actualAt:fd.actualAt||''}))};
 ACT['rent-pay']=async t=>{const Y=+t.dataset.y,q=+t.dataset.q,amt=+t.dataset.amt;if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent=`${won(amt)} 지출 기록`;t.classList.add('pri');return}
   try{await put('ledger',uid(),{eventId:'',kind:'out',cat:'코트 대여',item:`${Y}년 ${q}분기 정기대관료`,amount:amt,payer:'회비 통장',memo:'',date:ymd(today0()),rentQ:`${Y}-${q}`,createdAt:Date.now()});toast(`${q}분기 대관료 지출 기록 완료`)}catch(e){}};
+/* ---------- 정산 › 공 재고: 구매(몇 구짜리 몇 통) · 사용(몇 통 개봉, 쓴 공은 연습구로) · 연습구 조정 ----------
+   balls 문서: {date,kind:'buy'|'use'|'prac',per(구),cans(통),price,toPrac,n(연습구 증감),note} */
+const BALL_PER=[2,3,4];
+function ballStock(){const st={};BALL_PER.forEach(p=>st[p]=0);let prac=0;
+  (S.balls||[]).forEach(b=>{const per=+b.per||0,c=+b.cans||0;if(b.kind==='buy')st[per]=(st[per]||0)+c;else if(b.kind==='use'){st[per]=(st[per]||0)-c;if(b.toPrac)prac+=c*per}else if(b.kind==='prac')prac+=+b.n||0});
+  return {st,prac}}
+function ballsHtml(Y){const {st,prac}=ballStock();const rows=(S.balls||[]).slice().sort((x,y)=>(y.date||'').localeCompare(x.date||'')||(y.at||0)-(x.at||0));
+  const yb=rows.filter(b=>b.kind==='buy'&&(b.date||'').startsWith(Y+''));const yu=rows.filter(b=>b.kind==='use'&&(b.date||'').startsWith(Y+''));
+  const pers=BALL_PER.filter(p=>st[p]);const totalBalls=BALL_PER.reduce((s,p)=>s+st[p]*p,0);
+  const line=b=>b.kind==='buy'?`<b>구매</b> ${b.per}구 ${b.cans}통${b.price?` · ${won(b.price)}`:''}`:b.kind==='use'?`<b>사용</b> ${b.per}구 ${b.cans}통 개봉${b.toPrac?` · 연습구 +${b.cans*b.per}`:''}`:`<b>연습구</b> ${(+b.n>0?'+':'')+b.n}개`;
+  const PER_N=5;const shown=ballMore?rows:rows.slice(0,PER_N);
+  return `<section class="panel balls"><div class="panel-h"><h2>공 재고</h2>${RO?'':`<div class="row"><button class="btn sm" data-act="ball-add" data-k="buy">구매</button><button class="btn sm" data-act="ball-add" data-k="use">사용</button><button class="btn sm" data-act="ball-add" data-k="prac">연습구 조정</button></div>`}</div>
+    <div class="ball-sum"><div class="bs"><span class="l">새 공</span><b class="num">${pers.length?pers.map(p=>`${p}구 ${st[p]}통`).join(' · '):'0통'}</b><span class="small muted">총 ${totalBalls}구</span></div>
+      <div class="bs"><span class="l">연습구</span><b class="num">${prac}개</b></div>
+      <div class="bs"><span class="l">${Y}년</span><b class="num">구매 ${yb.reduce((s,b)=>s+(+b.cans||0),0)}통 · 사용 ${yu.reduce((s,b)=>s+(+b.cans||0),0)}통</b><span class="small muted">구매 금액 ${won(yb.reduce((s,b)=>s+(+b.price||0),0))}</span></div></div>
+    ${BALL_PER.some(p=>st[p]<0)?'<p class="small" style="margin:8px 0 0;color:var(--warn)">재고가 음수인 종류가 있음 · 구매 기록 확인 필요</p>':''}
+    <div class="list ball-list">${shown.length?shown.map(b=>`<div class="li${RO?'':' click'}" ${RO?'':`data-act="ball-edit" data-id="${b.id}"`}><span class="ball-dot bd-${b.kind}"></span><div class="grow"><div class="ttl">${line(b)}</div><div class="sub">${fmtD(b.date)}${b.note?' · '+h(b.note):''}</div></div></div>`).join(''):'<div class="muted small" style="padding:8px 0">기록 없음 · 구매부터 기록</div>'}</div>
+    ${rows.length>PER_N?`<button class="btn sm ghost ev-more" data-act="ball-more">${ballMore?'접기':`기록 ${rows.length-PER_N}건 더 보기`}</button>`:''}</section>`}
+let ballMore=false;ACT['ball-more']=()=>{ballMore=!ballMore;render()};
+function ballForm(k,b={}){const per=`<label class="f">종류<select class="in" name="per">${BALL_PER.map(p=>`<option value="${p}"${(+b.per||3)===p?' selected':''}>${p}구짜리 (1통 ${p}개)</option>`).join('')}</select></label>`;
+  const date=`<label class="f">날짜${calField(b.date||ymd(today0()),{name:'date',required:true})}</label>`;const note=`<label class="f">메모 (선택)<input class="in" name="note" value="${h(b.note||'')}" placeholder="${k==='buy'?'예: 던롭 포트 · 온라인 구매':k==='use'?'예: 정기모임 · MT':'예: 낡은 공 버림 · 기증'}"></label>`;
+  if(k==='buy')return `<div class="grid2">${date}${per}</div><div class="grid2"><label class="f">수량 (통)<input class="in" name="cans" inputmode="numeric" data-selall="1" value="${h(b.cans||'')}" required></label><label class="f">금액 (원 · 선택)<input class="in" name="price" inputmode="numeric" data-comma="1" data-selall="1" value="${b.price?Number(b.price).toLocaleString('ko-KR'):''}"></label></div>${note}`;
+  if(k==='use')return `<div class="grid2">${date}${per}</div><label class="f">개봉 수량 (통)<input class="in" name="cans" inputmode="numeric" data-selall="1" value="${h(b.cans||'')}" required></label><label class="check"><input type="checkbox" name="toPrac"${b.toPrac!==false?' checked':''}> 쓴 공은 연습구로 (통 × 구 수만큼 연습구 추가)</label>${note}`;
+  return `${date}<div class="grid2"><label class="f">변경<select class="in" name="sign"><option value="-"${+b.n<0||b.n==null?' selected':''}>빼기 (버림 · 분실)</option><option value="+"${+b.n>0?' selected':''}>더하기 (기증 · 발견)</option></select></label><label class="f">개수<input class="in" name="n" inputmode="numeric" data-selall="1" value="${b.n?Math.abs(b.n):''}" required></label></div>${note}`}
+const ballFromFd=(k,fd)=>{const o={kind:k,date:fd.date,note:(fd.note||'').trim()};if(k==='prac'){o.n=(fd.sign==='+'?1:-1)*numOf(fd.n)}else{o.per=+fd.per;o.cans=numOf(fd.cans);if(k==='buy')o.price=numOf(fd.price);else o.toPrac=!!fd.toPrac}return o};
+const BALL_T={buy:'공 구매',use:'공 사용',prac:'연습구 조정'};
+ACT['ball-add']=t=>{const k=t.dataset.k;openModal(BALL_T[k],ballForm(k),async fd=>{const o=ballFromFd(k,fd);if(k!=='prac'&&!o.cans){toast('수량 입력 필요');throw new Error('keep')}if(k==='prac'&&!o.n){toast('개수 입력 필요');throw new Error('keep')}
+  await put('balls',uid(),{...o,at:Date.now()});toast(`${BALL_T[k]} 기록`);render()})};
+ACT['ball-edit']=t=>{const b=(S.balls||[]).find(x=>x.id===t.dataset.id);if(!b)return;
+  openModal(BALL_T[b.kind]+' 수정',ballForm(b.kind,b),async fd=>{const {id,...rest}=b;await put('balls',b.id,{...rest,...ballFromFd(b.kind,fd)});toast('수정 완료');render()},`<button type="button" class="btn danger" data-act="ball-del" data-id="${b.id}">삭제</button>`)};
+ACT['ball-del']=async t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 삭제';return}await del('balls',t.dataset.id);closeModal();toast('기록 삭제');render()};
 function viewMoney(){
   const Y=monY,M=monM;const cfg=duesCfg();const fee=Number(cfg.fee)||0;const ppl=duesPeople(Y);
   // ----- dues: month -----
@@ -2224,8 +2257,8 @@ function viewMoney(){
   const quarter=`<section class="panel" style="margin-top:16px"><div class="panel-h"><div><h2>정기대관 코트 정산</h2><div class="small muted">${h(r.name)} · 분기별 청구${rfee?` · 회당 ${won(rfee)}`:' · 회당 대관료는 코트 탭 대관 정보에서 입력'}</div></div><a href="#courts">코트 탭</a></div>
     <div class="xwrap"><table class="tbl ytbl"><thead><tr><th>분기</th><th>청구 회차</th><th>차감 (대체일 미사용)</th><th>대기 (예정·대체일 미정)</th><th>청구 금액</th><th>예상 금액</th><th>납부</th></tr></thead><tbody>${[0,1,2,3].map(q=>{const ms=by.slice(q*3,q*3+3);const t=k=>ms.reduce((n,o)=>n+o[k],0);return `<tr><td>${q+1}분기 <span class="muted small">${q*3+1}–${q*3+3}월</span></td><td class="num">${t('charge')}</td><td class="num${t('deduct')?'':' muted'}">${t('deduct')||'–'}</td><td class="num${t('pending')?'':' muted'}">${t('pending')||'–'}</td><td class="num">${rfee?won(t('charge')*rfee):'–'}</td><td class="num muted">${rfee?won((t('charge')+t('pending'))*rfee):'–'}</td><td>${(()=>{const pd=S.ledger.find(x=>x.rentQ===`${Y}-${q+1}`);if(pd)return `<span class="chip ok">납부 ${won(pd.amount)}</span>`;const amt=t('charge')*rfee;return RO||!amt?'<span class="muted small">–</span>':`<button class="btn sm" data-act="rent-pay" data-y="${Y}" data-q="${q+1}" data-amt="${amt}">납부 기록</button>`})()}</td></tr>`}).join('')}</tbody></table></div>
     <p class="small muted" style="margin:8px 0 0;line-height:1.6">청구: 사용 · 우천 취소 · 클럽 사정 취소(행사 대체·기타) · 미진행 · 코트 측 취소 후 대체일 사용. 차감: 코트 측 취소 후 대체일 미사용(비용 없음). 대기: 예정 회차 및 대체일 미정·예정 회차</p></section>`;
-  return `<div class="page-head"><div><h1>정산</h1><p>월 회비 납부 · 행사 비용 · 정기대관 분기 정산</p></div><div class="row"><button class="btn sm" data-act="mon-y" data-v="-1" aria-label="이전 해">‹</button><b class="num" style="font-size:16px">${Y}년</b><button class="btn sm" data-act="mon-y" data-v="1" aria-label="다음 해">›</button></div></div>
-  ${bankHtml(Y)}${dues}${ledger}${quarter}`;
+  return `<div class="page-head"><div><h1>정산</h1><p>월 회비 납부 · 행사 비용 · 정기대관 분기 정산 · 공 재고</p></div><div class="row"><button class="btn sm" data-act="mon-y" data-v="-1" aria-label="이전 해">‹</button><b class="num" style="font-size:16px">${Y}년</b><button class="btn sm" data-act="mon-y" data-v="1" aria-label="다음 해">›</button></div></div>
+  ${bankHtml(Y)}${dues}${ledger}${quarter}${ballsHtml(Y)}`;
 }
 ACT['mon-y']=t=>{monY+=+t.dataset.v;render()};
 ACT['mon-m']=t=>{monM=+t.dataset.v;render();const l=$('.due-top');l&&l.scrollIntoView({behavior:'smooth',block:'start'})};
