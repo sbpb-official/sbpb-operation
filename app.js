@@ -59,7 +59,10 @@ const NEAR=['고양시','과천시','광명시','광주시','구리시','군포�
 const EV_TYPES=['정기모임','내부대회','교류전','MT','개인대회','기타'];
 const EV_STATUS=['기획중','확정','완료','취소'];
 const REG={weekday:6,start:'09:00',end:'12:00',gameStart:'09:30',place:'서울시립대',title:'SBPB 정기모임'};
-function nextRegNow(){const n=new Date();const t=today0();if(n.getDay()===REG.weekday&&n.getHours()*60+n.getMinutes()>=REG.end.split(':').reduce((h,m)=>h*60+ +m,0))t.setDate(t.getDate()+1);return nextReg(t)}
+/* 다음 정기모임: 이번 주 토요일(종료 시각이 지나면 다음 주) · 코트 측 취소의 대체일 중 가장 가까운 날 */
+const mkDates=()=>{try{return (S.regstat||[]).filter(r=>isCourtCx(r)&&r.mkDate&&!r.mkUnused).map(r=>({d:r.mkDate,rs:r}))}catch(e){return []}};
+function nextRegNow(){const n=new Date();const t=today0();const endM=REG.end.split(':').reduce((h,m)=>h*60+ +m,0),nowM=n.getHours()*60+n.getMinutes();if(n.getDay()===REG.weekday&&nowM>=endM)t.setDate(t.getDate()+1);let best=nextReg(t);
+  const td=ymd(today0());mkDates().forEach(({d})=>{const passed=d<td||(d===td&&nowM>=endM);if(!passed&&d<best)best=d});return best}
 function nextReg(from=today0()){const d=new Date(from);while(d.getDay()!==REG.weekday)d.setDate(d.getDate()+1);return ymd(d)}
 const NOTE_KIND={yellow:'회의',pink:'할 일',sky:'아이디어',green:'결정'};
 /* 전화번호: 숫자만 남겨 010-1234-5678 형태로 · 누르면 전화 연결 */
@@ -112,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
+    {k:'mkday',t:'정기모임 취소일 · 대체일: 상단 카드는 사유가 행사 대체일 때만 행사 표시 · 코트 측 취소의 대체일은 정기모임으로 안 잡힘 → 취소된 날 행사가 있으면 그날 하루 행사 카드(정기모임 취소 사유 · 대체일 함께), 대체일은 다음 정기모임 · 대진표 기본 날짜 · 캘린더 정기모임 표시 · 출석률 분모에 포함 (취소 통계 · 대관 정산은 그대로)'},
     {k:'trlabel',t:'토너먼트 대진표 라운드 이름: 경기마다 연결선 옆에 반복 표시 → 층마다 대진표 왼쪽 칸에 한 번만 (가로로 넘겨도 고정)'},
     {k:'trtree',t:'토너먼트 본선: 라운드별 매치 카드(VS) + 꺾은선 → 대진표 나무 그림 (첫 경기 선수 칸이 맨 아래 한 줄 · 사람이 많으면 칸 겹침 없이 옆으로 밀어서 보기, 같은 경기에서 맞붙는 두 칸은 같은 높이에 나란히 · 부전승 선수도 상대 옆에 표시, 부전승 선수는 1차전 줄에도 칸을 두고 올라간 라운드 칸까지 "부전승" 글자가 붙은 곧은 선으로 연결, 두 칸을 꺾은선으로 묶어 다음 경기 칸 · 우승 칸으로 연결, 이긴 쪽 선 초록, 라운드 이름은 갈림 지점 옆에 표시, 부전승은 긴 선으로 표시) · "부전승 지정" 버튼: 라운드 이름 옆 → 본선 제목 줄 ("2차전 부전승 지정")'},
     {k:'trvs',t:'토너먼트 본선 매치 카드: 두 선수 위아래 배치 · 라운드 사이 연결선 없음 → 두 선수 사이 VS 표시, 칸 폭이 충분한 라운드(2차전 · 결승 등)는 두 선수 좌우 배치 · 점수는 VS 쪽에 표시, 이전 경기에서 다음 경기 진출 칸까지 꺾은선 연결 (결과가 나온 경기는 초록 선, 부전승 진출은 대진표 가장자리로 우회)'},
@@ -767,6 +771,7 @@ function viewHome(){
   </div>`;
   // calendar
   const openSet=new Set(openings(400).map(o=>ymd(o.date)));
+  const mkSetC=new Set(mkDates().map(x=>x.d));
   const bdMap={};S.members.filter(x=>x.birth&&ST(x)==='활동').forEach(x=>{const k=bdayIn(x.birth,calYear);(bdMap[k]=bdMap[k]||[]).push(x)});
   let months='';
   for(let m=0;m<12;m++){
@@ -776,7 +781,7 @@ function viewHome(){
     for(let d=1;d<=days;d++){
       const ds=`${calYear}-${pad(m+1)}-${pad(d)}`;const evs=eventsOn(ds);
       const live=evs.filter(e=>e.status!=='취소');const cls=[evs.length?'ev t-'+(live[0]||evs[0]).type+(live.length?'':' cx'):'',openSet.has(ds)?'open':'',ds===ymd(t)?'today':'',ds===calSel?'sel':'',new Date(calYear,m,d).getDay()===0&&!evs.length?'sun':''].filter(Boolean).join(' ');
-      const rs=regStat(ds);const isReg=new Date(calYear,m,d).getDay()===REG.weekday&&!evs.length&&!(rs&&rs.status==='삭제');const regCx=isReg&&rs&&rs.status==='취소';const bds=bdMap[ds];
+      const rs=regStat(ds);const isReg=(new Date(calYear,m,d).getDay()===REG.weekday||mkSetC.has(ds))&&!evs.length&&!(rs&&rs.status==='삭제');const regCx=isReg&&rs&&rs.status==='취소';const bds=bdMap[ds];
       cells+=`<button class="${cls}${isReg?(regCx?' regx':' reg'):(!evs.length&&mkOn(ds)?' reg':'')}${bds?' bd':''}" data-act="cal-day" data-d="${ds}" aria-label="${m+1}월 ${d}일${evs.length?' 행사 '+evs.length+'건':''}${bds?' 생일 '+bds.length+'명':''}">${d}</button>`;
     }
     months+=`<div class="mon${calYear===t.getFullYear()&&m===t.getMonth()?' cur':''}"><h4>${m+1}월</h4><div class="mgrid">${cells}</div></div>`;
@@ -812,9 +817,12 @@ function viewHome(){
     <div class="small muted" style="margin-top:12px;margin-bottom:6px">거주지 상위</div><div class="chips">${topA.map(([k,v])=>`<span class="chip court">${h(k)} ${v}</span>`).join('')}</div>
     ${(()=>{const ub=act.filter(m=>m.birth).map(m=>({m,d:nextBday(m.birth)})).filter(x=>diffDays(x.d)<=30).sort((a,b)=>a.d.localeCompare(b.d));return ub.length?`<div class="small muted" style="margin-top:12px;margin-bottom:6px">30일 내 생일</div><div class="list">${ub.map(x=>`<div class="li"><span class="dot" style="background:var(--t-bd)"></span><div class="grow"><div class="ttl bd-row">${h(x.m.name)}<span class="bd-date">${fmtD(x.d)}</span></div></div><span class="dday">${ddayLabel(x.d)}</span></div>`).join('')}</div>`:''})()}`;
   }else mo=`<div class="empty"><b>등록된 회원 없음</b>회원 등록 시 성별·레벨·구력·거주지 분포 표시<div class="row"><a class="btn sm" href="#members">회원 관리</a></div></div>`;
-  const nr=nextRegNow(),nrs=regStat(nr),nrx=nrs&&nrs.status==='취소',dd=diffDays(nr);const nrEv=nrx&&nrs.reason==='행사 대체'?S.events.find(e=>e.date===nr&&e.status!=='취소'):null;
+  /* 취소된 토요일에 행사가 있으면 그날 하루 동안 행사 카드 · 대체일은 정기모임으로 */
+  const td0=ymd(today0()),liveEv=ds=>S.events.find(e=>e.date===ds&&e.status!=='취소'&&e.type!=='개인대회');const trs=regStat(td0);
+  let nr=nextRegNow();if(trs&&trs.status==='취소'&&liveEv(td0))nr=td0;
+  const nrs=regStat(nr),nrx=nrs&&nrs.status==='취소',dd=diffDays(nr);const nrEv=nrx?liveEv(nr):null;const nrMk=mkDates().find(x=>x.d===nr);
   return `<div class="page-head dash-head"><div class="dh-main"><div class="dh-today"><span>${t.getFullYear()}년 ${t.getMonth()+1}월 ${t.getDate()}일 ${WD[t.getDay()]}요일</span><b class="num" id="clock">${clockText()}</b></div>
-    ${nrEv?`<div class="dh-next rep t-${h(nrEv.type||'기타')}" data-act="ev-open" data-id="${nrEv.id}" role="button" tabindex="0"><span class="dh-l">다음 모임 · 행사 대체</span><div class="dh-v"><b>${fmtD(nr)}</b><span>${h(nrEv.title)}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${h(nrEv.place||'')}${nrEv.place?' · ':''}정기모임 대신 행사 진행</span></div>`:`<div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div>`}</div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextRegNow()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>
+    ${nrEv?`<div class="dh-next rep t-${h(nrEv.type||'기타')}" data-act="ev-open" data-id="${nrEv.id}" role="button" tabindex="0"><span class="dh-l">다음 모임 · ${nrs.reason==='행사 대체'?'행사 대체':'행사'}</span><div class="dh-v"><b>${fmtD(nr)}</b><span>${h(nrEv.title)}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${h(nrEv.place||'')}${nrEv.place?' · ':''}${nrs.reason==='행사 대체'?'정기모임 대신 행사 진행':`정기모임은 ${h(nrs.reason)}${isCourtCx(nrs)&&nrs.mkDate&&!nrs.mkUnused?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`}</span></div>`:`<div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrMk?` · 대체일 (${fmtD(nrMk.rs.id)} 코트 측 취소분)`:''}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div>`}</div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextRegNow()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>
   ${kp}<div class="dash">${cal}<div class="side">
   <section class="panel"><div class="panel-h"><h2>다가오는 행사</h2><a href="#events">전체 보기</a></div><div class="list">${upHtml}</div></section>
   ${(()=>{const ts=S.events.filter(e=>e.type==='개인대회'&&e.date);if(!ts.length)return '';const up2=ts.filter(e=>diffDays(e.date)>=0).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);const past=ts.filter(e=>diffDays(e.date)<0&&e.result&&e.result!=='대기').sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
@@ -1069,6 +1077,7 @@ function meetDates(){const out=new Set();const n=new Date();const endMin=REG.end
   for(;;d.setDate(d.getDate()+7)){const ds=ymd(d);const past=d<today0()||(ds===ymd(today0())&&n.getHours()*60+n.getMinutes()>=endMin);if(!past)break;
     const rs=regStat(ds);if(rs&&(rs.status==='취소'||rs.status==='삭제'))continue;out.add(ds)}
   pastBrackets().forEach(b=>out.add(b.cfg.date));
+  mkDates().forEach(({d})=>{if(d<ymd(today0()))out.add(d)});
   (S.attend||[]).forEach(x=>{const rs=regStat(x.id);if(x.id<=ymd(today0())&&!(rs&&(rs.status==='취소'||rs.status==='삭제')))out.add(x.id)});return [...out].sort()}
 function drawStats(){const B=pastBrackets();const pair={},opp={},att={},games={},last={};const add=(o,k,j,ds)=>{(o[k]=o[k]||{})[j]=(o[k][j]||0)+1};
   B.forEach(b=>{const ds=b.cfg.date;const seen=new Set();
@@ -1502,7 +1511,7 @@ document.addEventListener('change',e=>{
   if(t.dataset.cfg==='mode'||t.dataset.cfg==='start'||t.dataset.cfg==='end'||t.dataset.cfg==='mins')render();
 });
 ACT['court-n']=t=>{const v=+t.dataset.v;if(v>0&&cfg.courtList.length<6)cfg.courtList.push({name:`코트 ${cfg.courtList.length+1}`,pref:''});if(v<0&&cfg.courtList.length>1)cfg.courtList.pop();saveCfg();render()};
-ACT['reg-defaults']=()=>{delete cfg.eventId;delete cfg.matchId;Object.assign(cfg,{title:REG.title,place:REG.place,start:REG.gameStart,end:REG.end,mins:30,courtList:defCourts(),date:cfg.date&&diffDays(cfg.date)>=0&&parseYmd(cfg.date).getDay()===REG.weekday&&cfg.date>=nextRegNow()?cfg.date:nextRegNow()});saveCfg();render()};
+ACT['reg-defaults']=()=>{delete cfg.eventId;delete cfg.matchId;Object.assign(cfg,{title:REG.title,place:REG.place,start:REG.gameStart,end:REG.end,mins:30,courtList:defCourts(),date:cfg.date&&diffDays(cfg.date)>=0&&(parseYmd(cfg.date).getDay()===REG.weekday||mkDates().some(x=>x.d===cfg.date))&&cfg.date>=nextRegNow()?cfg.date:nextRegNow()});saveCfg();render()};
 ACT['reg-draw']=t=>{closeDayPop();Object.assign(cfg,{title:REG.title,place:REG.place,start:REG.gameStart,end:REG.end,date:t.dataset.d});saveCfg();location.hash='#draw'};
 ACT['pick-all']=()=>{cfg.picked=[...new Set([...cfg.picked,...activeMembers().map(m=>m.id)])];saveCfg();render()};
 ACT['pick-none']=()=>{cfg.picked=[];saveCfg();render()};
