@@ -1085,3 +1085,4 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .top-fab{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:15;width:44px;height:44px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.14)}
 .top-fab{opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .35s ease,transform .35s ease}.top-fab.show{opacity:1;transform:none;pointer-events:auto}.top-fab:hover{color:var(--ink);border-color:var(--muted)}
 .top-fab svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ev-back{margin:0 0 12px}.ev-back .btn{padding-left:4px;min-height:40px;font-weight:600}

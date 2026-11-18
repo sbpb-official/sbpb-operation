@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
+    {k:'evmobile',t:'휴대폰 이벤트 페이지: 행사를 누르면 목록 아래쪽 상세만 바뀌어 반응이 안 보임 → 이벤트 페이지 안에서 상세 화면으로 전체 전환, "← 행사 목록" · 휴대폰 뒤로 가기로 목록 복귀(보던 위치 유지), 상세 주소가 따로 있어 새로고침해도 유지'},
     {k:'topfade',t:'맨 위로 버튼: 스크롤에 따라 갑자기 나타나고 사라짐 → 서서히 나타나고 흐려지며 사라짐'},
     {k:'fabsize',t:'화면 모드 · 맨 위로 버튼 크기: 38px → 44px (누르기 쉬운 크기)'},
     {k:'topfab',t:'맨 위로 이동: 없음 → 모든 탭 오른쪽 아래 둥근 ^ 버튼 (화면을 어느 정도 내리면 표시, 누르면 최상단으로)'},
@@ -687,12 +688,13 @@ function priorityMembers(c){
 }
 
 /* ---------- render core ---------- */
-let route='home';
+let route='home';let evRoute=null;let evListY=0;let evFromList=false;
+const evMobile=()=>window.innerWidth<=1000;
 function render(){
   S.events.forEach(e=>{if(e.result==='예선 탈락')e.result='예선';if(e.cancelReason==='인원 부족')e.cancelReason='기타'});S.regstat.forEach(r=>{if(r.reason==='인원 부족')r.reason='기타'});
   const v=$('#view');const ae=document.activeElement;let keep=null;
   if(ae&&ae.id&&v.contains(ae)){let s=null,e2=null;try{s=ae.selectionStart;e2=ae.selectionEnd}catch(err){}keep={id:ae.id,s,e:e2,top:ae.scrollTop,val:ae.dataset&&ae.dataset.led?ae.value:undefined}}
-  const r=(location.hash||'#home').slice(1);route=VIEWS[r]?r:'home';
+  const hp=(location.hash||'#home').slice(1).split('/');const r=hp[0];route=VIEWS[r]?r:'home';evRoute=route==='events'&&hp[1]?decodeURIComponent(hp[1]):null;if(evRoute)evSel=evRoute;
   document.querySelectorAll('#tabs a').forEach(a=>a.setAttribute('aria-current',a.getAttribute('href')==='#'+route?'page':'false'));
   let banner='';
   if(mode==='ro')banner=PUB.snap?`<div class="banner"><b>보기 전용 화면</b> · ${new Date(PUB.snap.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})} 기준 공개본. ${WEB?'수정은 운영진 로그인 후 가능':'수정은 Claude 로그인 운영진만 가능'}</div>`:`<div class="banner"><b>공개된 데이터 없음.</b> 운영진의 '공개본 갱신' 이후 로그인 없이 비밀번호로 열람 가능</div>`;
@@ -707,7 +709,7 @@ function render(){
   bkLabels(v);
   const rb=$('#renew-body');if(rb)rb.innerHTML=renewBody();
 }
-window.addEventListener('hashchange',()=>{render();window.scrollTo(0,0)});
+window.addEventListener('hashchange',()=>{const back=route==='events'&&evRoute&&/^#events\/?$/.test(location.hash||'');render();window.scrollTo(0,back&&evMobile()?evListY:0)});
 
 /* ---------- modal ---------- */
 let modalSubmit=null;
@@ -1679,10 +1681,13 @@ const evFromFd=(fd,old={})=>{
   if(fd.type==='개인대회'){const ids=pre=>Object.keys(fd).filter(k=>k.startsWith(pre)&&fd[k]===true).map(k=>k.slice(pre.length));
     Object.assign(o,{division:fd.division.trim(),category:fd.category,host:fd.host.trim(),cond:fd.cond.trim(),entrants:ids('ent_'),partners:(()=>{try{return JSON.parse(fd.partners||'[]')}catch(e){return []}})(),partner:'',result:fd.result,resultNote:fd.resultNote.trim(),cheer:ids('ch_').filter(x=>!ids('ent_').includes(x))})}
   return o};
-ACT['ev-new']=t=>{const stay=!!t.dataset.stay;closeDayPop();openModal(t.dataset.type==='개인대회'?'대회 출전 기록':'행사 추가',evForm({date:t.dataset.d||'',status:t.dataset.type==='개인대회'?'확정':'기획중',type:t.dataset.type||''}),async fd=>{const id=uid();await put('events',id,{...evFromFd(fd),createdAt:Date.now()});evSel=id;if(stay){toast('일정 추가 완료');reopenPop()}else if(route!=='events')location.hash='#events'})};
+ACT['ev-new']=t=>{const stay=!!t.dataset.stay;closeDayPop();openModal(t.dataset.type==='개인대회'?'대회 출전 기록':'행사 추가',evForm({date:t.dataset.d||'',status:t.dataset.type==='개인대회'?'확정':'기획중',type:t.dataset.type||''}),async fd=>{const id=uid();await put('events',id,{...evFromFd(fd),createdAt:Date.now()});evSel=id;if(stay){toast('일정 추가 완료');reopenPop()}else location.hash='#events/'+encodeURIComponent(id)})};
 ACT['ev-edit']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;openModal('행사 수정',evForm(ev),fd=>put('events',ev.id,evFromFd(fd,ev)),`<button type="button" class="btn danger" data-act="ev-del">삭제</button>`)};
-ACT['ev-del']=async t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='메모 포함 삭제. 한 번 더 누르면 삭제';return}const id=evSel;closeModal();for(const n of S.notes.filter(n=>n.eventId===id))await del('notes',n.id);await del('events',id);evSel=null};
-ACT['ev-open']=t=>{closeDayPop();if(route==='events'&&evSel===t.dataset.id&&!t.closest('#daypop')){setMemoOpen(!memoOpen);return}evSel=t.dataset.id;if(route!=='events')location.hash='#events';else{render();if(window.innerWidth<=1000){const d=$('#evdetail');d&&d.scrollIntoView({behavior:'smooth',block:'start'})}}};
+ACT['ev-del']=async t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='메모 포함 삭제. 한 번 더 누르면 삭제';return}const id=evSel;closeModal();for(const n of S.notes.filter(n=>n.eventId===id))await del('notes',n.id);await del('events',id);evSel=null;if(evRoute)location.hash='#events'};
+/* 행사 열기: 휴대폰은 이벤트 페이지 안에서 상세 화면으로 전체 전환 (#events/행사id), PC는 목록 옆 상세 */
+ACT['ev-open']=t=>{closeDayPop();const id=t.dataset.id;if(route==='events'&&!evMobile()&&evSel===id&&!t.closest('#daypop')){setMemoOpen(!memoOpen);return}
+  if(route==='events'&&!evRoute){evListY=window.scrollY;evFromList=true}else evFromList=false;evSel=id;const h2='#events/'+encodeURIComponent(id);if(location.hash!==h2)location.hash=h2;else render()};
+ACT['ev-back']=()=>{if(evFromList){evFromList=false;history.back()}else location.hash='#events'};
 ACT['cheer']=async t=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const id=t.dataset.id;const c=new Set(ev.cheer||[]);c.has(id)?c.delete(id):c.add(id);try{await put('events',ev.id,{...ev,cheer:[...c]})}catch(e){}};
 const nameOf=id=>memberById(id)?.name||'(삭제된 회원)';
 ACT['ev-filter']=t=>{evFilter=t.dataset.v;evPastMore=false;render()};
@@ -2168,7 +2173,10 @@ function viewEvents(){
       </details>
     </section>`;
   }
-  return `<div class="page-head"><div><h1>이벤트</h1><p>내부대회 · 교류전 · MT 일정과 기획 메모, 멤버 개인 대회 출전 기록</p></div><div class="row"><button class="btn pri" data-act="ev-new">행사 추가</button></div></div><div class="evwrap">${left}<div style="min-width:0">${right}</div></div>`;
+  const head=`<div class="page-head"><div><h1>이벤트</h1><p>내부대회 · 교류전 · MT 일정과 기획 메모, 멤버 개인 대회 출전 기록</p></div><div class="row"><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>`;
+  /* 휴대폰: 목록 화면과 상세 화면을 이벤트 페이지 안에서 전환 */
+  if(evMobile()){if(evRoute&&ev)return `<div class="ev-back"><button type="button" class="btn ghost" data-act="ev-back">← 행사 목록</button></div>${right}`;return head+left}
+  return `${head}<div class="evwrap">${left}<div style="min-width:0">${right}</div></div>`;
 }
 document.addEventListener('input',e=>{if(e.target.dataset.notedraft)lsSet('sbpb-notedraft',e.target.value)});
 
