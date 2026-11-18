@@ -1,0 +1,40 @@
+rules_version = '2';
+// SBPB 운영실 — Firestore 보안 규칙
+// Firebase 콘솔 > Firestore Database > 규칙 탭에 그대로 붙여넣고 "게시"
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function email() {
+      return request.auth.token.email.lower();
+    }
+    // 운영진 공용 로그인 (사이트 비밀번호 = 이 계정의 비밀번호, Firebase 서버에서 확인)
+    function isStaff() {
+      return request.auth != null && request.auth.token.email == 'staff@sbpb-official.github.io';
+    }
+    // 공용 비밀번호 로그인 + 대표 구글 계정 + 앱의 '운영진 계정'에 등록된 이메일
+    function isAdmin() {
+      return isStaff() || signedIn() && (
+        email() == 'sbpb.official@gmail.com' ||
+        (exists(/databases/$(database)/documents/config/admins) &&
+         email() in get(/databases/$(database)/documents/config/admins).data.emails)
+      );
+    }
+
+    // 비밀번호로 암호화된 공개본: 누구나 읽기, 운영진만 쓰기
+    match /public/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    // 운영진 목록: 로그인한 사람만 읽기(권한 확인용), 운영진만 수정
+    match /config/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    // 그 밖의 모든 데이터(회원·대진표·회비·정산 등): 운영진만
+    match /{col}/{docId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
