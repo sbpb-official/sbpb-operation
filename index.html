@@ -1061,6 +1061,17 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 :root[data-theme="dark"] .md b{color:#1B1F1C}
 .mcard2{gap:0}
 
+.eg-team{display:flex;flex-direction:column;gap:4px}.eg-team.win{outline:2px solid var(--court)}.eg-tn{display:flex;align-items:center;font-size:15px}.eg-ts{font-size:15px}
+.m-pick{display:flex;flex-wrap:wrap;gap:8px}.m-pick button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 14px;min-height:40px;font:inherit;font-size:14px;cursor:pointer}
+.m-pick button[aria-pressed="true"]{background:color-mix(in srgb,var(--court) 18%,var(--surface));border-color:var(--court);color:var(--court);font-weight:700}
+.mv-wrap{max-height:70vh;overflow:auto}
+.mv-sheet .poster{width:auto;padding:0;background:none}.mv-sheet .p-head .p-logo{height:44px}.mv-head .p-logo{height:62px}
+.mv-sheet{--surface:#FBFBF9;--surface-2:#EFEFEB;--ink:#1F2421;--muted:#6B716D;--line:#DADDD8;--court:#1D5A3B;--gold:#B8901C;--silver:#7F8A92;--bronze:#A86A3D;background:var(--surface);color:var(--ink);display:flex;flex-direction:column;gap:20px}
+.mv-sheet .md b{color:#fff}
+.mv-head{display:flex;align-items:center;gap:12px}.mv-sec{display:flex;flex-direction:column;gap:12px}.mv-t{margin:0;font-size:16px}
+.mv-sheet .btn,.mv-sheet .lg-grip,.mv-sheet .eg-h .row{display:none}.mv-sheet .tr-side{pointer-events:none}
+.mv-sheet .poster .p-logo,.mv-sheet .poster .p-foot{display:none}.mv-sheet .poster .p-title{font-size:18px}
+
 </style>
 </head>
 <body>
@@ -1186,7 +1197,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=5a598ef996';
+const CUR_APP = 'app.js?v=c7e8eb523d';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1214,7 +1225,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=5a598ef996';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=c7e8eb523d';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
