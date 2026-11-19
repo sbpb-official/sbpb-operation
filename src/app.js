@@ -114,6 +114,8 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    화면·기능이 바뀌는 배포마다 맨 위에 항목 추가 (id는 겹치지 않게, 날짜순).
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
+  {id:'2026-11-19',v:'1.7',date:'2026-11-19',items:[
+    {k:'openlive',t:'코트 카드 예약 오픈: 오픈 시각이 지나면 바로 다음 달(D-30) 표시 → 일반 오픈은 당일 동안 D-DAY 유지, 주민 우선은 일반 오픈 전까지 "예약 중"(D-DAY · D+1)으로 유지하고 일반 오픈 시각과 함께 표시, 코트 순서도 같은 기준'}]},
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
     {k:'sttabs',t:'대진표 탭 대진 통계: 대진 히스토리 상자와 붙어 있음 · 출석률 · 페어 통계가 세로로 이어짐 → 상자 사이 16px, 탭(정기모임 출석률 · 페어 통계)으로 하나씩 보기, 통계 상자 전체 접기 · 펼치기'},
     {k:'evmobile',t:'휴대폰 이벤트 페이지: 행사를 누르면 목록 아래쪽 상세만 바뀌어 반응이 안 보임 → 이벤트 페이지 안에서 상세 화면으로 전체 전환, "← 행사 목록" · 휴대폰 뒤로 가기로 목록 복귀(보던 위치 유지), 상세 주소가 따로 있어 새로고침해도 유지'},
@@ -661,6 +663,17 @@ function nextOpen(rule,from=new Date()){
   if(rule.type==='manual'&&rule.date){const d=parseYmd(rule.date);d.setHours(hh,mi);return d}
   return null;
 }
+/* 가장 최근(지금 이전) 오픈 시각 */
+function prevOpen(rule,now=new Date()){if(!rule||!rule.type||rule.type==='rolling')return null;let best=null;
+  if(rule.type==='manual'){const d=nextOpen(rule);return d&&d<=now?d:null}
+  const from=new Date(now);from.setMonth(from.getMonth()-(rule.type==='monthly'?2:0));if(rule.type==='weekly')from.setDate(from.getDate()-8);from.setHours(0,0,0,0);
+  for(let i=0,d=nextOpen(rule,from);d&&d<=now&&i<12;i++,d=nextOpen(rule,new Date(d.getTime()+60000)))best=d;return best}
+/* 코트 카드에 보일 오픈: 일반은 오픈 당일 하루 동안 D-DAY 유지, 주민 우선은 그 다음 일반 오픈 전까지(예약 기간) 유지 */
+function shownOpen(c,kind){const now=new Date();const rule=kind==='res'?c.resRule:c.genRule;if(!rule||!rule.type)return {d:null};if(rule.type==='rolling')return {d:null};
+  const p=prevOpen(rule,now);const same=p&&ymd(p)===ymd(today0());
+  if(kind==='res'&&p){const g=nextOpen(c.genRule,p);if(same||(g&&g>now))return {d:p,live:true,until:g}}
+  if(kind==='gen'&&same)return {d:p,live:true};
+  return {d:nextOpen(rule,now)}}
 function ruleText(rule){
   if(!rule||!rule.type)return '미입력';
   const t=rule.time?` ${rule.time}`:'';
@@ -2245,17 +2258,18 @@ let courtArea='';
 function viewCourts(){
   const ops=openings(45);
   const areas=[...new Set(S.courts.map(c=>c.district).filter(Boolean))].sort();
-  const list=S.courts.filter(c=>!courtArea||c.district===courtArea).map(c=>({c,n:[c.resident?nextOpen(c.resRule):null,nextOpen(c.genRule)].filter(Boolean).sort((a,b)=>a-b)[0]})).sort((a,b)=>{const k=o=>o.n?+o.n:(o.c.genRule&&o.c.genRule.type==='rolling'?9e15:Infinity);return (isSmash(a.c)-isSmash(b.c))||k(a)-k(b)||(a.c.name||'').localeCompare(b.c.name||'','ko')});
+  const list=S.courts.filter(c=>!courtArea||c.district===courtArea).map(c=>({c,n:[c.resident?shownOpen(c,'res').d:null,shownOpen(c,'gen').d].filter(Boolean).sort((a,b)=>a-b)[0]})).sort((a,b)=>{const k=o=>o.n?+o.n:(o.c.genRule&&o.c.genRule.type==='rolling'?9e15:Infinity);return (isSmash(a.c)-isSmash(b.c))||k(a)-k(b)||(a.c.name||'').localeCompare(b.c.name||'','ko')});
   const tl=ops.length?`<div class="timeline">${ops.slice(0,12).map(o=>`<div class="tl ${o.kind}"><div class="dday">${ddayLabel(ymd(o.date))}</div><div style="font-weight:600">${h(o.court.name)}</div><div class="small muted">${o.date.getMonth()+1}/${o.date.getDate()} (${WD[o.date.getDay()]}) ${pad(o.date.getHours())}:${pad(o.date.getMinutes())}</div><div style="margin-top:4px">${o.kind==='res'?`<span class="chip warn">주민 우선 · ${priorityMembers(o.court).length}명 가능</span>`:'<span class="chip court">일반 오픈</span>'}</div></div>`).join('')}</div>`:'';
   const card=({c})=>{
-    const g=nextOpen(c.genRule),r=c.resident?nextOpen(c.resRule):null;
+    const gS=shownOpen(c,'gen'),rS=c.resident?shownOpen(c,'res'):{d:null};const g=gS.d,r=rS.d;
     const pm=priorityMembers(c);
     const fd=d=>`${d.getMonth()+1}.${d.getDate()} (${WD[d.getDay()]})`;
     const ob=(l,d,rule)=>{const rc=l.startsWith('주민')?' res':'';if(rule&&rule.type==='rolling'){const n=Number(rule.days||0);const [hh,mi]=(rule.time||'00:00').split(':').map(Number);const now=new Date();const opened=now.getHours()*60+now.getMinutes()>=hh*60+mi;
         const upto=today0();upto.setDate(upto.getDate()+n-(opened?0:1));const nx=today0();nx.setDate(nx.getDate()+(opened?1:0));const nxUse=new Date(nx);nxUse.setDate(nxUse.getDate()+n);
         return `<div class="open-box roll${rc}"><div class="l">${l}</div><div class="big">이용일 <b>${n}일 전</b>${rule.time?` <b>${h(rule.time)}</b>`:''}</div><div class="d">지금 <b>${fd(upto)}</b> 이용분까지 예약 가능</div><div class="d">다음 오픈 ${opened?'내일':'오늘'} ${h(rule.time||'')} → ${fd(nxUse)} 이용분</div></div>`}
       if(!d)return `<div class="open-box${rc}"><div class="l">${l}</div><div class="big">미정</div><div class="d">${h(ruleText(rule))}</div></div>`;
-      const dd=diffDays(ymd(d));return `<div class="open-box${rc}"><div class="l">${l}</div><div class="big"><span class="dday">${ddayLabel(ymd(d))}</span><b>${fd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}</b></div><div class="d">${h(ruleText(rule))}</div></div>`};
+      const S2=rc?rS:gS;const live=S2&&S2.live&&S2.d===d;const dd=diffDays(ymd(d));
+      return `<div class="open-box${rc}${live?' live':''}"><div class="l">${l}${live?' · 예약 중':''}</div><div class="big"><span class="dday">${ddayLabel(ymd(d))}</span><b>${fd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}</b></div><div class="d">${live&&rc&&S2.until?`주민 우선 예약 기간 · 일반 오픈 ${fd(S2.until)} ${pad(S2.until.getHours())}:${pad(S2.until.getMinutes())} 전까지`:live?'오늘 오픈 · 내일부터 다음 오픈 표시':h(ruleText(rule))}</div>${live?`<div class="d">${h(ruleText(rule))}</div>`:''}</div>`};
     return `<article class="ccard"><div class="hd"><div><h3>${h(c.name)}</h3><div class="cbadges">${c.district?`<span class="cb cb-area">${h(c.district)}</span>`:''}${surfList(c.surface).map(s=>`<span class="cb ${({'인조잔디':'cb-grass','하드':'cb-hard','클레이':'cb-clay'})[s]||'cb-etc'}">${h(s)}</span>`).join('')}${c.indoor?'<span class="cb cb-io">실내</span>':''}${c.outdoor?'<span class="cb cb-io">실외</span>':''}${c.courts?`<span class="cb-n">${h(c.courts)}</span>`:''}${isSmash(c)?'<span class="cb cb-etc">스매시 앱 예약</span>':''}</div>${addrLink(c.address,c.name,c.map)}</div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
     ${c.genRule&&c.genRule.type?`<div class="opens">${c.resident?ob('주민 우선 오픈',r,c.resRule):''}${ob('일반 오픈',g,c.genRule)}</div>`:''}
     <dl class="kv"><dt>요금</dt><dd>${feeText(c)?h(feeText(c)):'-'}</dd>${c.memo?`<dt>메모</dt><dd style="white-space:pre-wrap">${h(c.memo)}</dd>`:''}</dl>
