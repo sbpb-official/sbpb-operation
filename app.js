@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-19',v:'1.7',date:'2026-11-19',items:[
+    {k:'askdel',t:'삭제 확인 창 통일 (회원 · 게스트 · 행사 · 대진표 · 코트 · 정산 등 저장 데이터 삭제 전 확인)'},
     {k:'court-jamsil',t:'코트 추가 (잠실유수지 테니스장, 송파구체육회 이용안내 기준 · 송파구민 · 재직자 우선 접수)'},
     {k:'migfix',t:'데이터 일괄 반영 오류 수정 (신규 코트 미등록)'},
     {k:'lighttone',t:'라이트 모드 배경 · 카드 · 입력칸 컬러 톤다운 (#FAFAF9>#EBECEA, 눈부심 완화 · 보조 글자 대비 유지)'},
@@ -910,18 +911,18 @@ function reopenPop(){closeDayPop();calSel=null;render()}
 function cancelForm(withMk){return `<div class="f">취소 사유<div class="cbchips">${CANCEL_REASONS.map((r,i)=>`<label><input type="radio" name="reason" value="${r}"${i===0?' checked':''}>${r}</label>`).join('')}</div></div><label class="f">메모 (선택)<input class="in" name="note" placeholder="예: 오전 강수량 많음, 코트 보수 공사"></label><p class="small muted" style="margin:0">취소 사유는 코트 탭의 정기대관 사용 현황에 기록</p>${withMk?`<fieldset class="fs" id="mk-fields" hidden><legend>대체일 (선택 · 추후 입력 가능)</legend>${mkFields({})}<p class="small muted" style="margin:0">정기모임과 같은 시간만큼 다른 날 이용. 대체일 사용 시 정상 청구, 대체일을 쓰지 못하면 해당 회차 비용 없음</p></fieldset>`:''}`}
 document.addEventListener('change',e=>{if(e.target.name==='reason'&&e.target.closest('#mform')){const f=$('#mk-fields');if(f)f.hidden=e.target.value!==COURT_CX}});
 ACT['reg-cancel']=(t,e)=>{e.stopPropagation();const ds=t.dataset.d;closeDayPop();openModal(`${fmtFull(ds)} 정기모임 취소`,cancelForm(true),async fd=>{const ct=fd.reason===COURT_CX;await put('regstat',ds,{date:ds,status:'취소',reason:fd.reason||'기타',note:(fd.note||'').trim(),mkDate:ct?(fd.mkDate||''):'',mkStart:ct?(fd.mkStart||REG.start):'',mkEnd:ct?(fd.mkEnd||REG.end):'',mkUnused:false,createdAt:Date.now()});toast('정기모임 취소 처리 완료');reopenPop(ds)},'','sm');const b=$('#mform button[type=submit]');if(b)b.textContent='취소 처리'};
-ACT['reg-del']=async(t,e)=>{e.stopPropagation();if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='정말 삭제';t.classList.add('on');setTimeout(()=>{if(document.body.contains(t)){delete t.dataset.confirm;t.textContent='삭제';t.classList.remove('on')}},4000);return}const ds=t.dataset.d;try{await put('regstat',ds,{date:ds,status:'삭제',reason:'일정 삭제',note:'다른 일정과 겹침',createdAt:Date.now()});toast('해당 날짜 정기모임 삭제 완료')}catch(err){return}reopenPop(ds)};
+ACT['reg-del']=async(t,e)=>{e.stopPropagation();const ds=t.dataset.d;if(!await askDel(ds.slice(5).replace('-','.')+' 정기모임','해당 날짜 정기모임 미진행 처리'))return;try{await put('regstat',ds,{date:ds,status:'삭제',reason:'일정 삭제',note:'다른 일정과 겹침',createdAt:Date.now()});toast('해당 날짜 정기모임 삭제 완료')}catch(err){return}reopenPop(ds)};
 ACT['reg-restore']=async(t,e)=>{e.stopPropagation();const ds=t.dataset.d;try{await del('regstat',ds);toast('정기모임 복구 완료')}catch(err){return}reopenPop()};
 ACT['reg-makeup']=(t,e)=>{e&&e.stopPropagation&&e.stopPropagation();const ds=t.dataset.d;const rs=regStat(ds);if(!rs)return;closeDayPop();
   openModal(`${fmtFull(ds)} 취소분 대체일`,`<p class="small muted" style="margin:0">코트 측 사정으로 취소된 정기모임을 같은 시간만큼 다른 날 이용</p>${mkFields(rs)}<label class="check"><input type="checkbox" name="mkUnused"${rs.mkUnused?' checked':''}> 대체일 미사용 (해당 회차 비용 없음)</label><p class="small muted" style="margin:0">대체일 사용 시 정상 청구, 미사용 시 분기 정산에서 차감</p>`,
     async fd=>{await put('regstat',ds,{...rs,mkDate:fd.mkDate||'',mkStart:fd.mkStart||REG.start,mkEnd:fd.mkEnd||REG.end,mkUnused:!!fd.mkUnused});toast(fd.mkDate?'대체일 저장 완료':'저장 완료');reopenPop()},
     rs.mkDate?`<button type="button" class="btn danger" data-act="mk-clear" data-d="${ds}">대체일 삭제</button>`:'')};
-ACT['mk-clear']=async t=>{const rs=regStat(t.dataset.d);if(!rs)return;try{await put('regstat',rs.id,{...rs,mkDate:'',mkUnused:false})}catch(e){return}closeModal();toast('대체일 삭제 완료');render()};
+ACT['mk-clear']=async t=>{const rs=regStat(t.dataset.d);if(!rs)return;if(!await askDel('대체일'))return;try{await put('regstat',rs.id,{...rs,mkDate:'',mkUnused:false})}catch(e){return}closeModal();toast('대체일 삭제 완료');render()};
 ACT['reg-mk-at']=(t,e)=>{const r=mkOn(t.dataset.d);if(r)ACT['reg-makeup']({dataset:{d:r.id}},e)};
 ACT['ev-cancel']=(t,e)=>{e.stopPropagation();const ev=S.events.find(x=>x.id===t.dataset.id);if(!ev)return;const ds=t.dataset.d;closeDayPop();openModal(`${ev.title} 취소`,cancelForm(),async fd=>{await put('events',ev.id,{...ev,status:'취소',cancelReason:fd.reason||'기타',cancelNote:(fd.note||'').trim(),cancelledAt:Date.now()});toast('행사 취소 처리 완료');reopenPop(ds)});const b=$('#mform button[type=submit]');if(b)b.textContent='취소 처리'};
 ACT['ev-restore']=async(t,e)=>{e.stopPropagation();const ev=S.events.find(x=>x.id===t.dataset.id);if(!ev)return;const ds=t.dataset.d;const o={...ev,status:'확정'};delete o.cancelReason;delete o.cancelNote;delete o.cancelledAt;try{await put('events',ev.id,o);toast('행사 복구 완료')}catch(err){return}reopenPop(ds)};
 ACT['dp-close']=()=>{closeDayPop();calSel=null;render()};
-ACT['dp-del']=async(t,e)=>{e.stopPropagation();if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='정말 삭제';t.classList.add('on');setTimeout(()=>{if(document.body.contains(t)){delete t.dataset.confirm;t.textContent='삭제';t.classList.remove('on')}},4000);return}
+ACT['dp-del']=async(t,e)=>{e.stopPropagation();{const ev=S.events.find(x=>x.id===t.dataset.id);const nn=S.notes.filter(n=>n.eventId===t.dataset.id).length;if(!await askDel(ev?ev.title:'일정',nn?`메모 ${nn}개 포함 삭제`:''))return}
   const id=t.dataset.id;const ds=calSel;try{for(const n of S.notes.filter(n=>n.eventId===id))await del('notes',n.id);await del('events',id);toast('일정 삭제 완료')}catch(err){return}
   reopenPop()};
 document.addEventListener('click',e=>{const p=$('#daypop');if(p&&!p.classList.contains('sheet')&&!e.target.closest('#daypop')&&!e.target.closest('[data-act="cal-day"]'))closeDayPop()},true);
@@ -1001,7 +1002,7 @@ function staffFromFd(fd,old){const sy={...staffMap(old)};const role=(fd.role||''
 const memberFromFd=(fd,old={})=>({...old,name:fd.name.trim(),gender:fd.gender,since:fd.since,level:Number(fd.level),district:(fd.district||'').trim(),phone:fmtPhone(fd.phone||''),work:(fd.work||'').trim(),status:fd.status,joined:fd.joined,memo:fd.memo.trim(),...staffFromFd(fd,old),birth:fd.birth||'',years:Object.keys(fd).filter(k=>k.startsWith('yr_')&&fd[k]===true).map(k=>Number(k.slice(3))).sort(),...(fd.status!==ST(old)&&['탈퇴','게스트'].includes(fd.status)?{changedYear:new Date().getFullYear(),changedAt:Date.now()}:{})});
 ACT['m-new']=()=>openModal('회원 추가',memberForm(),fd=>{const id=uid();return put('members',id,{...memberFromFd(fd),createdAt:Date.now()})});
 ACT['m-edit']=t=>{closeDayPop();const m=memberById(t.dataset.id);if(!m)return;openModal(`${m.name} 정보 수정`,memberForm(m),fd=>put('members',m.id,memberFromFd(fd,m)),`<button type="button" class="btn danger" data-act="m-del" data-id="${m.id}">삭제</button>`)};
-ACT['m-del']=t=>{const b=t;if(b.dataset.confirm){del('members',b.dataset.id);closeModal()}else{b.dataset.confirm='1';b.textContent='한 번 더 누르면 삭제'}};
+ACT['m-del']=async t=>{const m=memberById(t.dataset.id);if(!await askDel(m?m.name+' 회원':'회원'))return;del('members',t.dataset.id);closeModal()};
 async function memberToGuest(m,y){
   const gid=uid();
   await put('guests',gid,{name:m.name,nick:'',gender:m.gender,level:m.level??null,career:career(m.since),contact:'',inviter:'',memo:m.memo||'',memberId:m.id,visits:0,createdAt:Date.now()});
@@ -1010,7 +1011,7 @@ async function memberToGuest(m,y){
 }
 ACT['m-to-guest']=async t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 전환';return}
   const m=memberById(t.dataset.id);if(!m)return;try{await memberToGuest(m)}catch(e){return}closeModal();toast(`${m.name} 님 게스트 전환 완료. 등록 연도 기록 유지`);render()};
-ACT['g-clear-member']=async t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 초기화';return}
+ACT['g-clear-member']=async t=>{if(!await askDel('전 회원 기록'))return;
   const g=S.guests.find(x=>x.id===t.dataset.id);if(!g)return;const old=g.memberId&&memberById(g.memberId);
   try{const ng={...g};delete ng.memberId;delete ng.id;await put('guests',g.id,ng);
     if(old&&old.status==='게스트')await del('members',old.id)}catch(e){return}
@@ -1057,7 +1058,7 @@ ACT['m-sample']=async()=>{
   for(const [n,g,l,s,d] of smp){await put('members',uid(),{name:'(예시) '+n,gender:g,level:l,since:s,district:d,work:'',status:'활동',memo:'',sample:true,createdAt:Date.now()})}
   toast('예시 회원 12명 추가 완료. 회원 관리의 예시 회원 삭제 버튼으로 일괄 삭제 가능');
 };
-ACT['m-clear-sample']=async t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 삭제';return}for(const m of S.members.filter(m=>m.sample))await del('members',m.id);toast('예시 회원 삭제 완료')};
+ACT['m-clear-sample']=async t=>{if(!await askDel('예시 회원',`예시 회원 ${S.members.filter(m=>m.sample).length}명 일괄 삭제`))return;for(const m of S.members.filter(m=>m.sample))await del('members',m.id);toast('예시 회원 삭제 완료')};
 
 /* =========================================================
    BRACKET
@@ -1480,6 +1481,8 @@ ACT['br-copy']=t=>{const b=S.brackets.find(x=>x.id===t.dataset.id);if(!b)return;
   saveCfg();saveDraft();sel=null;if(route!=='draw')location.hash='#draw';render();window.scrollTo(0,0);toast(`${fmtD(b.cfg.date)} 대진을 ${fmtD(bc.date)} 새 초안으로 복사`)};
 /* 테마에 맞춘 선택 창 (기기 기본 확인 창 대신): 선택한 key, 닫으면 null */
 let dateAsk=false;
+/* 삭제 확인 창: 저장된 데이터를 지우는 모든 버튼 공통 */
+const askDel=async(what,msg='')=>(await choiceDialog({title:what+' 삭제',msg:[msg,'삭제 후 되돌릴 수 없음'].filter(Boolean).join(' · '),choices:[{key:'go',label:'삭제',cls:'danger'},{key:'no',label:'취소'}]}))==='go';
 function choiceDialog({title,msg='',choices}){return new Promise(res=>{const ov=document.createElement('div');ov.className='me-ov ch-ov';ov.id='choice';
   ov.innerHTML=`<div class="ch-box" role="dialog" aria-modal="true" aria-label="${h(title)}"><div class="ch-h"><b>${h(title)}</b><button type="button" class="modal-x" data-ch="" aria-label="닫기">×</button></div>${msg?`<p class="ch-msg">${h(msg)}</p>`:''}<div class="ch-btns">${choices.map(c=>`<button type="button" class="btn ${c.cls||''}" data-ch="${h(c.key)}"><b>${h(c.label)}</b>${c.sub?`<span>${h(c.sub)}</span>`:''}</button>`).join('')}</div></div>`;
   const done=k=>{ov.remove();res(k||null)};ov.addEventListener('click',e=>{const b=e.target.closest('[data-ch]');if(b){e.stopPropagation();done(b.dataset.ch)}else if(e.target===ov)done(null)});
@@ -1490,7 +1493,7 @@ function openBracketView(id){
   lockPage();fitIn($('#bv-stage'));
 }
 ACT['bv-open']=t=>{closeDayPop();openBracketView(t.dataset.id)};
-ACT['bv-del']=async t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 삭제';return}const id=t.dataset.id;closeModal();await del('brackets',id);if(draft&&draft.id===id){draft.id=null;saveDraft()}toast('대진표 삭제 완료');render()};
+ACT['bv-del']=async t=>{const id=t.dataset.id;{const b=S.brackets.find(x=>x.id===id);if(!await askDel((b&&b.date?b.date.slice(5).replace('-','.')+' ':'')+'대진표'))return}closeModal();await del('brackets',id);if(draft&&draft.id===id){draft.id=null;saveDraft()}toast('대진표 삭제 완료');render()};
 ACT['bv-img']=async t=>{const b=S.brackets.find(x=>x.id===t.dataset.id);if(!b)return;const inline=t.dataset.inline;const st=inline?$('#stage'):$('#bv-stage');const el=st&&st.querySelector('.poster');if(!el)return;await exportPoster(el,normB(b));fitIn(st)};
 function viewDraw(){
   if(RO)return viewDrawRO();
@@ -1610,7 +1613,7 @@ ACT['guest-new']=t=>{const fill=t.dataset.fill&&pickCtx?{...pickCtx}:null;openMo
   if(fill&&draft){pickCtx=fill;setTimeout(()=>{if(S.guests.find(g=>g.id===id)||!db)placeInto(id);else{const iv=setInterval(()=>{if(S.guests.find(g=>g.id===id)){clearInterval(iv);pickCtx=fill;placeInto(id)}},200);setTimeout(()=>clearInterval(iv),5000)}},0)}
   render()})};
 ACT['guest-edit']=(t,e)=>{e.preventDefault();const g=S.guests.find(x=>x.id===t.dataset.id);if(!g)return;openModal(`게스트 ${g.name}`,guestForm(g,route==='members'?'members':'')+`${g.visits?`<p class="small muted" style="margin:0">방문 ${g.visits}회 · 최근 ${fmtFull(g.lastDate)}</p>`:''}`,async fd=>{await put('guests',g.id,guestFromFd(fd,g));if(fd.attend&&!cfg.picked.includes(g.id)){cfg.picked.push(g.id);saveCfg()}},`<button type="button" class="btn danger" data-act="guest-del" data-id="${g.id}">삭제</button>`)};
-ACT['guest-del']=t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 삭제';return}const id=t.dataset.id;cfg.picked=cfg.picked.filter(x=>x!==id);saveCfg();del('guests',id);closeModal()};
+ACT['guest-del']=async t=>{const id=t.dataset.id;{const g=S.guests.find(x=>x.id===id);if(!await askDel(g?g.name+' 게스트':'게스트'))return}cfg.picked=cfg.picked.filter(x=>x!==id);saveCfg();del('guests',id);closeModal()};
 /* ---- save / confirm / export ---- */
 ACT['gen']=()=>{if(draft&&draft.status==='확정'&&!ACT._genOk){ACT._genOk=1;toast('확정된 대진표. 한 번 더 누르면 새 초안 생성');setTimeout(()=>ACT._genOk=0,3000);return}ACT._genOk=0;generate()};
 async function saveBracket(){const id=draft.id||uid();draft.id=id;saveDraft();const old=S.brackets.find(x=>x.id===id)||{};await put('brackets',id,{...old,cfg:draft.cfg,players:draft.players,rounds:draft.rounds,status:draft.status,allowBlank:!!draft.allowBlank,createdBy:old.createdBy||myId||null});}
@@ -1719,7 +1722,7 @@ const evFromFd=(fd,old={})=>{
   return o};
 ACT['ev-new']=t=>{const stay=!!t.dataset.stay;closeDayPop();openModal(t.dataset.type==='개인대회'?'대회 출전 기록':'행사 추가',evForm({date:t.dataset.d||'',status:t.dataset.type==='개인대회'?'확정':'기획중',type:t.dataset.type||''}),async fd=>{const id=uid();await put('events',id,{...evFromFd(fd),createdAt:Date.now()});evSel=id;if(stay){toast('일정 추가 완료');reopenPop()}else location.hash='#events/'+encodeURIComponent(id)})};
 ACT['ev-edit']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;openModal('행사 수정',evForm(ev),fd=>put('events',ev.id,evFromFd(fd,ev)),`<button type="button" class="btn danger" data-act="ev-del">삭제</button>`)};
-ACT['ev-del']=async t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='메모 포함 삭제. 한 번 더 누르면 삭제';return}const id=evSel;closeModal();for(const n of S.notes.filter(n=>n.eventId===id))await del('notes',n.id);await del('events',id);evSel=null;if(evRoute)location.hash='#events'};
+ACT['ev-del']=async t=>{const id=evSel;{const ev=S.events.find(x=>x.id===id);const nn=S.notes.filter(n=>n.eventId===id).length;if(!await askDel(ev?ev.title:'행사',nn?`메모 ${nn}개 포함 삭제`:''))return}closeModal();for(const n of S.notes.filter(n=>n.eventId===id))await del('notes',n.id);await del('events',id);evSel=null;if(evRoute)location.hash='#events'};
 /* 행사 열기: 휴대폰은 이벤트 페이지 안에서 상세 화면으로 전체 전환 (#events/행사id), PC는 목록 옆 상세 */
 ACT['ev-open']=t=>{closeDayPop();const id=t.dataset.id;if(route==='events'&&!evMobile()&&evSel===id&&!t.closest('#daypop')){setMemoOpen(!memoOpen);return}
   if(route==='events'&&!evRoute){evListY=window.scrollY;evFromList=true}else evFromList=false;evSel=id;const h2='#events/'+encodeURIComponent(id);if(location.hash!==h2)location.hash=h2;else render()};
@@ -1731,7 +1734,7 @@ ACT['ev-past-more']=()=>{evPastMore=true;render()};
 ACT['ev-past-less']=()=>{evPastMore=false;render();const b=$('.ev-more');b&&b.scrollIntoView({block:'center'})};
 ACT['note-color']=t=>{noteColor=t.dataset.c;document.querySelectorAll('.sw').forEach(s=>s.setAttribute('aria-pressed',s.dataset.c===noteColor))};
 ACT['note-add']=async()=>{const ta=$('#note-text');const txt=ta.value.trim();if(!txt){ta.focus();return}const id=uid();try{await put('notes',id,{eventId:evSel,text:txt,color:noteColor,authorId:myId||null,createdAt:Date.now(),rot:(Math.random()*3-1.5).toFixed(1)});ta.value='';lsSet('sbpb-notedraft','')}catch(e){}};
-ACT['note-del']=t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='삭제?';setTimeout(()=>{t.dataset.confirm='';t.textContent='×'},2500);return}del('notes',t.dataset.id)};
+ACT['note-del']=async t=>{if(!await askDel('메모'))return;del('notes',t.dataset.id)};
 ACT['note-edit']=t=>{const n=S.notes.find(x=>x.id===t.dataset.id);if(!n)return;openModal('메모 수정',`<label class="f">내용<textarea class="in" name="text" rows="6">${h(n.text)}</textarea></label><label class="f">분류<select class="in" name="color">${Object.entries(NOTE_KIND).map(([c,k])=>`<option value="${c}"${n.color===c?' selected':''}>${k}</option>`).join('')}</select></label>`,fd=>put('notes',n.id,{...n,text:fd.text.trim(),color:fd.color}))};
 
 /* ---------- 행사 대진 (MT · 내부대회): 팀전 · 점수 · 시상 ---------- */
@@ -1769,7 +1772,7 @@ ACT['eg-on']=async()=>{const ev=curEv();if(!ev)return;const {id,...rest}=ev;awai
 ACT['eg-off']=async()=>{const ev=curEv();if(!ev)return;const {id,...rest}=ev;await put('events',ev.id,{...rest,games:false});render()};
 ACT['eg-award']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;
   openModal('시상 추가',`<label class="f">상 이름<input class="in" name="t" required placeholder="예: 우승 팀 · MVP · 발리 대전 우승"></label><label class="f">수상자<input class="in" name="w" required placeholder="예: 사방 · 홍길동"></label>`,async fd=>{if(!fd.t.trim()||!fd.w.trim())return;const {id,...rest}=ev;await put('events',ev.id,{...rest,awards:(ev.awards||[]).concat({t:fd.t.trim(),w:fd.w.trim()})});toast('시상 기록 추가');render()})};
-ACT['eg-award-del']=async t=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const aw=(ev.awards||[]).slice();aw.splice(+t.dataset.i,1);const {id,...rest}=ev;await put('events',ev.id,{...rest,awards:aw});render()};
+ACT['eg-award-del']=async t=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;{const x=(ev.awards||[])[+t.dataset.i];if(!await askDel((x&&x.t?x.t+' ':'')+'시상'))return}const aw=(ev.awards||[]).slice();aw.splice(+t.dataset.i,1);const {id,...rest}=ev;await put('events',ev.id,{...rest,awards:aw});render()};
 ACT['eg-teams']=(_t,_e,n)=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const T=(ev.teams&&ev.teams.length?ev.teams:Array.from({length:Math.max(2,+n||2)},(_,i)=>({name:`팀 ${i+1}`,members:[]})));const tm=teamMap({teams:T});
   const ppl=byName(S.members.filter(isCur).map(m=>({key:m.id,name:m.name}))).concat(byName(S.guests.map(g=>({key:g.id,name:g.name,g:true}))).filter(p=>tm[p.key]!=null));
   openModal('팀 설정',`<div class="grid2">${T.map((t,i)=>`<div class="f"><label class="f" style="margin:0">팀 ${i+1} 이름<input class="in" name="tn${i}" value="${h(t.name)}"></label><label class="f" style="margin:6px 0 0">색<select class="in" name="tc${i}">${TEAM_C.map((c,ci)=>`<option value="${ci}"${(t.color!=null?t.color:i)===ci?' selected':''}>${TEAM_CN[ci]}</option>`).join('')}</select></label></div>`).join('')}</div>
@@ -1834,7 +1837,7 @@ ACT['ps-manage']=()=>{const PS=presets();
 ACT['ps-edit']=t=>{const p=presets().find(x=>x.id===t.dataset.id)||{name:'',unit:'pair',prog:'ko',teams:0,groups:0,adv:2};
   openModal(t.dataset.id?'프리셋 수정':'프리셋 추가',`<label class="f">이름<input class="in" name="name" required value="${h(p.name)}" placeholder="예: 송년 단식 토너먼트"></label>${optSelects(p)}`,
     async fd=>{if(!fd.name.trim())return;const id=t.dataset.id||'p-'+uid();await put('presets',id,{...(S.presets||[]).find(x=>x.id===id),name:fd.name.trim(),...optFrom(fd),order:p.order||50,deleted:false});toast('프리셋 저장');setTimeout(()=>ACT['ps-manage'](),60)})};
-ACT['ps-del']=async t=>{const id=t.dataset.id;const p=presets().find(x=>x.id===id);if(!p)return;const ch=await choiceDialog({title:`${p.name} 삭제`,msg:'이 프리셋을 목록에서 삭제',choices:[{key:'go',label:'삭제',sub:'이미 만든 행사 대진에는 영향 없음',cls:'danger'}]});if(ch!=='go')return;
+ACT['ps-del']=async t=>{const id=t.dataset.id;const p=presets().find(x=>x.id===id);if(!p)return;if(!await askDel(p.name+' 프리셋','이미 만든 행사 대진에는 영향 없음'))return;
   if(PRESET_DEF.some(d=>d.id===id))await put('presets',id,{...p,deleted:true});else await del('presets',id);toast('프리셋 삭제');ACT['ps-manage']()};
 
 /* 참가 팀 입력 → 형식대로 조 · 리그 경기 · 본선 생성 */
@@ -2130,7 +2133,7 @@ ACT['m-edit']=t=>{const ev=curEv(),mid=midOf(t);const m=ev&&mGet(ev,mid);if(!m)r
   openModal('매치 수정',matchForm(m),async fd=>{const p=mFromFd(fd);const changed=p.kind!==m.kind||p.fmt!==m.fmt||p.groups!==(+m.groups||0)||p.adv!==(+m.adv||2);
     const patch={...p};if(changed){if(m.tr)patch.tr=null;if(mSingle(p)!==mSingle(m)||(p.fmt==='rot')!==(m.fmt==='rot'))patch.entries=[]}
     await mSave(ev,mid,patch);toast(changed&&m.tr?'형식이 바뀌어 대진 초기화 · "대진 만들기"로 다시 생성':'매치 수정')},`<button type="button" class="btn danger" data-act="m-del" data-mid="${h(mid)}">삭제</button>`)};
-ACT['m-del']=async t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 삭제';return}const ev=curEv();if(!ev)return;closeModal();await mSaveAll(ev,evMatches(ev).filter(m=>m.id!==t.dataset.mid));toast('매치 삭제')};
+ACT['m-del']=async t=>{const ev=curEv();if(!ev)return;const mm=evMatches(ev).find(m=>m.id===t.dataset.mid);if(!await askDel(mm?mm.name:'매치','대진 · 결과 포함 삭제'))return;closeModal();await mSaveAll(ev,evMatches(ev).filter(m=>m.id!==t.dataset.mid));toast('매치 삭제')};
 /* 참가 설정: 단식 · 로테이션 · 이벤트 게임은 사람 고르기, 복식은 페어 칸에 배치 */
 function mPeople(ev,m){let ppl=evPeople(ev);if(!ppl.length)ppl=activeMembers().map(x=>x.id);return byName(ppl.filter(k=>mGenderOk(m,k)).map(k=>({key:k,name:keyName(k)}))).map(x=>x.key)}
 ACT['m-entries']=t=>{const ev=curEv(),mid=midOf(t);const m=ev&&mGet(ev,mid);if(!m)return;const ppl=mPeople(ev,m);
@@ -2259,7 +2262,7 @@ function courtForm(c={}){
 const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:(fd.map||'').trim(),courts:courtsN(fd.courts)?courtsN(fd.courts)+'면':'',surface:Object.keys(fd).filter(k=>k.startsWith('surf_')&&fd[k]===true).map(k=>k.slice(5)).join('·'),indoor:!!fd.indoor,outdoor:!!fd.outdoor,feeN:numOf(fd.feeN)||0,feeUnit:fd.feeUnit||'1시간',fee:numOf(fd.feeN)?'':(old.fee||''),url:fd.url.trim(),platform:old.platform||'etc',kind:fd.kind||'public',smash:!!fd.smash,genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:(numOf(fd.feeN)&&old.fee&&!fd.memo.includes(old.fee)?['요금 상세: '+old.fee,fd.memo.trim()].filter(Boolean).join('\n'):fd.memo.trim())});
 ACT['c-new']=()=>openModal('코트 추가',courtForm(),fd=>put('courts',uid(),{...courtFromFd(fd),createdAt:Date.now()}));
 ACT['c-edit']=t=>{const c=S.courts.find(x=>x.id===t.dataset.id);if(!c)return;openModal('코트 수정',courtForm(c),fd=>put('courts',c.id,courtFromFd(fd,c)),`<button type="button" class="btn danger" data-act="c-del" data-id="${c.id}">삭제</button>`)};
-ACT['c-del']=t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 삭제';return}del('courts',t.dataset.id);closeModal()};
+ACT['c-del']=async t=>{{const c=S.courts.find(x=>x.id===t.dataset.id);if(!await askDel(c?c.name:'코트'))return}del('courts',t.dataset.id);closeModal()};
 // 예약처: 카드에 예약 링크가 없을 때 연결할 기본 사이트 (예전 데이터 호환)
 const PLATFORMS=[
   {k:'seoul',url:'https://yeyak.seoul.go.kr/web/search/selectPageListDetailSearchImg.do?code=T100&dCode=T108'},
@@ -2453,7 +2456,7 @@ ACT['ball-add']=t=>{const k=t.dataset.k;openModal(BALL_T[k],ballForm(k),async fd
   await put('balls',uid(),{...o,at:Date.now()});toast(`${BALL_T[k]} 기록`);render()})};
 ACT['ball-edit']=t=>{const b=(S.balls||[]).find(x=>x.id===t.dataset.id);if(!b)return;
   openModal(BALL_T[b.kind]+' 수정',ballForm(b.kind,b),async fd=>{const {id,...rest}=b;await put('balls',b.id,{...rest,...ballFromFd(b.kind,fd)});toast('수정 완료');render()},`<button type="button" class="btn danger" data-act="ball-del" data-id="${b.id}">삭제</button>`)};
-ACT['ball-del']=async t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='한 번 더 누르면 삭제';return}await del('balls',t.dataset.id);closeModal();toast('기록 삭제');render()};
+ACT['ball-del']=async t=>{if(!await askDel('공 재고 기록'))return;await del('balls',t.dataset.id);closeModal();toast('기록 삭제');render()};
 function viewMoney(){
   const Y=monY,M=monM;const cfg=duesCfg();const fee=Number(cfg.fee)||0;const ppl=duesPeople(Y);
   // ----- dues: month -----
@@ -2571,7 +2574,7 @@ document.addEventListener('click',e=>{if($('#cellpop')&&!e.target.closest('#cell
 window.addEventListener('scroll',e=>{const p=$('#cellpop');if(!p||(e.target&&e.target.nodeType===1&&p.contains(e.target)))return;placeCellPop()},true);
 window.addEventListener('resize',placeCellPop);if(window.visualViewport)visualViewport.addEventListener('resize',placeCellPop);
 window.addEventListener('hashchange',closeCellPop);
-ACT['led-del']=t=>{if(!t.dataset.confirm){t.dataset.confirm='1';t.textContent='삭제?';t.classList.add('on');setTimeout(()=>{if(document.body.contains(t)){delete t.dataset.confirm;t.textContent='×';t.classList.remove('on')}},3000);return}del('ledger',t.dataset.id)};
+ACT['led-del']=async t=>{if(!await askDel('정산 항목'))return;del('ledger',t.dataset.id)};
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('led-it')){e.preventDefault();e.target.click()}});
 
 /* ---------- boot ---------- */
