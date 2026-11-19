@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-19',v:'1.7',date:'2026-11-19',items:[
+    {k:'etcgames',t:'기타 행사(회식 · 신년회 등) 상세: 행사 대진 · 결과 항상 표시 → 기본은 숨기고 "+ 대진 · 매치 추가" 버튼만, 누르면 펼침(기록이 없으면 "숨기기"로 다시 접기), 기록이 있는 행사는 처음부터 펼침'},
     {k:'openlive',t:'코트 카드 예약 오픈: 오픈 시각이 지나면 바로 다음 달(D-30) 표시 → 일반 오픈은 당일 동안 D-DAY 유지, 주민 우선은 일반 오픈 전까지 "예약 중"(D-DAY · D+1)으로 유지하고 일반 오픈 시각과 함께 표시, 코트 순서도 같은 기준'}]},
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
     {k:'sttabs',t:'대진표 탭 대진 통계: 대진 히스토리 상자와 붙어 있음 · 출석률 · 페어 통계가 세로로 이어짐 → 상자 사이 16px, 탭(정기모임 출석률 · 페어 통계)으로 하나씩 보기, 통계 상자 전체 접기 · 펼치기'},
@@ -1729,6 +1730,9 @@ function teamTally(ev){const T=(ev&&ev.teams)||[];if(T.length<2)return null;cons
   const rank=r.slice().sort((p,q)=>q.w-p.w||(q.gf-q.ga)-(p.gf-p.ga));return {rows:r,rank,played}}
 const tdot=(ev,k)=>{if(!ev||!k)return '';const i=teamMap(ev)[k];return i==null?'':`<i class="tdot" style="background:${tcol(ev,i)}" title="${h(ev.teams[i].name)}"></i>`};
 function evGames(ev){if(ev.type==='개인대회')return '';const bs=S.brackets.filter(b=>b.cfg&&b.cfg.eventId===ev.id).sort((x,y)=>(x.cfg.start||'').localeCompare(y.cfg.start||''));
+  /* 기타(회식 · 신년회 등): 기본은 대진 섹션 없이 "+ 대진 · 매치 추가" 버튼만, 누르거나 기록이 있으면 펼침 */
+  const hasG=evMatches(ev).length||bs.length||(ev.teams||[]).length||(ev.awards||[]).length;const optional=ev.type==='기타';
+  if(optional&&!ev.games&&!hasG)return RO?'':'<div class="eg-off"><button type="button" class="btn sm ghost" data-act="eg-on">+ 대진 · 매치 추가</button></div>';
   const T=ev.teams||[];const tl=teamTally(ev);const aw=ev.awards||[];
   const nMatch=bs.reduce((s,b)=>s+(b.rounds||[]).reduce((t,R)=>t+(R.matches||[]).filter(m=>m&&(m.a||[]).some(Boolean)).length,0),0);
   const res=tl&&bs.length?`<div class="eg-res">${tl.rank.map((x,j)=>`<span class="eg-sc${j===0&&(tl.rank[0].w!==tl.rank[1].w||(tl.rank[0].gf-tl.rank[0].ga)!==(tl.rank[1].gf-tl.rank[1].ga))?' win':''}"><i class="tdot" style="background:${tcol(ev,x.i)}"></i>${h(x.name)} <b class="num">${x.w}승</b> <span class="muted small">${x.l}패 · 득실 ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}</span></span>`).join('')}<span class="small muted">점수 입력 ${tl.played}/${nMatch}경기</span></div>`:'';
@@ -1740,9 +1744,11 @@ function evGames(ev){if(ev.type==='개인대회')return '';const bs=S.brackets.f
   const games=bs.map(b=>`<div class="eg-games"><div class="eg-h"><h4 class="st-h" style="margin:0">경기 현황 <span class="small muted" style="font-weight:500">${h(b.cfg.title||'')}</span></h4>${RO?'':`<button class="btn sm" data-act="bv-score" data-id="${b.id}">점수 입력</button>`}</div>
     ${(b.rounds||[]).map((R,ri)=>`<div class="eg-rd"><span class="eg-t num">${ri+1}<small>${h((R.time||'').split('–')[0])}</small></span><div class="eg-ms">${(R.matches||[]).map((m,ci)=>{if(!m||!(m.a||[]).some(Boolean))return '';const sc=m.sc&&m.sc[0]!==''&&m.sc[1]!==''&&m.sc[0]!=null;const wa=sc&&+m.sc[0]>+m.sc[1],wb=sc&&+m.sc[1]>+m.sc[0];
       return `<div class="eg-m"><span class="eg-c">${h(((b.cfg.courtList||[])[ci]||{}).name||'')}</span><span class="eg-p${wa?' w':''}">${tdot(ev,m.a.find(Boolean))}<span>${m.a.map(k=>h(nmK(b,k))).join('<br>')}</span></span><span class="eg-s num">${sc?`${m.sc[0]} : ${m.sc[1]}`:'vs'}</span><span class="eg-p r${wb?' w':''}"><span>${m.b.map(k=>h(nmK(b,k))).join('<br>')}</span>${tdot(ev,m.b.find(Boolean))}</span></div>`}).join('')}</div></div>`).join('')}</div>`).join('');
-  return `<div class="evgames"><div class="eg-h"><h3>행사 대진 · 결과</h3>${RO?'':`<div class="row"><button class="btn sm pri" data-act="m-add">매치 추가</button><button class="btn sm" data-act="eg-teams">팀 설정</button><button class="btn sm" data-act="eg-award">시상 추가</button>${evMatches(ev).length>=2?'<button class="btn sm" data-act="mv-all">통합본</button>':''}</div>`}</div>
+  return `<div class="evgames"><div class="eg-h"><h3>행사 대진 · 결과${optional&&!hasG&&!RO?' <button type="button" class="eg-hide" data-act="eg-off">숨기기</button>':''}</h3>${RO?'':`<div class="row"><button class="btn sm pri" data-act="m-add">매치 추가</button><button class="btn sm" data-act="eg-teams">팀 설정</button><button class="btn sm" data-act="eg-award">시상 추가</button>${evMatches(ev).length>=2?'<button class="btn sm" data-act="mv-all">통합본</button>':''}</div>`}</div>
     ${teamsHtml}${matchesHtml(ev)}
     ${aw.length?`<div class="eg-aw"><h4 class="st-h">시상</h4>${aw.map((x,i)=>`<div class="eg-awr"><b>${h(x.t)}</b><span>${h(x.w)}</span>${RO?'':`<button class="x" data-act="eg-award-del" data-i="${i}" aria-label="시상 삭제">×</button>`}</div>`).join('')}</div>`:''}</div>`}
+ACT['eg-on']=async()=>{const ev=curEv();if(!ev)return;const {id,...rest}=ev;await put('events',ev.id,{...rest,games:true});render()};
+ACT['eg-off']=async()=>{const ev=curEv();if(!ev)return;const {id,...rest}=ev;await put('events',ev.id,{...rest,games:false});render()};
 ACT['eg-award']=()=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;
   openModal('시상 추가',`<label class="f">상 이름<input class="in" name="t" required placeholder="예: 우승 팀 · MVP · 발리 대전 우승"></label><label class="f">수상자<input class="in" name="w" required placeholder="예: 사방 · 홍길동"></label>`,async fd=>{if(!fd.t.trim()||!fd.w.trim())return;const {id,...rest}=ev;await put('events',ev.id,{...rest,awards:(ev.awards||[]).concat({t:fd.t.trim(),w:fd.w.trim()})});toast('시상 기록 추가');render()})};
 ACT['eg-award-del']=async t=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const aw=(ev.awards||[]).slice();aw.splice(+t.dataset.i,1);const {id,...rest}=ev;await put('events',ev.id,{...rest,awards:aw});render()};

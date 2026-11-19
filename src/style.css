@@ -1088,3 +1088,4 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .ev-back{margin:0 0 12px}.ev-back .btn{padding-left:4px;min-height:40px;font-weight:600}
 .draw-hist>.panel+.panel{margin-top:16px}.st-fold>summary{align-items:center}.st-tabs{margin:12px 0 16px;display:flex;width:100%}.st-tabs button{flex:1;min-height:40px}
 .st-tabs button{text-align:center;font-size:13px}
+.eg-off{margin:16px 0 4px}.eg-hide{border:0;background:none;color:var(--muted);font:inherit;font-size:12px;font-weight:600;margin-left:8px;cursor:pointer;padding:4px}
