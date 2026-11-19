@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-19',v:'1.7',date:'2026-11-19',items:[
+    {k:'lighttone',t:'라이트 모드 배경 · 카드 컬러 톤다운 (#FAFAF9>#F5F6F5, 눈부심 완화)'},
     {k:'trcolor',t:'토너먼트 대진표 컬러 개편 (로테이션 대진표와 종목 색 통일 · 우승 하이라이트 · 승리 경로 강조, 앱 · 이미지 공통)'},
     {k:'etcgames',t:'기타 행사 대진 섹션 기본 숨김 처리 (+ 버튼으로 추가)'},
     {k:'openlive',t:'코트 예약 오픈 표시 기준 수정 (오픈 당일 D-DAY 유지 · 주민 우선 예약 기간 표시)'}]},

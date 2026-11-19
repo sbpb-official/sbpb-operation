@@ -1,6 +1,6 @@
 /* Layout: quiet neutral header with logo top-left; working surfaces are soft greys (no pure white/black); club deep green and ball yellow-green only as point colors. */
 :root{
-  --bg:#F2F2F0; --surface:#FAFAF9; --surface-2:#EAEAE7; --ink:#252826; --muted:#6B6F6C; --line:#DDDDD9;
+  --bg:#ECEDEB; --surface:#F5F6F5; --surface-2:#E4E5E3; --ink:#252826; --muted:#6B6F6C; --line:#D6D7D4;
   --court:#1D5A3B; --court-soft:#E6E8E5; --on-court:#F7F7F4; --ball:#C9D94F; --ball-ink:#1E2A06;
   --ok:#2B8A3E; --warn:#B86E00; --bad:#C92A2A;
   --t-reg:#1D5A3B; --t-tour:#F76707; --t-ex:#1C7ED6; --t-mt:#7048E8; --t-etc:#868E96; --t-ind:#0CA678; --t-bd:#E64980; --star:#F59F00; --male:#6F93C0; --female:#D7939B; --bar:#8CB79A; --sf-grass:#2F9E44; --sf-hard:#1971C2; --sf-clay:#D9480F; --sat-soft:#4F77A3; --sun-soft:#B9645E;
