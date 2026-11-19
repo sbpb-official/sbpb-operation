@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-19',v:'1.7',date:'2026-11-19',items:[
+    {k:'trcolor',t:'토너먼트 대진표 색: 회색 상자 · 탁한 초록 · 누런 우승 칸 → 로테이션 대진표와 같은 종목 색(혼합 연초록 · 남자 하늘 · 여자 코랄) 상자, 이긴 쪽 종목 색 글자 · 진한 테두리, 이긴 길 연결선 강조, 우승 칸 · 우승 띠는 형광 연두 계열 노랑, 조별 예선도 같은 색 (앱 화면 · 이미지 공통) · 이미지에서 라운드 이름 높이 어긋남 수정'},
     {k:'etcgames',t:'기타 행사(회식 · 신년회 등) 상세: 행사 대진 · 결과 항상 표시 → 기본은 숨기고 "+ 대진 · 매치 추가" 버튼만, 누르면 펼침(기록이 없으면 "숨기기"로 다시 접기), 기록이 있는 행사는 처음부터 펼침'},
     {k:'openlive',t:'코트 카드 예약 오픈: 오픈 시각이 지나면 바로 다음 달(D-30) 표시 → 일반 오픈은 당일 동안 D-DAY 유지, 주민 우선은 일반 오픈 전까지 "예약 중"(D-DAY · D+1)으로 유지하고 일반 오픈 시각과 함께 표시, 코트 순서도 같은 기준'}]},
   {id:'2026-11-18',v:'1.6',date:'2026-11-18',items:[
@@ -1878,7 +1879,7 @@ ACT['tr-bye']=t=>{const c=trCtx(t),ev=c.ev;if(!ev||!c.tr)return;const tr=c.tr;co
       t2.ko.forEach((m,i)=>{if(K.rd[i]>=r){m.w=null;if(K.rd[i]>r)delete m.sc}});await saveTr(ev,t2,c.mid);toast('부전승 지정')})};
 /* 대진표 나무: 라운드 이름을 경기마다 대신 층마다 왼쪽 칸에 한 번만 (같은 이름의 첫 연결선 높이) */
 function bkLabels(root){(root||document).querySelectorAll('.bk-wrap').forEach(w=>{const tree=w.querySelector('.tr-tree.bk'),gut=w.querySelector('.bk-gut');if(!tree||!gut)return;
-  const base=w.getBoundingClientRect().top;const seen={};tree.querySelectorAll('.bk-stem .bk-rn').forEach(el=>{el.classList.add('bk-hide');const t=el.textContent;const r=el.parentElement.getBoundingClientRect();const y=r.top+r.height/2-base;if(!(t in seen)||y<seen[t])seen[t]=y});
+  const wr=w.getBoundingClientRect();const base=wr.top;const sc=wr.height/(w.offsetHeight||1)||1;const seen={};tree.querySelectorAll('.bk-stem .bk-rn').forEach(el=>{el.classList.add('bk-hide');const t=el.textContent;const r=el.parentElement.getBoundingClientRect();const y=(r.top+r.height/2-base)/sc;if(!(t in seen)||y<seen[t])seen[t]=y});
   gut.innerHTML=Object.entries(seen).map(([t,y])=>`<span class="bk-gl" style="top:${Math.round(y)}px">${h(t)}</span>`).join('')})}
 function tourHtml(ev,mm){const tr=mm?mm.tr:ev.tourney;if(!tr)return '';tr.groups=tr.groups||[];tr.lg=tr.lg||[];tr.ko=tr.ko||[];
   const fin=tr.ko[tr.ko.length-1];let champ=fin&&fin.w?trTeam(tr,fin.w==='a'?fin.a:fin.b):null;
@@ -1895,7 +1896,8 @@ function tourHtml(ev,mm){const tr=mm?mm.tr:ev.tourney;if(!tr)return '';tr.groups
   const multi=tr.groups.length>1;
   const stand=tr.groups.length?`<div class="tr-groups">${tr.groups.map((g,gi)=>{const s=grpStand(tr,gi);return `<div class="tr-g"><b>${h(g.name)}${s.auto?' <span class="small muted" style="font-weight:500">결과로 자동 계산</span>':''}</b>${s.rows.map(x=>`<div class="tr-gt${x.rank&&tr.ko.length&&x.rank<=(tr.fmt&&tr.fmt.adv||2)?' adv':''}"><span class="num">${x.rank?x.rank+'위':'–'}</span><span>${h(trName(x.t))}</span>${s.auto?`<span class="num small">${x.w}승 ${x.l}패${x.gf||x.ga?` · ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}`:''}</span>`:''}</div>`).join('')}</div>`}).join('')}</div>`:'';
   const lg=tr.lg.length?`<div class="lg-list" data-lg="1">${tr.lg.map((m,i)=>`<div class="lg-row" data-i="${i}">${RO?'':'<span class="lg-grip" aria-label="순서 바꾸기" title="끌어서 순서 바꾸기">⋮⋮</span>'}<span class="lg-n num">${i+1}</span>${multi?`<span class="lg-g">${h(tr.groups[m.g].name)}</span>`:''}<div class="lg-ms">${side(m,i,'a','lg-win')}${side(m,i,'b','lg-win')}</div></div>`).join('')}</div>`:'';
-  return `<div class="tr"><div class="eg-h"><h4 class="st-h" style="margin:0">${h(tr.title||'토너먼트')}</h4>${RO?'':'<button class="btn sm" data-act="tr-score">점수 입력</button>'}</div>
+  const tk=mm?(/^(MS|MD)$/.test(mm.kind)?' tk-m':/^(WS|WD)$/.test(mm.kind)?' tk-w':' tk-x'):' tk-x';
+  return `<div class="tr${tk}"><div class="eg-h"><h4 class="st-h" style="margin:0">${h(tr.title||'토너먼트')}</h4>${RO?'':'<button class="btn sm" data-act="tr-score">점수 입력</button>'}</div>
     ${tr.fmt&&!mm?`<p class="small muted" style="margin:0">${h(UNIT_L[tr.fmt.unit]||'')} · ${h(PROG_L[tr.fmt.prog]||'')}</p>`:''}
     ${champ?`<div class="tr-champ">우승 <b>${h(trName(champ))}</b></div>`:''}${ko}
     ${tr.groups.length?`<div class="eg-h"><h4 class="tr-sec">${tr.ko.length?'조별 예선':'리그'}</h4>${RO||tr.lg.length?'':'<button class="btn sm" data-act="tr-rank">조 순위 입력</button>'}</div>${stand}`:''}

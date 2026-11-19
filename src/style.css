@@ -1089,3 +1089,25 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .draw-hist>.panel+.panel{margin-top:16px}.st-fold>summary{align-items:center}.st-tabs{margin:12px 0 16px;display:flex;width:100%}.st-tabs button{flex:1;min-height:40px}
 .st-tabs button{text-align:center;font-size:13px}
 .eg-off{margin:16px 0 4px}.eg-hide{border:0;background:none;color:var(--muted);font:inherit;font-size:12px;font-weight:600;margin-left:8px;cursor:pointer;padding:4px}
+
+/* 토너먼트 색: 로테이션 대진표의 종목 색과 같은 계열 · 우승은 볼 옐로 계열 */
+.tr{--tk:#2F7024;--tk-bg:#EEF7E9;--tk-bd:#CFE5C2;--ch:#5B6A0E;--ch-bg:#F2F7C6;--ch-bd:#C9D94F}
+.tr.tk-m{--tk:#1F5C9E;--tk-bg:#EDF4FC;--tk-bd:#CCDDF2}.tr.tk-w{--tk:#B4441E;--tk-bg:#FDF0EA;--tk-bd:#F5D2C3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tr{--tk:#9FD08A;--tk-bg:#25322A;--tk-bd:#3E5E43;--ch:#E3EE8A;--ch-bg:#363C1C;--ch-bd:#C9D94F}
+ :root:not([data-theme="light"]) .tr.tk-m{--tk:#9DBCE0;--tk-bg:#222C37;--tk-bd:#3A5170}:root:not([data-theme="light"]) .tr.tk-w{--tk:#F2AE98;--tk-bg:#3B2824;--tk-bd:#8E5544}}
+:root[data-theme="dark"] .tr{--tk:#9FD08A;--tk-bg:#25322A;--tk-bd:#3E5E43;--ch:#E3EE8A;--ch-bg:#363C1C;--ch-bd:#C9D94F}
+:root[data-theme="dark"] .tr.tk-m{--tk:#9DBCE0;--tk-bg:#222C37;--tk-bd:#3A5170}:root[data-theme="dark"] .tr.tk-w{--tk:#F2AE98;--tk-bg:#3B2824;--tk-bd:#8E5544}
+.mv-sheet .tr{--tk:#2F7024!important;--tk-bg:#EEF7E9!important;--tk-bd:#CFE5C2!important;--ch:#5B6A0E!important;--ch-bg:#F2F7C6!important;--ch-bd:#C9D94F!important}
+.mv-sheet .tr.tk-m{--tk:#1F5C9E!important;--tk-bg:#EDF4FC!important;--tk-bd:#CCDDF2!important}.mv-sheet .tr.tk-w{--tk:#B4441E!important;--tk-bg:#FDF0EA!important;--tk-bd:#F5D2C3!important}
+.tr .tr-tree.bk{--bk-ln:var(--tk-bd)}.tr .bk-stem.on,.tr .bk-down.on,.tr .bk-c.on>.bk-up{border-left-color:var(--tk)}.tr .bk-c.on::before{border-top-color:var(--tk)}
+.tr .bk-stem,.tr .bk-up,.tr .bk-down{border-left-width:2px}.tr .bk-c::before{border-top-width:2px}
+.tr .bk-box.tr-side{background:var(--tk-bg);border-color:var(--tk-bd);color:var(--ink)}
+.tr .bk-box.tr-side.tbd{background:var(--surface);border-style:dashed;border-color:var(--tk-bd);color:var(--muted)}
+.tr .bk-box.tr-side.w{border:2px solid var(--tk);color:var(--tk);font-weight:800}
+.tr .bk-box.tr-side.l{opacity:.55}
+.tr .bk-champ.tr-side{background:var(--ch-bg);border:2px solid var(--ch-bd);color:var(--ch);font-weight:800}
+.tr .bk-champ-st{color:var(--ch)}
+.tr .tr-champ{background:var(--ch-bg);border:1px solid var(--ch-bd);color:var(--ch)}.tr .tr-champ b{color:var(--ch)}
+.tr .tr-g{background:var(--tk-bg);border:1px solid var(--tk-bd)}.tr .tr-gt.adv{color:var(--tk)}.tr .tr-g>b{color:var(--tk)}
+.tr .bk-gl{color:var(--tk)}.tr .tr-sec{color:var(--tk)}
+.tr .lg-ms .tr-side{background:var(--tk-bg);border-color:var(--tk-bd)}.tr .lg-ms .tr-side.w{border:2px solid var(--tk);color:var(--tk)}
