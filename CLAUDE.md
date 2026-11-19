@@ -15,5 +15,6 @@
   - 글자 대비 WCAG AA: 본문 4.5:1 이상, 큰 글자 · 보조 글자 3:1 이상. 순백 · 순흑 미사용.
   - 본문 줄간격 1.4–1.6, 휴대폰 입력 글자 16px 이상, 누르는 영역 최소 40–44px.
   - 강조색은 포인트로만, 같은 의미는 같은 색 · 같은 모양.
+- 커밋 작성자는 연결된 GitHub 계정과 상관없이 항상 `sbpb-official` (`git -c user.name="sbpb-official" -c user.email="noreply@anthropic.com" commit …`).
 - 빌드: `python3 tools/build.py web` → `index.html` + `app.js` 생성 후 함께 커밋.
 - 데이터 일괄 변경은 `runMigrations()`에 플래그(dues 컬렉션 문서 id)로 한 번만 실행.
