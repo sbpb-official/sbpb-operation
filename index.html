@@ -21,7 +21,7 @@
 <style id="css">
 /* Layout: quiet neutral header with logo top-left; working surfaces are soft greys (no pure white/black); club deep green and ball yellow-green only as point colors. */
 :root{
-  --bg:#F2F2F0; --surface:#FAFAF9; --surface-2:#EAEAE7; --ink:#252826; --muted:#6B6F6C; --line:#DDDDD9;
+  --bg:#ECEDEB; --surface:#F5F6F5; --surface-2:#E4E5E3; --ink:#252826; --muted:#6B6F6C; --line:#D6D7D4;
   --court:#1D5A3B; --court-soft:#E6E8E5; --on-court:#F7F7F4; --ball:#C9D94F; --ball-ink:#1E2A06;
   --ok:#2B8A3E; --warn:#B86E00; --bad:#C92A2A;
   --t-reg:#1D5A3B; --t-tour:#F76707; --t-ex:#1C7ED6; --t-mt:#7048E8; --t-etc:#868E96; --t-ind:#0CA678; --t-bd:#E64980; --star:#F59F00; --male:#6F93C0; --female:#D7939B; --bar:#8CB79A; --sf-grass:#2F9E44; --sf-hard:#1971C2; --sf-clay:#D9480F; --sat-soft:#4F77A3; --sun-soft:#B9645E;
@@ -1258,7 +1258,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=30b8962068';
+const CUR_APP = 'app.js?v=acc2a79abc';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1286,7 +1286,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=30b8962068';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=acc2a79abc';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
