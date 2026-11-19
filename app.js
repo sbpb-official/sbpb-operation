@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-19',v:'1.7',date:'2026-11-19',items:[
+    {k:'court-jamsil',t:'코트 추가 (잠실유수지 테니스장)'},
     {k:'lighttone',t:'라이트 모드 배경 · 카드 · 입력칸 컬러 톤다운 (#FAFAF9>#EBECEA, 눈부심 완화 · 보조 글자 대비 유지)'},
     {k:'trcolor',t:'토너먼트 대진표 컬러 개편 (로테이션 대진표와 종목 색 통일 · 우승 하이라이트 · 승리 경로 강조, 앱 · 이미지 공통)'},
     {k:'etcgames',t:'기타 행사 대진 섹션 기본 숨김 처리 (+ 버튼으로 추가)'},
@@ -525,6 +526,7 @@ async function runMigrations(){
   const F13='mig-court-myeonmok';
   const F14='mig-court-imun';
   const F15='mig-court-fee-num';
+  const F17='mig-court-jamsil-yusuji';                // 2026-11-19: 잠실유수지 테니스장 (송파구) 추가 · 송파구체육회 대관신청
   const F16='mig-staff-years';                       // 2026-11-16: 지금 운영진 3명은 2027년 임기로 기록 (2026년 운영진은 직접 입력)                     // 2026-11-16: 요금을 숫자+단위로 (단위가 분명한 코트만) · 상세 요금은 메모로 · 이문 요금표 반영                        // 2026-11-16: 이문체육문화센터 테니스장 (동대문구) 추가                    // 2026-11-15: 면목구립테니스장 추가 (공단 이용안내 기준)                    // 2026-11-15: 중랑구립테니스장 추가 (예약 링크·순위는 용마와 같은 공단 규정)                 // 2026-11-15: 용마 테니스장 공단 이용안내 반영 (요금·예약 순위·예약 사이트)                      // 2026-11-15: 용마폭포공원 테니스장 (중랑구) 추가                     // 2026-11-14: TS는 네이버 링크 예약 (스매시 아님) · 메모의 '○○에서 예약' 안내 문구 제거                       // 2026-11-14: 계남테니스장 (구로구) 추가                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
   const TS_MEMO='예약 링크는 네이버 지도 · 9호선 둔촌오륜역 1번 출구 도보 약 860m\n대관료 (개장 당시): 평일 야간·주말 주간 35,000원 · 주말 야간 40,000원\n※ 현재 요금·예약 오픈 방식은 네이버 지도 업체 정보로 확인 필요';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
   const has=id=>S.dues.find(d=>d.id===id);
@@ -630,7 +632,14 @@ async function runMigrations(){
       await put('courts',c.id,{...c,feeN:hit[1],feeUnit:hit[2],fee:'',memo});n++}
     await put('dues',F15,{done:true,count:n,at:Date.now()})}
   if(!has(F16)){let n=0;for(const m of S.members){if(m.staff&&!m.staffYears){await put('members',m.id,{...m,staffYears:{'2027':m.role||''}});n++}}
-    await put('dues',F16,{done:true,count:n,at:Date.now()});if(n)toast(`운영진 ${n}명 2027년 임기로 기록 완료`)}}
+    await put('dues',F16,{done:true,count:n,at:Date.now()});if(n)toast(`운영진 ${n}명 2027년 임기로 기록 완료`)}
+  if(!has(F17)){const dup=S.courts.some(c=>/잠실\s*유수지/.test(c.name||''));
+    if(!dup)await put('courts','c-jamsil-yusuji',{name:'잠실유수지 테니스장',district:'송파구',address:'',map:mapUrl('잠실유수지 테니스장'),courts:'',surface:'',indoor:false,outdoor:false,
+      fee:'',feeN:15000,feeUnit:'1시간',url:'https://club.esongpa.or.kr/',platform:'etc',kind:'public',smash:false,
+      genRule:{type:'monthly',day:'20',time:'10:00'},resident:false,area:'',workers:false,resRule:{},
+      memo:'예약: 송파구체육회 사이트 › 잠실유수지테니스장 대관신청\n다음 달 대관 신청: 매월 20일 10:00 선착순 · 서울시민 누구나\n요금: 평일 06:00~18:00 시간당 15,000원 · 평일 18:00 이후 · 주말 · 공휴일 시간당 19,500원\n신청 제한: 아이디 1개당 월 4타임 · 신청 직후 카드결제 (미결제 시 자동 취소) · 변경 불가 (취소 후 재예약) · 양도 · 레슨 금지\n문의: 사무실 02-402-5526 · 관리실 02-2202-7330\n※ 2025년 3월 공고 기준 · 면 수 · 바닥 확인 필요',createdAt:Date.now()});
+    await put('dues',F17,{done:true,skipped:dup,at:Date.now()});
+    if(!dup)toast('코트 추가 완료 · 잠실유수지 테니스장')}}
   catch(e){}
   migBusy=false;
 }
