@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-21',v:'1.9',date:'2026-11-21',items:[
+    {k:'courtgo',t:'대시보드 예약 오픈 임박 클릭 시 코트 탭 해당 코트 카드 이동 (캘린더 날짜 팝업 예약 오픈 항목 포함)'},
     {k:'regleg',t:'캘린더 정기모임 범례 수정 (사각형>원형 · 시간 표기 제거 · 딥그린 컬러 적용), 범례 점 · 글자 간격 통일 (4px)'},
     {k:'moncal',t:'대시보드 이번 달 캘린더 추가 (일정 이름 표시 · 월 이동 · 스와이프), 연간 캘린더 접기 · 펼치기 전환 (기본 접힘)'},
     {k:'gateorder',t:'입장 화면 정보 순서 조정 (비밀번호 유지 안내 입력칸 아래 배치 · 운영실 · 회원 화면 전환 버튼 화면 하단 분리)'},
@@ -748,13 +749,13 @@ function priorityMembers(c){
 }
 
 /* ---------- render core ---------- */
-let route='home';let evRoute=null;let evListY=0;let evFromList=false;
+let route='home';let courtFocus=null,courtHashDone='';let evRoute=null;let evListY=0;let evFromList=false;
 const evMobile=()=>window.innerWidth<=1000;
 function render(){
   S.events.forEach(e=>{if(e.result==='예선 탈락')e.result='예선';if(e.cancelReason==='인원 부족')e.cancelReason='기타'});S.regstat.forEach(r=>{if(r.reason==='인원 부족')r.reason='기타'});
   const v=$('#view');const ae=document.activeElement;let keep=null;
   if(ae&&ae.id&&v.contains(ae)){let s=null,e2=null;try{s=ae.selectionStart;e2=ae.selectionEnd}catch(err){}keep={id:ae.id,s,e:e2,top:ae.scrollTop,val:ae.dataset&&ae.dataset.led?ae.value:undefined}}
-  const hp=(location.hash||'#home').slice(1).split('/');const r=hp[0];route=VIEWS[r]&&(!MV||MV_TABS.includes(r))?r:'home';evRoute=route==='events'&&hp[1]?decodeURIComponent(hp[1]):null;if(evRoute)evSel=evRoute;
+  const hp=(location.hash||'#home').slice(1).split('/');const r=hp[0];route=VIEWS[r]&&(!MV||MV_TABS.includes(r))?r:'home';evRoute=route==='events'&&hp[1]?decodeURIComponent(hp[1]):null;if(evRoute)evSel=evRoute;if(route==='courts'&&hp[1]&&location.hash!==courtHashDone){courtHashDone=location.hash;courtFocus=decodeURIComponent(hp[1])}else if(route!=='courts')courtHashDone='';
   document.querySelectorAll('#tabs a').forEach(a=>a.setAttribute('aria-current',a.getAttribute('href')==='#'+route?'page':'false'));
   let banner='';
   if(MV)banner=mvDenied?`<div class="banner"><b>회원 화면 준비 중.</b> 운영진의 보안 규칙 적용 후 표시</div>`:'';
@@ -810,9 +811,14 @@ ACT['ov-close']=closeModal;
 ACT['to-top']=()=>window.scrollTo({top:0,behavior:'smooth'});
 (()=>{const upd=()=>{const b=document.getElementById('top-fab');if(!b)return;const on=window.scrollY>=window.innerHeight*0.6;b.classList.toggle('show',on);b.tabIndex=on?0:-1;b.setAttribute('aria-hidden',String(!on))};window.addEventListener('scroll',upd,{passive:true});window.addEventListener('hashchange',()=>setTimeout(upd,50));setTimeout(upd,500)})();
 /* 대시보드 숫자 카드 → 해당 섹션으로 이동 (고정 헤더 높이만큼 띄움) · 도착 섹션 잠깐 강조 */
-ACT['dash-go']=t=>{const el=document.getElementById(t.dataset.to);if(!el)return;const hd=document.querySelector('.top');const H=hd?hd.getBoundingClientRect().height:0;const avail=window.innerHeight-H,eh=el.getBoundingClientRect().height;
+/* 요소를 헤더 아래 남은 화면 가운데로 스크롤 + 잠깐 강조 */
+function focusEl(el){const hd=document.querySelector('.top');const H=hd?hd.getBoundingClientRect().height:0;const avail=window.innerHeight-H,eh=el.getBoundingClientRect().height;
   /* 헤더 아래 남은 화면의 가운데 · 섹션이 더 길면 헤더 바로 아래 */const off=H+(eh<avail?(avail-eh)/2:12);
-  window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-off,behavior:'smooth'});el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1400)};
+  window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-off,behavior:'smooth'});el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1400)}
+ACT['dash-go']=t=>{const el=document.getElementById(t.dataset.to);if(el)focusEl(el)};
+/* 예약 오픈 항목 → 코트 탭의 해당 코트 카드 (#courts/코트id) */
+ACT['court-go']=t=>{closeDayPop();const h2='#courts/'+encodeURIComponent(t.dataset.id);if(location.hash!==h2)location.hash=h2;else{courtFocus=t.dataset.id;render()}};
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.act==='court-go'){e.preventDefault();ACT['court-go'](e.target)}});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.act==='dash-go'){e.preventDefault();ACT['dash-go'](e.target)}});
 // overlays must never scroll themselves (iOS scrolls overflow:hidden ancestors when focusing inputs)
 document.addEventListener('scroll',e=>{const t=e.target;if(t&&t.classList&&(t.classList.contains('ov')||t.classList.contains('wh-ov'))&&(t.scrollTop||t.scrollLeft)){t.scrollTop=0;t.scrollLeft=0}},true);
@@ -880,7 +886,7 @@ function viewHome(){
     </section>`;
   // side
   const upHtml=up.length?up.slice(0,5).map(ev=>`<div class="li click t-${h(ev.type)}" data-act="ev-open" data-id="${ev.id}">${dateBox(ev.date)}<div class="grow"><div class="ttl">${h(ev.title)}</div><div class="sub"><span class="chip ttag">${h(ev.type)}</span><span class="sub-t">${h(ev.status||'')}</span></div></div><span class="dday">${ddayLabel(ev.date)}</span></div>`).join(''):`<div class="empty"><b>예정된 행사 없음</b>내부대회·교류전·MT 등록 가능<div class="row"><button class="btn pri sm" data-act="ev-new">행사 추가</button></div></div>`;
-  const opHtml=ops.length?ops.slice(0,5).map(o=>{const pm=o.kind==='res'&&!MV?priorityMembers(o.court).length:null;const ds=ymd(o.date);return `<div class="li"><div class="grow"><div class="ttl">${h(o.court.name)}</div><div class="sub">${o.date.getMonth()+1}/${o.date.getDate()} (${WD[o.date.getDay()]}) ${pad(o.date.getHours())}:${pad(o.date.getMinutes())} · ${o.kind==='res'?`<span class="chip warn">주민 우선</span>${pm===null?'':` 가능 회원 ${pm}명`}`:'일반 오픈'}</div></div><span class="dday${o.kind==='res'?' res':''}">${ddayLabel(ds)}</span></div>`}).join(''):`<div class="empty"><b>등록된 코트 없음</b>공공 코트 등록 시 오픈일 자동 계산<div class="row"><a class="btn sm" href="#courts">코트 등록</a></div></div>`;
+  const opHtml=ops.length?ops.slice(0,5).map(o=>{const pm=o.kind==='res'&&!MV?priorityMembers(o.court).length:null;const ds=ymd(o.date);return `<div class="li click" data-act="court-go" data-id="${h(o.court.id)}" role="button" tabindex="0"><div class="grow"><div class="ttl">${h(o.court.name)}</div><div class="sub">${o.date.getMonth()+1}/${o.date.getDate()} (${WD[o.date.getDay()]}) ${pad(o.date.getHours())}:${pad(o.date.getMinutes())} · ${o.kind==='res'?`<span class="chip warn">주민 우선</span>${pm===null?'':` 가능 회원 ${pm}명`}`:'일반 오픈'}</div></div><span class="dday${o.kind==='res'?' res':''}">${ddayLabel(ds)}</span><span class="li-go" aria-hidden="true">›</span></div>`}).join(''):`<div class="empty"><b>등록된 코트 없음</b>공공 코트 등록 시 오픈일 자동 계산<div class="row"><a class="btn sm" href="#courts">코트 등록</a></div></div>`;
   // member overview
   let mo='';
   if(act.length){
@@ -941,7 +947,7 @@ function dayItems(ds){
   S.brackets.filter(b=>b.cfg&&b.cfg.date===ds).forEach(b=>out.push({c:'var(--court)',t:`대진표 · ${b.status}`,s:`${Object.keys(b.players||{}).length}명 참석`,act:'bv-open',id:b.id}));
   eventsOn(ds).forEach(ev=>{const cx=ev.status==='취소';out.push({c:cx?'var(--muted)':'var(--tc)',cls:'t-'+ev.type,dim:cx,t:ev.title,s:cx?`${ev.cancelReason||'취소'}${ev.cancelNote?' · '+ev.cancelNote:''}`:(ev.type==='개인대회'?'개인 대회':ev.type),act:'ev-open',id:ev.id,btns:RO?[]:cx?[['ev-restore','복구']]:[['ev-cancel','취소'],['dp-del','삭제','del']]})});
   S.members.filter(m=>m.birth&&ST(m)==='활동'&&bdayIn(m.birth,dt.getFullYear())===ds).forEach(m=>out.push({c:'var(--t-bd)',t:`${m.name} 생일`,s:`만 ${dt.getFullYear()-parseYmd(m.birth).getFullYear()}세`,act:RO?null:'m-edit',id:m.id}));
-  openings(400).filter(o=>ymd(o.date)===ds).forEach(o=>out.push({c:'var(--ball)',t:`${o.court.name} 예약 오픈`,s:`${pad(o.date.getHours())}:${pad(o.date.getMinutes())} · ${o.kind==='res'?'주민 우선':'일반'}`,act:null}));
+  openings(400).filter(o=>ymd(o.date)===ds).forEach(o=>out.push({c:'var(--ball)',t:`${o.court.name} 예약 오픈`,s:`${pad(o.date.getHours())}:${pad(o.date.getMinutes())} · ${o.kind==='res'?'주민 우선':'일반'}`,act:'court-go',id:o.court.id}));
   return out;
 }
 function closeDayPop(){const p=$('#daypop');if(p)p.remove();const b=$('#dp-back');if(b){b.remove();if(!$('#modal-root').innerHTML)unlockPage()}}
@@ -2347,7 +2353,7 @@ function viewCourts(){
       if(!d)return `<div class="open-box${rc}"><div class="l">${l}</div><div class="big">미정</div><div class="d">${h(ruleText(rule))}</div></div>`;
       const S2=rc?rS:gS;const live=S2&&S2.live&&S2.d===d;const dd=diffDays(ymd(d));
       return `<div class="open-box${rc}${live?' live':''}"><div class="l">${l}${live?' · 예약 중':''}</div><div class="big"><span class="dday">${ddayLabel(ymd(d))}</span><b>${fd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}</b></div><div class="d">${live&&rc&&S2.until?`주민 우선 예약 기간 · 일반 오픈 ${fd(S2.until)} ${pad(S2.until.getHours())}:${pad(S2.until.getMinutes())} 전까지`:live?'오늘 오픈 · 내일부터 다음 오픈 표시':h(ruleText(rule))}</div>${live?`<div class="d">${h(ruleText(rule))}</div>`:''}</div>`};
-    return `<article class="ccard"><div class="hd"><div><h3>${h(c.name)}</h3><div class="cbadges">${c.district?`<span class="cb cb-area">${h(c.district)}</span>`:''}${surfList(c.surface).map(s=>`<span class="cb ${({'인조잔디':'cb-grass','하드':'cb-hard','클레이':'cb-clay'})[s]||'cb-etc'}">${h(s)}</span>`).join('')}${c.indoor?'<span class="cb cb-io">실내</span>':''}${c.outdoor?'<span class="cb cb-io">실외</span>':''}${c.courts?`<span class="cb-n">${h(c.courts)}</span>`:''}${isSmash(c)?'<span class="cb cb-etc">스매시 앱 예약</span>':''}</div>${addrLink(c.address,c.name,c.map)}</div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
+    return `<article class="ccard" data-cid="${h(c.id)}"><div class="hd"><div><h3>${h(c.name)}</h3><div class="cbadges">${c.district?`<span class="cb cb-area">${h(c.district)}</span>`:''}${surfList(c.surface).map(s=>`<span class="cb ${({'인조잔디':'cb-grass','하드':'cb-hard','클레이':'cb-clay'})[s]||'cb-etc'}">${h(s)}</span>`).join('')}${c.indoor?'<span class="cb cb-io">실내</span>':''}${c.outdoor?'<span class="cb cb-io">실외</span>':''}${c.courts?`<span class="cb-n">${h(c.courts)}</span>`:''}${isSmash(c)?'<span class="cb cb-etc">스매시 앱 예약</span>':''}</div>${addrLink(c.address,c.name,c.map)}</div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
     ${c.genRule&&c.genRule.type?`<div class="opens">${c.resident?ob('주민 우선 오픈',r,c.resRule):''}${ob('일반 오픈',g,c.genRule)}</div>`:''}
     <dl class="kv"><dt>요금</dt><dd>${feeText(c)?h(feeText(c)):'-'}</dd>${c.memo?`<dt>메모</dt><dd style="white-space:pre-wrap">${h(c.memo)}</dd>`:''}</dl>
     ${c.resident?`<div class="prio"><div class="l">우선 예약 가능 회원 · ${h(c.area||c.district)}${c.workers?' 거주·직장':' 거주'} 기준 ${pm.length}명</div><div class="chips">${pm.length?pm.map(({m,why})=>`<span class="chip ${why==='거주'?'court':''}">${h(m.name)}${why==='직장'?' (직장)':''}</span>`).join(''):'<span class="small muted">해당 지역 회원 없음</span>'}</div></div>`:''}
@@ -2641,6 +2647,8 @@ function viewSettings(){
   </div>`}
 const VIEWS={home:viewHome,members:viewMembers,draw:viewDraw,events:viewEvents,courts:viewCourts,money:viewMoney,settings:viewSettings};
 const AFTER={};
+AFTER.courts=()=>{if(!courtFocus)return;const id=courtFocus;let el=document.querySelector(`.ccard[data-cid="${CSS.escape(id)}"]`);
+  if(!el&&courtArea){courtArea='';render();return}courtFocus=null;if(el)setTimeout(()=>focusEl(el),80)};
 let posterZoom='fit';
 function fitPoster(){fitIn($('#stage'))}
 function resetScale(p){p.style.zoom='';p.style.transform='';p.style.marginRight='';p.style.marginBottom=''}
