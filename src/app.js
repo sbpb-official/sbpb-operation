@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-21',v:'1.9',date:'2026-11-21',items:[
+    {k:'moncal',t:'대시보드 이번 달 캘린더 추가 (일정 이름 표시 · 월 이동 · 스와이프), 연간 캘린더 접기 · 펼치기 전환 (기본 접힘)'},
     {k:'gateorder',t:'입장 화면 정보 순서 조정 (비밀번호 유지 안내 입력칸 아래 배치 · 운영실 · 회원 화면 전환 버튼 화면 하단 분리)'},
     {k:'gatestaff',t:'운영실 입장 화면 딥그린 테마 적용 (그린 버전 로고 · 운영진 전용 배지, 회원 입장 화면과 구분)'},
     {k:'mview',t:'회원 화면 추가 (회원 비밀번호 입장 · 대시보드 · 대진표 · 이벤트 · 코트 보기 전용, 운영실 전환 버튼)'},
@@ -869,9 +870,12 @@ function viewHome(){
     ${ops2.map(o=>`<div class="li"><span class="dot" style="background:var(--ball)"></span><div class="grow"><div class="ttl">${h(o.court.name)} ${o.kind==='res'?'주민 우선':'일반'} 예약 오픈</div><div class="sub">${pad(o.date.getHours())}:${pad(o.date.getMinutes())}</div></div></div>`).join('')}
     ${!regLi&&!bdLi&&!evs.length&&!ops2.length&&!S.brackets.some(b=>b.cfg&&b.cfg.date===calSel)?'<div class="li muted">일정 없음</div>':''}</div></div>`;
   }
-  const cal=`<section class="panel"><div class="panel-h"><h2>${calYear} 연간 캘린더</h2><div class="row"><button class="btn sm" data-act="cal-y" data-v="-1" aria-label="이전 해">‹</button><button class="btn sm" data-act="cal-y" data-v="0">올해</button><button class="btn sm" data-act="cal-y" data-v="1" aria-label="다음 해">›</button></div></div>
-    <div class="year">${months}</div>
-    <div class="legend"><span><i class="swatch" style="background:color-mix(in srgb,var(--t-reg) 18%,transparent)"></i>정기모임 (매주 토 ${REG.start}–${REG.end})</span><span><i class="dot" style="background:var(--t-bd)"></i>회원 생일</span>${EV_TYPES.filter(x=>x!=='정기모임').map(x=>`<span class="t-${x}"><i class="dot tdot"></i>${x}</span>`).join('')}<span><i class="dot" style="background:var(--ball)"></i>예약 오픈일</span></div>
+  const legend=`<div class="legend"><span><i class="swatch" style="background:color-mix(in srgb,var(--t-reg) 18%,transparent)"></i>정기모임 (매주 토 ${REG.start}–${REG.end})</span><span><i class="dot" style="background:var(--t-bd)"></i>회원 생일</span>${EV_TYPES.filter(x=>x!=='정기모임').map(x=>`<span class="t-${x}"><i class="dot tdot"></i>${x}</span>`).join('')}<span><i class="dot" style="background:var(--ball)"></i>예약 오픈일</span></div>`;
+  /* 이번 달 캘린더 (크게) + 연간 캘린더 (접기 · 펼치기, 기본 접힘) */
+  const cal=`<section class="panel" id="dash-cal">${monthCal(t)}${legend}
+    <details class="due-yr yr-fold" id="yr-box"${lsGet('sbpb-yr-box',false)?' open':''}><summary><h2 style="margin:0">${calYear} 연간 캘린더</h2><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
+      <div class="row yr-nav"><button class="btn sm" data-act="cal-y" data-v="-1" aria-label="이전 해">‹</button><button class="btn sm" data-act="cal-y" data-v="0">올해</button><button class="btn sm" data-act="cal-y" data-v="1" aria-label="다음 해">›</button></div>
+      <div class="year">${months}</div></details>
     </section>`;
   // side
   const upHtml=up.length?up.slice(0,5).map(ev=>`<div class="li click t-${h(ev.type)}" data-act="ev-open" data-id="${ev.id}">${dateBox(ev.date)}<div class="grow"><div class="ttl">${h(ev.title)}</div><div class="sub"><span class="chip ttag">${h(ev.type)}</span><span class="sub-t">${h(ev.status||'')}</span></div></div><span class="dday">${ddayLabel(ev.date)}</span></div>`).join(''):`<div class="empty"><b>예정된 행사 없음</b>내부대회·교류전·MT 등록 가능<div class="row"><button class="btn pri sm" data-act="ev-new">행사 추가</button></div></div>`;
@@ -908,6 +912,22 @@ function viewHome(){
 /* 회원 화면 대시보드: 회원 개요 대신 다가오는 생일 (이름 · 생년월일) */
 function mvBdays(){const ub=activeMembers().filter(m=>m.birth).map(m=>({m,d:nextBday(m.birth)})).filter(x=>diffDays(x.d)<=30).sort((a,b)=>a.d.localeCompare(b.d));
   return `<section class="panel" id="dash-bd"><div class="panel-h"><h2>다가오는 생일</h2><span class="small muted">30일 이내</span></div><div class="list">${ub.length?ub.map(x=>`<div class="li"><span class="dot" style="background:var(--t-bd)"></span><div class="grow"><div class="ttl">${h(x.m.name)}</div><div class="sub">${x.m.birth.replace(/-/g,'.')}</div></div><span class="small muted">${ddayLabel(x.d)}</span></div>`).join(''):'<div class="li muted">30일 이내 생일 없음</div>'}</div></section>`}
+let calMon=null;/* [연, 월(0~11)] · 기본 이번 달 */
+function monthCal(t){if(!calMon)calMon=[t.getFullYear(),t.getMonth()];const [y,m]=calMon;
+  const first=new Date(y,m,1),days=new Date(y,m+1,0).getDate();const lead=first.getDay();const total=Math.ceil((lead+days)/7)*7;
+  const lab=it=>it.t.replace(/\s*테니스장 예약 오픈$/,' 오픈').replace(/ 예약 오픈$/,' 오픈').replace(/^대진표 · .*/,'');
+  let cells=WD.map((w,i)=>`<span class="mc-wd${i===0?' sun':i===6?' sat':''}">${w}</span>`).join('');
+  for(let i=0;i<total;i++){const d=i-lead+1;if(d<1||d>days){cells+='<span class="mc-x"></span>';continue}
+    const ds=`${y}-${pad(m+1)}-${pad(d)}`;const wd=(lead+d-1)%7;const its=dayItems(ds).filter(it=>lab(it));const more=its.length-2;
+    cells+=`<button type="button" class="mc${ds===ymd(t)?' today':''}${ds===calSel?' sel':''}${wd===0?' sun':wd===6?' sat':''}" data-act="cal-day" data-d="${ds}" aria-label="${m+1}월 ${d}일${its.length?' 일정 '+its.length+'건':''}"><span class="mc-d">${d}</span><span class="mc-its">${its.slice(0,2).map(it=>`<i class="mc-it ${it.cls||''}${it.dim?' dim':''}" style="--c:${it.c}">${h(lab(it))}</i>`).join('')}${more>0?`<i class="mc-more">+${more}</i>`:''}</span></button>`}
+  const isNow=y===t.getFullYear()&&m===t.getMonth();
+  return `<div class="panel-h"><h2>${y}년 ${m+1}월</h2><div class="row"><button class="btn sm" data-act="mcal" data-v="-1" aria-label="이전 달">‹</button><button class="btn sm${isNow?' on':''}" data-act="mcal" data-v="0">이번 달</button><button class="btn sm" data-act="mcal" data-v="1" aria-label="다음 달">›</button></div></div>
+  <div class="mcal" id="mcal">${cells}</div>`}
+ACT['mcal']=t=>{const v=+t.dataset.v;const n=new Date();if(!v)calMon=[n.getFullYear(),n.getMonth()];else{let [y,m]=calMon;m+=v;if(m<0){m=11;y--}if(m>11){m=0;y++}calMon=[y,m]}render()};
+document.addEventListener('toggle',e=>{if(e.target.id==='yr-box')lsSet('sbpb-yr-box',e.target.open)},true);
+/* 이번 달 캘린더 좌우 스와이프로 월 이동 */
+document.addEventListener('touchstart',e=>{const g=e.target.closest&&e.target.closest('#mcal');if(!g)return;const t0=e.touches[0];g._sw={x:t0.clientX,y:t0.clientY}},{passive:true});
+document.addEventListener('touchend',e=>{const g=e.target.closest&&e.target.closest('#mcal');if(!g||!g._sw)return;const t1=e.changedTouches[0];const dx=t1.clientX-g._sw.x,dy=t1.clientY-g._sw.y;g._sw=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5){ACT['mcal']({dataset:{v:dx<0?1:-1}});closeDayPop()}},{passive:true});
 ACT['cal-y']=t=>{const v=Number(t.dataset.v);calYear=v?calYear+v:new Date().getFullYear();render()};
 ACT['cal-day']=t=>{const d=t.dataset.d;if(calSel===d&&$('#daypop')){closeDayPop();return}calSel=d;render();openDayPop(d)};
 function dayItems(ds){
@@ -926,7 +946,7 @@ function dayItems(ds){
 function closeDayPop(){const p=$('#daypop');if(p)p.remove();const b=$('#dp-back');if(b){b.remove();if(!$('#modal-root').innerHTML)unlockPage()}}
 function openDayPop(ds){
   closeDayPop();
-  const anchor=document.querySelector(`.mgrid [data-d="${ds}"]`);const items=dayItems(ds);const phone=window.innerWidth<=640;
+  const anchor=document.querySelector(`#mcal [data-d="${ds}"]`)||document.querySelector(`.mgrid [data-d="${ds}"]`);const items=dayItems(ds);const phone=window.innerWidth<=640;
   const p=document.createElement('div');p.id='daypop';p.className='daypop'+(phone?' sheet center':'');p.setAttribute('role','dialog');p.setAttribute('aria-label',fmtFull(ds)+' 일정');
   p.innerHTML=`<div class="dp-h"><b>${fmtFull(ds)}</b><button class="dp-x" data-act="dp-close" aria-label="닫기">닫기</button></div>
   <div class="dp-list">${items.length?items.map(it=>`<div class="dp-it${it.act?' click':''}${it.dim?' dim':''} ${it.cls||''}"${it.act?` data-act="${it.act}" data-id="${it.id||''}" data-d="${it.d||''}" role="button" tabindex="0"`:''}><span class="dot" style="background:${it.c}"></span><div class="grow"><div class="dp-t">${h(it.t)}</div><div class="dp-s">${h(it.s)}</div></div>${(it.btns||[]).length?'<div class="dp-btns" data-act="noop">':''}${(it.btns||[]).map(([act,l,k])=>`<button class="dp-x${k?' '+k:''}" data-act="${act}" data-id="${it.id||''}" data-d="${ds}" aria-label="${h(it.t)} ${l}">${l}</button>`).join('')}${(it.btns||[]).length?'</div>':''}</div>`).join(''):'<div class="dp-empty">일정 없음</div>'}</div>
