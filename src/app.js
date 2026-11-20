@@ -115,6 +115,8 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-19',v:'1.7',date:'2026-11-19',items:[
+    {k:'mview',t:'회원 화면 추가 (회원 비밀번호 입장 · 대시보드 · 대진표 · 이벤트 · 코트 보기 전용, 운영실 전환 버튼)'},
+    {k:'mpw',t:'설정 회원 비밀번호 관리 추가 (변경 · 마지막 변경일 · 6개월 경과 시 변경 권장)'},
     {k:'askdel',t:'삭제 확인 창 통일 (회원 · 게스트 · 행사 · 대진표 · 코트 · 정산 등 저장 데이터 삭제 전 확인)'},
     {k:'court-jamsil',t:'코트 추가 (잠실유수지 테니스장, 송파구체육회 이용안내 기준 · 송파구민 · 재직자 우선 접수)'},
     {k:'migfix',t:'데이터 일괄 반영 오류 수정 (신규 코트 미등록)'},
@@ -458,6 +460,8 @@ function mkInfo(rs){if(!isCourtCx(rs))return '';const st=mkState(rs);
   return `<div class="mk-info">대체일 ${rs.mkDate?`<b>${fmtD(rs.mkDate)} ${h(rs.mkStart||REG.start)}–${h(rs.mkEnd||REG.end)}</b>`:'미정'} <span class="st ${MK_CLS[st]}">${st==='미정'?'지정 전':st==='미사용'?'미사용 · 비용 없음':st}</span></div>`}
 function mkFields(rs){return `<div class="grid3"><label class="f">대체일${calField(rs.mkDate,{name:'mkDate'})}</label><label class="f">시작${timeField(rs.mkStart||REG.start,{name:'mkStart',title:'대체일 시작'})}</label><label class="f">종료${timeField(rs.mkEnd||REG.end,{name:'mkEnd',title:'대체일 종료'})}</label></div>`}
 let db=null,userCap=null,myId=null,dl=null,mode='connecting',slow=false,RO=false,art=null,snapKey=null;
+/* 회원 화면 (MV): 회원 공용 비밀번호로 들어오는 보기 전용 화면 · 운영실은 지금 앱 그대로 */
+let MV=false,mvDenied=false;const MV_TABS=['home','draw','events','courts'];const MV_COLS=['courts','events','regstat','brackets','rentals','presets','names'];
 const loaded=new Set();
 const names={};
 function loadLocal(){const d=lsGet('sbpb-local',null);if(d)COLS.forEach(c=>S[c]=d[c]||[])}
@@ -477,6 +481,7 @@ async function del(col,id){
 }
 const pendingCount=()=>{const at=(PUB.snap&&PUB.snap.at)||0;return COLS.reduce((n,c)=>n+S[c].filter(x=>(x.updatedAt||0)>at).length,0)};
 function setConn(){const c=$('#conn');const sp=c.querySelector('span');c.removeAttribute('data-act');c.removeAttribute('role');c.removeAttribute('tabindex');
+  const mb=$('#mode-btn');if(mb){mb.hidden=!WEB||!(MV||mode==='db');mb.textContent=MV?'운영실':'회원 화면'}
   if(mode==='db'){c.className='conn on';const p=pendingCount();sp.textContent=slow?'동기화 지연':(art?`공개본 갱신${p?` · 변경 ${p}건`:''}`:'운영진 편집 모드');if(art){c.dataset.act='pub-open';c.setAttribute('role','button');c.setAttribute('tabindex','0');c.classList.add('click')}}
   else if(mode==='ro'&&WEB){c.className='conn click';sp.textContent='운영진 로그인';c.dataset.act='web-login';c.setAttribute('role','button');c.setAttribute('tabindex','0')}
   else if(mode==='ro'){c.className='conn';sp.textContent=PUB.snap?`보기 전용 · ${new Date(PUB.snap.at).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'})} 기준`:'보기 전용'}
@@ -503,6 +508,7 @@ async function boot(){
       loaded.add(col);
       if(!snap.metadata.fromCache)fresh.add(col);if(fresh.size===COLS.length&&!migRan){migRan=true;clearTimeout(timer);if(slow){slow=false}runMigrations()}
       if(col==='notes')resolveNames(S.notes.map(n=>n.authorId));
+      if((col==='members'||col==='guests')&&fresh.has('members')&&fresh.has('guests'))syncRoster();
       setConn();render();
     },err=>{loaded.add(col);toast('데이터 불러오기 실패: '+col);render()});
   });
@@ -652,6 +658,20 @@ async function runMigrations(){
   migBusy=false;
 }
 async function getSnapKey(){if(snapKey)return snapKey;const s=lsGet('sbpb-k',null);if(s&&PUB.snap&&s.salt===PUB.snap.salt){try{snapKey=await importKey(s.k);return snapKey}catch(e){}}return null}
+/* 회원 화면용 공개 명단: 이름 · 성별 · 생년월일 · 상태만 (전화번호 · 거주지 · 직장 · 메모 제외) */
+let rosterT=null,rosterLast='';
+function syncRoster(){if(!WEB||RO||!db||!window.SBPB_WEB.saveRoster)return;clearTimeout(rosterT);rosterT=setTimeout(()=>{
+  const r={members:S.members.filter(m=>!m.sample).map(m=>({id:m.id,name:m.name||'',gender:m.gender||'',birth:m.birth||'',status:ST(m)})),guests:S.guests.map(g=>({id:g.id,name:g.name||'',gender:g.gender||''}))};
+  const j=JSON.stringify(r);if(j===rosterLast)return;rosterLast=j;window.SBPB_WEB.saveRoster({...r,at:Date.now()}).catch(()=>{rosterLast=''})},3000)}
+/* 회원 화면 시작: 회원 계정으로 공개 범위 데이터만 실시간 읽기 */
+async function bootMember(){
+  MV=true;RO=true;mode='member';started=true;document.body.classList.add('ro','mv');document.body.classList.remove('locked');$('#gate').hidden=true;
+  const m=window.SBPB_WEB.member;COLS.filter(c=>!MV_COLS.includes(c)).forEach(c=>{S[c]=S[c]||[];loaded.add(c)});
+  const fail=err=>{if(err&&(err.code==='permission-denied'||err.code==='unauthenticated')){if(!m.user()){showGate('member','회원 비밀번호 변경됨. 새 비밀번호 입력 필요');return}if(!mvDenied){mvDenied=true;render()}}};
+  MV_COLS.forEach(col=>m.db.collection(col).onSnapshot(snap=>{S[col]=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.add(col);render()},err=>{loaded.add(col);fail(err)}));
+  m.roster(r=>{S.members=(r&&r.members)||[];S.guests=(r&&r.guests)||[];render()},fail);
+  setConn();render();
+}
 async function enterRO(){
   RO=true;mode='ro';document.body.classList.add('ro');
   if(PUB.snap){const k=await getSnapKey();if(!k){lock('공개본 열람을 위해 비밀번호 재입력 필요');return}
@@ -716,7 +736,7 @@ function openings(rangeDays=60){
   return out.sort((a,b)=>a.date-b.date);
 }
 function priorityMembers(c){
-  if(!c.resident)return [];
+  if(MV||!c.resident)return [];
   const area=normArea(c.area||c.district);if(!area)return [];
   return activeMembers().filter(m=>normArea(m.district)===area||(c.workers&&normArea(m.work)===area)).map(m=>({m,why:normArea(m.district)===area?'거주':'직장'}));
 }
@@ -728,10 +748,11 @@ function render(){
   S.events.forEach(e=>{if(e.result==='예선 탈락')e.result='예선';if(e.cancelReason==='인원 부족')e.cancelReason='기타'});S.regstat.forEach(r=>{if(r.reason==='인원 부족')r.reason='기타'});
   const v=$('#view');const ae=document.activeElement;let keep=null;
   if(ae&&ae.id&&v.contains(ae)){let s=null,e2=null;try{s=ae.selectionStart;e2=ae.selectionEnd}catch(err){}keep={id:ae.id,s,e:e2,top:ae.scrollTop,val:ae.dataset&&ae.dataset.led?ae.value:undefined}}
-  const hp=(location.hash||'#home').slice(1).split('/');const r=hp[0];route=VIEWS[r]?r:'home';evRoute=route==='events'&&hp[1]?decodeURIComponent(hp[1]):null;if(evRoute)evSel=evRoute;
+  const hp=(location.hash||'#home').slice(1).split('/');const r=hp[0];route=VIEWS[r]&&(!MV||MV_TABS.includes(r))?r:'home';evRoute=route==='events'&&hp[1]?decodeURIComponent(hp[1]):null;if(evRoute)evSel=evRoute;
   document.querySelectorAll('#tabs a').forEach(a=>a.setAttribute('aria-current',a.getAttribute('href')==='#'+route?'page':'false'));
   let banner='';
-  if(mode==='ro')banner=PUB.snap?`<div class="banner"><b>보기 전용 화면</b> · ${new Date(PUB.snap.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})} 기준 공개본. ${WEB?'수정은 운영진 로그인 후 가능':'수정은 Claude 로그인 운영진만 가능'}</div>`:`<div class="banner"><b>공개된 데이터 없음.</b> 운영진의 '공개본 갱신' 이후 로그인 없이 비밀번호로 열람 가능</div>`;
+  if(MV)banner=mvDenied?`<div class="banner"><b>회원 화면 준비 중.</b> 운영진의 보안 규칙 적용 후 표시</div>`:'';
+  else if(mode==='ro')banner=PUB.snap?`<div class="banner"><b>보기 전용 화면</b> · ${new Date(PUB.snap.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})} 기준 공개본. ${WEB?'수정은 운영진 로그인 후 가능':'수정은 Claude 로그인 운영진만 가능'}</div>`:`<div class="banner"><b>공개된 데이터 없음.</b> 운영진의 '공개본 갱신' 이후 로그인 없이 비밀번호로 열람 가능</div>`;
   else if(mode==='local')banner=`<div class="banner">공유 저장소 미연결 상태. 이 브라우저에만 저장됨</div>`;
   else if(slow)banner=`<div class="banner">저장소 응답 지연. 표시 내용이 최신이 아닐 수 있음</div>`;
   const ks={};v.querySelectorAll('[data-ks]').forEach(el=>ks[el.dataset.ks]=el.scrollTop);const wy=window.scrollY;
@@ -811,10 +832,10 @@ function viewHome(){
   const up=S.events.filter(e=>e.date&&diffDays(e.endDate||e.date)>=0&&e.status!=='취소').sort((a,b)=>a.date.localeCompare(b.date));
   const ops=openings(30);const opsWeek=ops.filter(o=>(o.date-new Date())/864e5<=7);
   const t=new Date();
-  const kp=`<div class="kpis">
+  const kp=`<div class="kpis${MV?' mv2':''}">${MV?'':`
     <div class="kpi go" data-act="dash-go" data-to="dash-mem" role="button" tabindex="0"><div class="l">활동 회원</div><div class="v">${act.length}</div><div class="s">남 ${M} · 여 ${F} · 운영진 ${act.filter(m=>isStaff(m)).length}${S.members.filter(m=>ST(m)==='휴면').length?` · 휴면 ${S.members.filter(m=>ST(m)==='휴면').length}`:''}</div></div>
     <div class="kpi go" data-act="dash-go" data-to="dash-mem" role="button" tabindex="0"><div class="l">평균 레벨</div><div class="v">${act.length?avg.toFixed(1):'–'}</div><div class="s">${act.length?stars(Math.round(avg*2)/2):'회원 등록 후 표시'}</div></div>
-    <div class="kpi go" data-act="dash-go" data-to="dash-ev" role="button" tabindex="0"><div class="l">다가오는 행사</div><div class="v">${up.length}</div><div class="s">${up[0]?`${h(up[0].title)} ${ddayLabel(up[0].date)}`:'예정된 행사 없음'}</div></div>
+    `}<div class="kpi go" data-act="dash-go" data-to="dash-ev" role="button" tabindex="0"><div class="l">다가오는 행사</div><div class="v">${up.length}</div><div class="s">${up[0]?`${h(up[0].title)} ${ddayLabel(up[0].date)}`:'예정된 행사 없음'}</div></div>
     <div class="kpi go" data-act="dash-go" data-to="dash-open" role="button" tabindex="0"><div class="l">7일 내 예약 오픈</div><div class="v">${opsWeek.length}</div><div class="s">${opsWeek[0]?`${h(opsWeek[0].court.name)} ${opsWeek[0].date.getMonth()+1}/${opsWeek[0].date.getDate()}`:'등록된 코트 기준'}</div></div>
   </div>`;
   // calendar
@@ -838,7 +859,7 @@ function viewHome(){
   if(calSel){
     const evs=eventsOn(calSel);const ops2=openings(400).filter(o=>ymd(o.date)===calSel);
     const regLi=parseYmd(calSel).getDay()===REG.weekday?`<div class="li t-정기모임"><span class="dot tdot"></span><div class="grow"><div class="ttl">정기모임</div><div class="sub">${REG.start}–${REG.end} · ${REG.place}</div></div>${diffDays(calSel)>=0?`<button class="btn sm" data-act="reg-draw" data-d="${calSel}">대진표 만들기</button>`:''}</div>`:'';
-    const bdLi=(bdMap[calSel]||[]).map(x=>`<div class="li click" data-act="m-edit" data-id="${x.id}"><span class="dot" style="background:var(--t-bd)"></span><div class="grow"><div class="ttl">${h(x.name)} 생일</div><div class="sub">${parseYmd(calSel).getFullYear()-parseYmd(x.birth).getFullYear()}번째 생일 · ${x.birth.slice(0,4)}년생</div></div></div>`).join('');
+    const bdLi=(bdMap[calSel]||[]).map(x=>`<div class="li${MV?'':' click'}"${MV?'':` data-act="m-edit" data-id="${x.id}"`}><span class="dot" style="background:var(--t-bd)"></span><div class="grow"><div class="ttl">${h(x.name)} 생일</div><div class="sub">${parseYmd(calSel).getFullYear()-parseYmd(x.birth).getFullYear()}번째 생일 · ${x.birth.slice(0,4)}년생</div></div></div>`).join('');
     dayInfo=`<div class="dayinfo"><div class="row" style="justify-content:space-between"><h3>${fmtFull(calSel)}</h3><button class="btn sm" data-act="ev-new" data-d="${calSel}">이 날 행사 추가</button></div>
     <div class="list">${regLi}${S.brackets.filter(b=>b.cfg&&b.cfg.date===calSel).map(b=>`<div class="li click" data-act="bv-open" data-id="${b.id}"><span class="dot" style="background:var(--ball)"></span><div class="grow"><div class="ttl">대진표 · ${h(b.cfg.title)}</div><div class="sub">${h(b.status)} · ${Object.keys(b.players||{}).length}명 · 눌러서 보기</div></div></div>`).join('')}${bdLi}${evs.map(ev=>`<div class="li click t-${h(ev.type)}" data-act="ev-open" data-id="${ev.id}"><span class="dot tdot"></span><div class="grow"><div class="ttl">${h(ev.title)}</div><div class="sub">${h(ev.type)} · ${h(ev.place||'장소 미정')}</div></div></div>`).join('')}
     ${ops2.map(o=>`<div class="li"><span class="dot" style="background:var(--ball)"></span><div class="grow"><div class="ttl">${h(o.court.name)} ${o.kind==='res'?'주민 우선':'일반'} 예약 오픈</div><div class="sub">${pad(o.date.getHours())}:${pad(o.date.getMinutes())}</div></div></div>`).join('')}
@@ -850,7 +871,7 @@ function viewHome(){
     </section>`;
   // side
   const upHtml=up.length?up.slice(0,5).map(ev=>`<div class="li click t-${h(ev.type)}" data-act="ev-open" data-id="${ev.id}">${dateBox(ev.date)}<div class="grow"><div class="ttl">${h(ev.title)}</div><div class="sub"><span class="chip ttag">${h(ev.type)}</span><span class="sub-t">${h(ev.status||'')}</span></div></div><span class="dday">${ddayLabel(ev.date)}</span></div>`).join(''):`<div class="empty"><b>예정된 행사 없음</b>내부대회·교류전·MT 등록 가능<div class="row"><button class="btn pri sm" data-act="ev-new">행사 추가</button></div></div>`;
-  const opHtml=ops.length?ops.slice(0,5).map(o=>{const pm=o.kind==='res'?priorityMembers(o.court).length:null;const ds=ymd(o.date);return `<div class="li"><div class="grow"><div class="ttl">${h(o.court.name)}</div><div class="sub">${o.date.getMonth()+1}/${o.date.getDate()} (${WD[o.date.getDay()]}) ${pad(o.date.getHours())}:${pad(o.date.getMinutes())} · ${o.kind==='res'?`<span class="chip warn">주민 우선</span> 가능 회원 ${pm}명`:'일반 오픈'}</div></div><span class="dday${o.kind==='res'?' res':''}">${ddayLabel(ds)}</span></div>`}).join(''):`<div class="empty"><b>등록된 코트 없음</b>공공 코트 등록 시 오픈일 자동 계산<div class="row"><a class="btn sm" href="#courts">코트 등록</a></div></div>`;
+  const opHtml=ops.length?ops.slice(0,5).map(o=>{const pm=o.kind==='res'&&!MV?priorityMembers(o.court).length:null;const ds=ymd(o.date);return `<div class="li"><div class="grow"><div class="ttl">${h(o.court.name)}</div><div class="sub">${o.date.getMonth()+1}/${o.date.getDate()} (${WD[o.date.getDay()]}) ${pad(o.date.getHours())}:${pad(o.date.getMinutes())} · ${o.kind==='res'?`<span class="chip warn">주민 우선</span>${pm===null?'':` 가능 회원 ${pm}명`}`:'일반 오픈'}</div></div><span class="dday${o.kind==='res'?' res':''}">${ddayLabel(ds)}</span></div>`}).join(''):`<div class="empty"><b>등록된 코트 없음</b>공공 코트 등록 시 오픈일 자동 계산<div class="row"><a class="btn sm" href="#courts">코트 등록</a></div></div>`;
   // member overview
   let mo='';
   if(act.length){
@@ -877,9 +898,12 @@ function viewHome(){
     const li=e=>`<div class="li click" data-act="ev-open" data-id="${e.id}"><div class="grow"><div class="ttl">${entLine(e)||'출전 멤버 미입력'}</div><div class="sub">${fmtD(e.date)} · ${h(e.title)}${e.division?' · '+h(e.division):''}${(e.cheer||[]).length?` · 응원 ${(e.cheer||[]).length}명`:''}</div></div>${diffDays(e.date)>=0?`<span class="dday">${ddayLabel(e.date)}</span>`:`<span class="result ${resultCls(e.result)}" style="font-size:12px">${h(e.result)}</span>`}</div>`;
     return `<section class="panel"><div class="panel-h"><h2>멤버 대회 소식</h2><a href="#events" data-act="ev-filter" data-v="all">전체 보기</a></div><div class="list">${up2.map(li).join('')}${past.map(li).join('')}</div></section>`})()}
   <section class="panel" id="dash-open"><div class="panel-h"><h2>예약 오픈 임박</h2><a href="#courts">코트 보기</a></div><div class="list">${opHtml}</div></section>
-  <section class="panel" id="dash-mem"><div class="panel-h"><h2>회원 개요</h2><a href="#members">회원 보기</a></div>${mo}</section>
+  ${MV?mvBdays():`<section class="panel" id="dash-mem"><div class="panel-h"><h2>회원 개요</h2><a href="#members">회원 보기</a></div>${mo}</section>`}
   </div></div>`;
 }
+/* 회원 화면 대시보드: 회원 개요 대신 다가오는 생일 (이름 · 생년월일) */
+function mvBdays(){const ub=activeMembers().filter(m=>m.birth).map(m=>({m,d:nextBday(m.birth)})).filter(x=>diffDays(x.d)<=30).sort((a,b)=>a.d.localeCompare(b.d));
+  return `<section class="panel" id="dash-bd"><div class="panel-h"><h2>다가오는 생일</h2><span class="small muted">30일 이내</span></div><div class="list">${ub.length?ub.map(x=>`<div class="li"><span class="dot" style="background:var(--t-bd)"></span><div class="grow"><div class="ttl">${h(x.m.name)}</div><div class="sub">${x.m.birth.replace(/-/g,'.')}</div></div><span class="small muted">${ddayLabel(x.d)}</span></div>`).join(''):'<div class="li muted">30일 이내 생일 없음</div>'}</div></section>`}
 ACT['cal-y']=t=>{const v=Number(t.dataset.v);calYear=v?calYear+v:new Date().getFullYear();render()};
 ACT['cal-day']=t=>{const d=t.dataset.d;if(calSel===d&&$('#daypop')){closeDayPop();return}calSel=d;render();openDayPop(d)};
 function dayItems(ds){
@@ -1468,8 +1492,8 @@ function viewDrawRO(){
   const list=S.brackets.slice().sort((a,b)=>(b.cfg?.date||'').localeCompare(a.cfg?.date||''));
   const latest=list.find(b=>b.status==='확정')||list[0];
   return `<div class="page-head"><div><h1>대진표</h1><p>공개된 대진표 조회 및 이미지 다운로드</p></div></div>
-  <div class="draw"><div>${historyPanel(list)}</div><div style="min-width:0">${latest?`<div class="stage-bar"><div class="hint"><b>${fmtFull(latest.cfg.date)}</b> ${h(latest.status)}</div><button class="btn ball" data-act="bv-img" data-id="${latest.id}" data-inline="1">이미지 다운로드</button></div><div class="stage" id="stage">${posterHtml(normB(latest),false)}</div>`:'<div class="empty" style="padding:60px 16px"><b>공개된 대진표 없음</b>대진표 확정 및 공개본 갱신 후 표시</div>'}</div></div>
-  <div class="draw-hist">${statsPanel()}</div>`;
+  <div class="draw"><div>${historyPanel(list)}</div><div style="min-width:0">${latest?`<div class="stage-bar"><div class="hint"><b>${fmtFull(latest.cfg.date)}</b> ${h(latest.status)}</div><button class="btn ball" data-act="bv-img" data-id="${latest.id}" data-inline="1">이미지 다운로드</button></div><div class="stage" id="stage">${posterHtml(normB(latest),false)}</div>`:'<div class="empty" style="padding:60px 16px"><b>'+(MV?'확정된 대진표 없음</b>운영진 확정 후 표시':'공개된 대진표 없음</b>대진표 확정 및 공개본 갱신 후 표시')+'</div>'}</div></div>
+  ${MV?'':`<div class="draw-hist">${statsPanel()}</div>`}`;
 }
 let bvCtx=null;
 /* 지난 대진을 원본은 그대로 두고 다음 정기모임 날짜의 새 초안으로 복사 */
@@ -2099,7 +2123,7 @@ function mPodium(ev,m){if(m.fmt==='rank'){const r=(m.entries||[]).filter(e=>e.ra
 const medal=(n,txt)=>`<span class="md md${n}"><b>${n}위</b>${txt?` ${h(txt)}`:''}</span>`;
 function matchesHtml(ev){const ms=evMatches(ev);const board=ms.map(m=>({m,p:mPodium(ev,m)})).filter(x=>x.p[0]);
   return `${board.length?`<div class="mboard"><h4 class="st-h" style="margin:0 0 8px">매치별 결과</h4>${board.map(x=>`<div class="mb-row"><b>${h(x.m.name)}</b><div class="mb-p">${x.p.map((t,i)=>t?medal(i+1,t):'').join('')}</div></div>`).join('')}</div>`:''}
-    ${ms.length?ms.map(m=>matchCard(ev,m)).join(''):`<p class="small muted" style="margin:0">매치 없음 · "매치 추가"로 팀전 · 단식 · 복식 · 이벤트 게임 추가</p>`}`}
+    ${ms.length?ms.map(m=>matchCard(ev,m)).join(''):`<p class="small muted" style="margin:0">${RO?'등록된 대진 없음':'매치 없음 · "매치 추가"로 팀전 · 단식 · 복식 · 이벤트 게임 추가'}</p>`}`}
 function matchCard(ev,m){const n=(m.entries||[]).length;const unit=m.fmt==='rot'||mSingle(m)?'명':'팀';const b=mBracket(m);
   const acts=RO?'':`<div class="row">${m.fmt!=='rank'?`<button class="btn sm" data-act="m-entries">참가${m.fmt==='rot'||mSingle(m)?'자':' 페어'}</button>`:`<button class="btn sm" data-act="m-entries">참가자</button>`}
     ${m.fmt==='rank'?'<button class="btn sm pri" data-act="m-rank">결과 입력</button>':m.fmt==='rot'?`<button class="btn sm pri" data-act="m-make">${b?'대진 다시 만들기':'대진 만들기'}</button>`:`<button class="btn sm pri" data-act="m-make">${m.tr?'대진 다시 만들기':'대진 만들기'}</button>`}
@@ -2287,7 +2311,7 @@ function viewCourts(){
   const ops=openings(45);
   const areas=[...new Set(S.courts.map(c=>c.district).filter(Boolean))].sort();
   const list=S.courts.filter(c=>!courtArea||c.district===courtArea).map(c=>({c,n:[c.resident?shownOpen(c,'res').d:null,shownOpen(c,'gen').d].filter(Boolean).sort((a,b)=>a-b)[0]})).sort((a,b)=>{const k=o=>o.n?+o.n:(o.c.genRule&&o.c.genRule.type==='rolling'?9e15:Infinity);return (isSmash(a.c)-isSmash(b.c))||k(a)-k(b)||(a.c.name||'').localeCompare(b.c.name||'','ko')});
-  const tl=ops.length?`<div class="timeline">${ops.slice(0,12).map(o=>`<div class="tl ${o.kind}"><div class="dday">${ddayLabel(ymd(o.date))}</div><div style="font-weight:600">${h(o.court.name)}</div><div class="small muted">${o.date.getMonth()+1}/${o.date.getDate()} (${WD[o.date.getDay()]}) ${pad(o.date.getHours())}:${pad(o.date.getMinutes())}</div><div style="margin-top:4px">${o.kind==='res'?`<span class="chip warn">주민 우선 · ${priorityMembers(o.court).length}명 가능</span>`:'<span class="chip court">일반 오픈</span>'}</div></div>`).join('')}</div>`:'';
+  const tl=ops.length?`<div class="timeline">${ops.slice(0,12).map(o=>`<div class="tl ${o.kind}"><div class="dday">${ddayLabel(ymd(o.date))}</div><div style="font-weight:600">${h(o.court.name)}</div><div class="small muted">${o.date.getMonth()+1}/${o.date.getDate()} (${WD[o.date.getDay()]}) ${pad(o.date.getHours())}:${pad(o.date.getMinutes())}</div><div style="margin-top:4px">${o.kind==='res'?`<span class="chip warn">주민 우선${MV?'':` · ${priorityMembers(o.court).length}명 가능`}</span>`:'<span class="chip court">일반 오픈</span>'}</div></div>`).join('')}</div>`:'';
   const card=({c})=>{
     const gS=shownOpen(c,'gen'),rS=c.resident?shownOpen(c,'res'):{d:null};const g=gS.d,r=rS.d;
     const pm=priorityMembers(c);
@@ -2307,11 +2331,11 @@ function viewCourts(){
   const cards=KINDS.map(([k,l])=>{const items=list.filter(({c})=>kindOf(c)===k);return items.length?`<section class="plat"><div class="plat-h"><h3>${l} <span class="num muted" style="font-size:13px">${items.length}</span></h3></div><div class="cards">${items.map(card).join('')}</div></section>`:''}).join('');
   // area coverage: which districts have members
   const memAreas={};activeMembers().forEach(m=>{if(m.district)memAreas[m.district]=(memAreas[m.district]||0)+1});
-  return `<div class="page-head"><div><h1>코트</h1><p>정기대관 코트 사용 현황 및 추가 코트 예약 관리</p></div></div>
+  return `<div class="page-head"><div><h1>코트</h1><p>${MV?'코트별 예약 오픈 일정 · 요금 · 예약 링크':'정기대관 코트 사용 현황 및 추가 코트 예약 관리'}</p></div></div>
   ${rentalSection()}
   <div class="sec-h" id="extra"><div><h2>추가 코트 예약</h2><p class="small muted" style="margin:2px 0 0">예약처별 오픈 규칙·요금·예약 링크</p></div><div class="row"><button class="btn pri" data-act="c-new">코트 추가</button></div></div>
   ${S.courts.length?`<section class="panel"><div class="panel-h"><h2>45일 내 예약 오픈</h2><span class="small muted">주민 우선 오픈은 주황색</span></div>${tl||'<div class="muted small">45일 내 오픈 예정 코트 없음</div>'}</section>
-  <div class="toolbar" style="margin-top:16px"><select class="in" id="c-area" data-carea="1"><option value="">지역 전체</option>${areas.map(a=>`<option${courtArea===a?' selected':''}>${h(a)}</option>`).join('')}</select><span class="small muted">회원 거주지: ${Object.entries(memAreas).sort((a,b)=>b[1]-a[1]).map(([a,n])=>`${h(areaLabel(a))} ${n}`).join(' · ')||'미입력'}</span></div>
+  <div class="toolbar" style="margin-top:16px"><select class="in" id="c-area" data-carea="1"><option value="">지역 전체</option>${areas.map(a=>`<option${courtArea===a?' selected':''}>${h(a)}</option>`).join('')}</select>${MV?'':`<span class="small muted">회원 거주지: ${Object.entries(memAreas).sort((a,b)=>b[1]-a[1]).map(([a,n])=>`${h(areaLabel(a))} ${n}`).join(' · ')||'미입력'}</span>`}</div>
   ${cards}`:
   `<div class="empty" style="padding:50px 16px"><b>등록된 추가 코트 없음</b>예약 링크·오픈일·주민 우선 여부 입력 시 다음 오픈일까지 남은 기간과 우선 예약 가능 회원 표시<div class="row"><button class="btn pri" data-act="c-new">코트 추가</button></div></div>`}`;
 }
@@ -2587,6 +2611,7 @@ function viewSettings(){
     ${mode==='db'?`<div class="set-acts"><button class="btn" data-act="backup-open">데이터 백업</button>${art?`<button class="btn" data-act="pub-open">공개본 갱신${pendingCount()?` (${pendingCount()})`:''}</button>`:''}${WEB?`<button class="btn ghost" data-act="web-logout">로그아웃</button>`:''}</div>`:''}
     ${WEB&&mode==='ro'?`<div class="set-acts"><button class="btn" data-act="web-login">운영진 로그인</button></div>`:''}
   </section>
+  ${mpwPanel()}
   <section class="panel"><div class="panel-h"><h2>업데이트 기록</h2><span class="small muted">버전별 · 최신 순 · 같은 날 배포는 한 버전</span></div><div id="verwrap">${verBox()}</div></section>
   </div>`}
 const VIEWS={home:viewHome,members:viewMembers,draw:viewDraw,events:viewEvents,courts:viewCourts,money:viewMoney,settings:viewSettings};
@@ -2658,7 +2683,26 @@ ACT['bk-xlsx']=async t=>{
 
 /* ---------- web app: operator login, operator accounts, data import ---------- */
 ACT['web-login']=()=>{if(WEB)window.SBPB_WEB.login().catch(e=>toast('로그인 실패. 잠시 후 재시도 필요'))};
-ACT['web-logout']=async()=>{if(!WEB)return;await window.SBPB_WEB.logout();location.reload()};
+ACT['web-logout']=async()=>{if(!WEB)return;lsSet('sbpb-view','member');await window.SBPB_WEB.logout();location.reload()};
+/* 운영실 ↔ 회원 화면 전환: 마지막에 쓰던 화면을 기기에 기억 */
+ACT['mode-switch']=()=>{if(!WEB)return;lsSet('sbpb-view',MV?'staff':'member');location.hash='#home';location.reload()};
+/* 설정 › 회원 비밀번호 (운영진만) */
+let mpwInfo;
+async function loadMpw(){try{mpwInfo=await window.SBPB_WEB.member.info()||{}}catch(e){mpwInfo={err:1}}render()}
+function mpwPanel(){if(!WEB||mode!=='db')return '';if(mpwInfo===undefined){mpwInfo=null;loadMpw()}
+  const i=mpwInfo||{};const days=i.at?Math.floor((Date.now()-i.at)/864e5):null;
+  return `<section class="panel"><div class="panel-h"><h2>회원 비밀번호</h2><span class="small muted">회원 화면 입장용 · 회원 공용</span></div>
+    ${mpwInfo===null?'<div class="set-row"><span>불러오는 중</span></div>':i.pw?`<div class="set-row"><span>현재 비밀번호</span><b class="mpw" id="mpw-v" data-pw="${h(i.pw)}">••••••</b></div>
+    <div class="set-row"><span>마지막 변경</span><b>${fmtFull(ymd(new Date(i.at)))} · ${days}일 전</b></div>
+    ${days>=180?'<div class="need warn">변경 후 6개월 경과. 비밀번호 변경 권장</div>':''}`:'<div class="need warn">회원 계정 미생성. 회원 비밀번호 입력 후 회원 화면 사용 가능</div>'}
+    <div class="set-acts">${i.pw?'<button class="btn" data-act="mpw-show">비밀번호 보기</button>':''}<button class="btn pri" data-act="mpw-set">${i.pw?'비밀번호 변경':'회원 비밀번호 설정'}</button></div></section>`}
+ACT['mpw-show']=t=>{const v=$('#mpw-v');if(!v)return;const on=v.textContent!==v.dataset.pw;v.textContent=on?v.dataset.pw:'••••••';t.textContent=on?'숨기기':'비밀번호 보기'};
+ACT['mpw-set']=()=>{const has=mpwInfo&&mpwInfo.pw;openModal(has?'회원 비밀번호 변경':'회원 비밀번호 설정',`<label class="f">새 비밀번호 (6자 이상)<input class="in" name="pw" autocomplete="new-password" required minlength="6"></label>
+  <label class="f" id="mpw-old" hidden>현재 회원 비밀번호<input class="in" name="old" autocomplete="off"></label>
+  <p class="small muted" style="margin:0">변경 시 다른 기기의 회원 화면은 새 비밀번호 재입력 필요</p>`,async fd=>{const pw=(fd.pw||'').trim();if(pw.length<6){toast('비밀번호 6자 이상 필요');throw new Error('short')}
+    const r=await window.SBPB_WEB.member.setPassword(pw,(fd.old||'').trim());
+    if(r==='need-old'){const o=$('#mpw-old');if(o)o.hidden=false;toast('이미 만든 회원 계정. 현재 회원 비밀번호 입력 필요');throw new Error('need-old')}
+    if(r){toast(r);throw new Error(r)}toast(has?'회원 비밀번호 변경 완료':'회원 비밀번호 설정 완료');loadMpw()})};
 ACT['admin-open']=async()=>{if(!WEB)return;let list=[];try{list=await window.SBPB_WEB.getAdmins()}catch(e){}const me=window.SBPB_WEB.user();
   openModal('운영진 계정',`<p class="small muted" style="margin:0;line-height:1.6">구글 로그인 시 수정 권한을 받는 이메일 목록. 한 줄에 하나씩 입력. 대표 계정(${h(window.SBPB_WEB.SUPER)})은 항상 포함</p>
   <label class="f">운영진 이메일<textarea class="in" name="emails" rows="7" placeholder="name@gmail.com">${h(list.join('\n'))}</textarea></label>
@@ -2794,7 +2838,9 @@ const authed=()=>{if(WEB)return true;const t=lastSeen();return t>0&&Date.now()-t
 function lock(msg){memSeen=0;snapKey=null;try{localStorage.removeItem('sbpb-auth-seen');localStorage.removeItem('sbpb-k')}catch(e){}$('#gate-err').textContent=msg||'';document.body.classList.add('locked');closeModal();$('#gate').hidden=false;$('#gate-pw').value='';setTimeout(()=>$('#gate-pw').focus(),50)}
 function unlock(){touchAuth();document.body.classList.remove('locked');$('#gate').hidden=true;render();if(!started){started=true;boot()}else if(mode==='ro')enterRO()}
 $('#gate-form').addEventListener('submit',async e=>{e.preventDefault();const v=$('#gate-pw').value;
-  if(WEB){const sb=$('#gate-form button[type=submit]');sb.disabled=true;sb.textContent='확인 중…';const err=await window.SBPB_WEB.loginPw(v);sb.disabled=false;sb.textContent='입장하기';if(err){$('#gate-err').textContent=err;$('#gate-pw').select()}return}if(sha256(v)===PW_HASH){$('#gate-err').textContent='';
+  if(WEB&&gateKind==='member'){const sb=$('#gate-form button[type=submit]');sb.disabled=true;sb.textContent='확인 중…';const err=await window.SBPB_WEB.member.login(v);sb.disabled=false;sb.textContent='입장하기';
+    if(err){$('#gate-err').textContent=err;$('#gate-pw').select();return}lsSet('sbpb-view','member');if(started)location.reload();else bootMember();return}
+  if(WEB){lsSet('sbpb-view','staff');const sb=$('#gate-form button[type=submit]');sb.disabled=true;sb.textContent='확인 중…';const err=await window.SBPB_WEB.loginPw(v);sb.disabled=false;sb.textContent='입장하기';if(err){$('#gate-err').textContent=err;$('#gate-pw').select()}return}if(sha256(v)===PW_HASH){$('#gate-err').textContent='';
     if(PUB.snap){const sb=$('#gate-form button[type=submit]');sb.disabled=true;sb.textContent='여는 중…';try{snapKey=await deriveKey(v,PUB.snap.salt);lsSet('sbpb-k',{salt:PUB.snap.salt,k:await exportKey(snapKey)})}catch(err){}sb.disabled=false;sb.textContent='입장하기'}
     unlock()}else{$('#gate-err').textContent='비밀번호 불일치. 다시 입력 필요';$('#gate-pw').select()}});
 $('#gate-eye').addEventListener('click',()=>{const i=$('#gate-pw');const show=i.type==='password';i.type=show?'text':'password';$('#gate-eye').textContent=show?'숨기기':'보기'});
@@ -2802,8 +2848,17 @@ $('#gate-eye').addEventListener('click',()=>{const i=$('#gate-pw');const show=i.
 setInterval(()=>{if(!document.body.classList.contains('locked')&&!authed())lock()},60000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!document.body.classList.contains('locked')&&!authed())lock()});
 /* web app: password gate → signs in to the shared operator account on Firebase (checked by the server) */
-function showWebGate(msg){document.body.classList.add('locked');$('#gate').hidden=false;
-  const p=$('#gate-form > p');if(p)p.textContent='하루 1회 비밀번호 재입력 필요';
+let gateKind='staff';
+function showGate(kind,msg){gateKind=kind;const mem=kind==='member';document.body.classList.add('locked');$('#gate').hidden=false;
+  $('#gate-form h2').textContent=mem?'사방팔방':'사방팔방 운영실';$('#gate-form h2 + p').textContent=mem?'회원 비밀번호 입력':'운영진 비밀번호 입력';
+  const p=$('#gate-form > p');if(p)p.textContent=mem?'한 번 입력 후 이 기기에서 유지':'하루 1회 비밀번호 재입력 필요';
+  $('#gate-alt').textContent=mem?'운영실 입장':'회원 화면으로';$('#gate-pw').autocomplete=mem?'off':'current-password';
+  $('#gate-err').textContent=msg||'';$('#gate-pw').value='';setTimeout(()=>$('#gate-pw').focus(),50)}
+async function memberGate(){const m=window.SBPB_WEB.member;let u=null;try{u=await Promise.race([m.ready(),new Promise(r=>setTimeout(()=>r(null),9000))])}catch(e){}
+  if(u)bootMember();else showGate('member')}
+if(!WEB)$('#gate-alt').hidden=true;
+$('#gate-alt').addEventListener('click',()=>{if(gateKind==='member'){showGate('staff')}else{lsSet('sbpb-view','member');if(MV||!started)showGate('member');else location.reload()}});
+function showWebGate(msg){showGate('staff');
   $('#gate-err').textContent=msg||'';$('#gate-pw').value='';setTimeout(()=>$('#gate-pw').focus(),50)}
 // sign-in lasts for the day it was made: a new date asks for the password again
 const loginDay=()=>{try{return localStorage.getItem('sbpb-login-day')||''}catch(e){return ''}};
@@ -2811,7 +2866,9 @@ async function webGate(){let st={u:null,ok:false};try{st=await Promise.race([win
   if(st.ok&&loginDay()!==ymd(new Date())){try{await window.SBPB_WEB.logout()}catch(e){}showWebGate('하루 1회 비밀번호 재입력 필요');return}
   if(!st.ok){showWebGate(st.u?'이 계정은 운영진으로 등록되어 있지 않음':'');return}
   document.body.classList.remove('locked');$('#gate').hidden=true;render();if(!started){started=true;boot()}}
-if(WEB){webGate();setInterval(()=>{if(!document.body.classList.contains('locked')&&loginDay()!==ymd(new Date()))window.SBPB_WEB.logout().then(()=>location.reload())},60000);
+/* 기본 화면: 운영진으로 로그인한 적 있는 기기는 운영실, 그 밖은 회원 화면 */
+if(WEB&&lsGet('sbpb-view',loginDay()?'staff':'member')!=='staff')memberGate();
+else if(WEB){webGate();setInterval(()=>{if(!document.body.classList.contains('locked')&&loginDay()!==ymd(new Date()))window.SBPB_WEB.logout().then(()=>location.reload())},60000);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!document.body.classList.contains('locked')&&loginDay()!==ymd(new Date()))window.SBPB_WEB.logout().then(()=>location.reload())})}
 else if(authed()&&(!PUB.snap||((lsGet('sbpb-k',null)||{}).salt===PUB.snap.salt)))unlock();else lock();
 
