@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-19',v:'1.7',date:'2026-11-19',items:[
+    {k:'gateorder',t:'입장 화면 정보 순서 조정 (비밀번호 유지 안내 입력칸 아래 배치 · 운영실 · 회원 화면 전환 버튼 화면 하단 분리)'},
     {k:'gatestaff',t:'운영실 입장 화면 딥그린 테마 적용 (그린 버전 로고 · 운영진 전용 배지, 회원 입장 화면과 구분)'},
     {k:'mview',t:'회원 화면 추가 (회원 비밀번호 입장 · 대시보드 · 대진표 · 이벤트 · 코트 보기 전용, 운영실 전환 버튼)'},
     {k:'mpw',t:'설정 회원 비밀번호 관리 추가 (변경 · 마지막 변경일 · 6개월 경과 시 변경 권장)'},
@@ -2852,7 +2853,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 let gateKind='staff';
 function showGate(kind,msg){gateKind=kind;const mem=kind==='member';document.body.classList.add('locked');$('#gate').hidden=false;$('#gate').classList.toggle('staff',!mem);$('#gate-badge').hidden=mem;{const im=$('#gate-form img');if(im)im.src=mem?'logo-g-xl.png':'logo-green-xl.png'}
   $('#gate-form h2').textContent=mem?'사방팔방':'사방팔방 운영실';$('#gate-form h2 + p').textContent=mem?'회원 비밀번호 입력':'운영진 비밀번호 입력';
-  const p=$('#gate-form > p');if(p)p.textContent=mem?'한 번 입력 후 이 기기에서 유지':'하루 1회 비밀번호 재입력 필요';
+  const p=$('#gate-hint');if(p)p.textContent=mem?'한 번 입력 후 이 기기에서 유지':'하루 1회 비밀번호 재입력 필요';
   $('#gate-alt').textContent=mem?'운영실 입장':'회원 화면으로';$('#gate-pw').autocomplete=mem?'off':'current-password';
   $('#gate-err').textContent=msg||'';$('#gate-pw').value='';setTimeout(()=>$('#gate-pw').focus(),50)}
 async function memberGate(){const m=window.SBPB_WEB.member;let u=null;try{u=await Promise.race([m.ready(),new Promise(r=>setTimeout(()=>r(null),9000))])}catch(e){}

@@ -426,8 +426,8 @@ fieldset.fs legend{font-size:12px;font-weight:700;color:var(--muted);padding:0 6
 
 /* password gate */
 .locked .top,.locked main{display:none}
-.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding-block:32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--gate-bg);color:var(--gate-ink)}
-.gate-card{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px;align-items:stretch;text-align:center}
+.gate{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:32px;padding-bottom:max(24px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--gate-bg);color:var(--gate-ink)}
+.gate-card{margin-block:auto;width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px;align-items:stretch;text-align:center}
 .gate-card img{width:260px;max-width:78%;height:auto;margin:0 auto 6px;display:block}
 .gate-card h2{color:var(--brand)}
 .gate-card p{margin:0;color:var(--gate-muted);font-size:13px}
@@ -475,7 +475,8 @@ body.ro [data-act="backup-open"]{display:none!important}
 /* 운영실 ↔ 회원 화면 전환 버튼 */
 .mode-btn{min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--brand-2);background:transparent;color:var(--brand-ink);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
 .mode-btn:hover{border-color:var(--brand-muted)}
-.gate-card .btn.gate-alt{background:transparent;border-color:transparent;color:var(--gate-muted);font-weight:600;min-height:40px}
+.gate>.gate-alt{flex:none;margin-top:24px;background:transparent;border:1px solid var(--gate-line);border-radius:999px;color:var(--gate-ink);font-weight:600;min-height:44px;padding:0 20px}
+.gate-card .gate-hint{margin-top:-6px;text-align:left;font-size:12px}
 .gate-badge{display:inline-block;margin-bottom:8px;padding:4px 12px;border-radius:999px;background:var(--ball);color:var(--ball-ink);font-size:12px;font-weight:700}
 .gate-badge[hidden]{display:none}
 /* 운영실 입장 화면: 헤더와 같은 딥그린 테마 (회원 입장 화면은 크림색) */
@@ -487,7 +488,7 @@ body.ro [data-act="backup-open"]{display:none!important}
 .gate.staff .gate-card .in::placeholder{color:var(--brand-muted)}
 .gate.staff .gate-card .btn{background:var(--brand-2);border-color:#2E6B4D;color:var(--brand-ink)}
 .gate.staff .gate-card .btn.pri{background:var(--ball);border-color:var(--ball);color:var(--ball-ink)}
-.gate.staff .gate-card .btn.gate-alt{background:transparent;border-color:transparent;color:var(--brand-muted)}
+.gate.staff>.gate-alt{border-color:#2E6B4D;color:var(--brand-ink)}
 .gate.staff .gate-card .err{color:#FFB3A6}
 /* 회원 화면: 운영 전용 탭 · 섹션 숨김 */
 body.mv #tabs a[href="#members"],body.mv #tabs a[href="#money"],body.mv #tabs a[href="#settings"],body.mv .conn,body.mv .brand .sub b,body.mv .memo-fold,body.mv section.rent,body.mv .prio{display:none!important}
@@ -1320,7 +1321,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=8328135ad9';
+const CUR_APP = 'app.js?v=e89cb65df5';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1348,7 +1349,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=8328135ad9';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=e89cb65df5';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
