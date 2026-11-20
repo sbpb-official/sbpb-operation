@@ -455,6 +455,18 @@ body.ro [data-act="backup-open"]{display:none!important}
 .mode-btn{min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--brand-2);background:transparent;color:var(--brand-ink);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
 .mode-btn:hover{border-color:var(--brand-muted)}
 .gate-card .btn.gate-alt{background:transparent;border-color:transparent;color:var(--gate-muted);font-weight:600;min-height:40px}
+.gate-badge{display:inline-block;margin-bottom:8px;padding:4px 12px;border-radius:999px;background:var(--ball);color:var(--ball-ink);font-size:12px;font-weight:700}
+.gate-badge[hidden]{display:none}
+/* 운영실 입장 화면: 헤더와 같은 딥그린 테마 (회원 입장 화면은 크림색) */
+.gate.staff{background:var(--brand);color:var(--brand-ink)}
+.gate.staff .gate-card h2{color:var(--brand-ink)}
+.gate.staff .gate-card p{color:var(--brand-muted)}
+.gate.staff .gate-card .in{background:var(--brand-2);border-color:#2E6B4D;color:var(--brand-ink)}
+.gate.staff .gate-card .in::placeholder{color:var(--brand-muted)}
+.gate.staff .gate-card .btn{background:var(--brand-2);border-color:#2E6B4D;color:var(--brand-ink)}
+.gate.staff .gate-card .btn.pri{background:var(--ball);border-color:var(--ball);color:var(--ball-ink)}
+.gate.staff .gate-card .btn.gate-alt{background:transparent;border-color:transparent;color:var(--brand-muted)}
+.gate.staff .gate-card .err{color:#FFB3A6}
 /* 회원 화면: 운영 전용 탭 · 섹션 숨김 */
 body.mv #tabs a[href="#members"],body.mv #tabs a[href="#money"],body.mv #tabs a[href="#settings"],body.mv .conn,body.mv .brand .sub b,body.mv .memo-fold,body.mv section.rent,body.mv .prio{display:none!important}
 .kpis.mv2{grid-template-columns:1fr 1fr}
