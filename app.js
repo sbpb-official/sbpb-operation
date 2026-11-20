@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-21',v:'1.9',date:'2026-11-21',items:[
+    {k:'regleg',t:'캘린더 정기모임 범례 수정 (사각형>원형 · 시간 표기 제거 · 딥그린 컬러 적용), 범례 점 · 글자 간격 통일 (4px)'},
     {k:'moncal',t:'대시보드 이번 달 캘린더 추가 (일정 이름 표시 · 월 이동 · 스와이프), 연간 캘린더 접기 · 펼치기 전환 (기본 접힘)'},
     {k:'gateorder',t:'입장 화면 정보 순서 조정 (비밀번호 유지 안내 입력칸 아래 배치 · 운영실 · 회원 화면 전환 버튼 화면 하단 분리)'},
     {k:'gatestaff',t:'운영실 입장 화면 딥그린 테마 적용 (그린 버전 로고 · 운영진 전용 배지, 회원 입장 화면과 구분)'},
@@ -870,7 +871,7 @@ function viewHome(){
     ${ops2.map(o=>`<div class="li"><span class="dot" style="background:var(--ball)"></span><div class="grow"><div class="ttl">${h(o.court.name)} ${o.kind==='res'?'주민 우선':'일반'} 예약 오픈</div><div class="sub">${pad(o.date.getHours())}:${pad(o.date.getMinutes())}</div></div></div>`).join('')}
     ${!regLi&&!bdLi&&!evs.length&&!ops2.length&&!S.brackets.some(b=>b.cfg&&b.cfg.date===calSel)?'<div class="li muted">일정 없음</div>':''}</div></div>`;
   }
-  const legend=`<div class="legend"><span><i class="swatch" style="background:color-mix(in srgb,var(--t-reg) 18%,transparent)"></i>정기모임 (매주 토 ${REG.start}–${REG.end})</span><span><i class="dot" style="background:var(--t-bd)"></i>회원 생일</span>${EV_TYPES.filter(x=>x!=='정기모임').map(x=>`<span class="t-${x}"><i class="dot tdot"></i>${x}</span>`).join('')}<span><i class="dot" style="background:var(--ball)"></i>예약 오픈일</span></div>`;
+  const legend=`<div class="legend"><span><i class="dot" style="background:var(--t-reg)"></i>정기모임</span><span><i class="dot" style="background:var(--t-bd)"></i>회원 생일</span>${EV_TYPES.filter(x=>x!=='정기모임').map(x=>`<span class="t-${x}"><i class="dot tdot"></i>${x}</span>`).join('')}<span><i class="dot" style="background:var(--ball)"></i>예약 오픈일</span></div>`;
   /* 이번 달 캘린더 (크게) + 연간 캘린더 (접기 · 펼치기, 기본 접힘) */
   const cal=`<section class="panel" id="dash-cal">${monthCal(t)}${legend}
     <details class="due-yr yr-fold" id="yr-box"${lsGet('sbpb-yr-box',false)?' open':''}><summary><h2 style="margin:0">${calYear} 연간 캘린더</h2><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
