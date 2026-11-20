@@ -2,7 +2,7 @@
 // Exposes the same small interface the app uses inside the Claude artifact (window.claude.use(...)),
 // plus window.SBPB_WEB for login, operator accounts and the encrypted public snapshot.
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updatePassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, deleteDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // Firebase web config: public identifiers, safe to ship in the page (access is enforced by firestore.rules)
@@ -15,7 +15,8 @@ const firebaseConfig = {
   appId: '1:950304660445:web:96bb61c81d64cffcec3434'
 };
 const SUPER = 'sbpb.official@gmail.com';   // club account: always an operator (must match firestore.rules)
-const STAFF = 'staff@sbpb-official.github.io';   // shared operator login: the site password is this account's password (must match firestore.rules)
+const STAFF = 'staff@sbpb-official.github.io';
+const MEMBER = 'member@sbpb-official.github.io';   // shared member login: read-only member view (must match firestore.rules)   // shared operator login: the site password is this account's password (must match firestore.rules)
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -23,6 +24,20 @@ let fs;
 // ignoreUndefinedProperties: an empty optional field must never make a save fail
 try { fs = initializeFirestore(fbApp, { ignoreUndefinedProperties: true, localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
 catch (e) { fs = initializeFirestore(fbApp, { ignoreUndefinedProperties: true }); }
+
+// member view: a second Firebase app keeps the member sign-in separate from the operator sign-in
+const mApp = initializeApp(firebaseConfig, 'member');
+const mAuth = getAuth(mApp);
+const mFs = initializeFirestore(mApp, { ignoreUndefinedProperties: true });
+const mReady = new Promise(res => { const un = onAuthStateChanged(mAuth, u => { un(); res(u); }); });
+const authErr = e => {
+  const c = e && e.code || '';
+  if (c === 'auth/too-many-requests') return '시도 횟수 초과. 잠시 후 재시도 필요';
+  if (c === 'auth/network-request-failed') return '인터넷 연결 확인 필요';
+  if (c === 'auth/operation-not-allowed' || c === 'auth/configuration-not-found') return '로그인 설정 미완료. 관리자 확인 필요';
+  if (c === 'auth/weak-password') return '비밀번호 6자 이상 필요';
+  return '비밀번호 불일치. 다시 입력 필요';
+};
 
 getRedirectResult(auth).catch(() => {});
 let currentUser = null;
@@ -112,6 +127,32 @@ window.SBPB_WEB = {
       return '비밀번호 불일치. 다시 입력 필요';
     }
   },
+  member: {
+    ready: () => mReady,
+    user: () => mAuth.currentUser,
+    async login(pw) { try { await signInWithEmailAndPassword(mAuth, MEMBER, pw); return ''; } catch (e) { return authErr(e); } },
+    logout: () => signOut(mAuth),
+    db: { collection: col => ({ onSnapshot: (next, err) => onSnapshot(collection(mFs, col), { includeMetadataChanges: true }, s => next({ docs: s.docs, metadata: s.metadata }), err) }) },
+    roster: (next, err) => onSnapshot(doc(mFs, 'pub', 'roster'), s => next(s.exists() ? s.data() : null), err),
+    // operators only: current member password is kept in an operator-only document
+    async info() { const s = await getDoc(doc(fs, 'secure', 'member')); return s.exists() ? s.data() : null; },
+    async setPassword(pw, oldPw) {
+      try {
+        const cur = await getDoc(doc(fs, 'secure', 'member'));
+        const old = oldPw || (cur.exists() ? cur.data().pw : '');
+        if (!old) {
+          try { await createUserWithEmailAndPassword(mAuth, MEMBER, pw); }
+          catch (e) { if (e && e.code === 'auth/email-already-in-use') return 'need-old'; throw e; }
+        } else {
+          await signInWithEmailAndPassword(mAuth, MEMBER, old);
+          await updatePassword(mAuth.currentUser, pw);
+        }
+        await setDoc(doc(fs, 'secure', 'member'), { pw, at: Date.now() });
+        return '';
+      } catch (e) { return authErr(e); }
+    }
+  },
+  saveRoster: data => setDoc(doc(fs, 'pub', 'roster'), data),
   getAdmins: adminList,
   saveAdmins: emails => setDoc(doc(fs, 'config', 'admins'), { emails, at: Date.now() }),
   savePub: pub => setDoc(doc(fs, 'public', 'snapshot'), pub)

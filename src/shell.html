@@ -12,10 +12,11 @@
       <a href="#settings">설정</a>
     </nav>
     <div class="conn" id="conn"><i></i><span>연결 중</span></div>
+    <button type="button" class="mode-btn" id="mode-btn" data-act="mode-switch" hidden>운영실</button>
   </div>
 </header>
 <main id="view"></main>
-<div id="gate" class="gate" hidden><form class="gate-card" id="gate-form"><img src="logo-g-xl.png" alt="SBPB Tennis Club" width="260" height="173"><div><h2>사방팔방 운영실</h2><p>운영진 비밀번호 입력</p></div><div class="pwrow"><input class="in" type="password" id="gate-pw" autocomplete="current-password" placeholder="비밀번호" aria-label="비밀번호"><button type="button" class="btn" id="gate-eye" aria-label="비밀번호 보기">보기</button></div><button class="btn pri" type="submit" style="padding:10px">입장하기</button><div class="err" id="gate-err" role="alert"></div><p>2시간 미사용 시 재입력 필요</p></form></div>
+<div id="gate" class="gate" hidden><form class="gate-card" id="gate-form"><img src="logo-g-xl.png" alt="SBPB Tennis Club" width="260" height="173"><div><h2>사방팔방 운영실</h2><p>운영진 비밀번호 입력</p></div><div class="pwrow"><input class="in" type="password" id="gate-pw" autocomplete="current-password" placeholder="비밀번호" aria-label="비밀번호"><button type="button" class="btn" id="gate-eye" aria-label="비밀번호 보기">보기</button></div><button class="btn pri" type="submit" style="padding:10px">입장하기</button><button type="button" class="btn ghost gate-alt" id="gate-alt">회원 화면으로</button><div class="err" id="gate-err" role="alert"></div><p>2시간 미사용 시 재입력 필요</p></form></div>
 <div id="modal-root"></div>
 <button type="button" class="top-fab" id="top-fab" data-act="to-top" aria-label="맨 위로" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
 <button type="button" class="theme-fab" id="theme-fab" data-act="theme" aria-label="화면 모드 전환"><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>

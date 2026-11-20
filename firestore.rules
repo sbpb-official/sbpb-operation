@@ -22,6 +22,15 @@ service cloud.firestore {
       );
     }
 
+    // 회원 공용 로그인 (회원 화면 비밀번호 = 이 계정의 비밀번호, 운영진이 설정 › 회원 비밀번호에서 변경)
+    function isMember() {
+      return request.auth != null && request.auth.token.email == 'member@sbpb-official.github.io';
+    }
+    // 회원 화면에서 읽을 수 있는 데이터 (회원 정보 원본 · 메모 · 회비 · 정산 · 출석 · 게스트 · secure 제외)
+    function memberReadable(col) {
+      return col in ['courts', 'events', 'regstat', 'brackets', 'rentals', 'presets', 'names', 'pub'];
+    }
+
     // 비밀번호로 암호화된 공개본: 누구나 읽기, 운영진만 쓰기
     match /public/{docId} {
       allow read: if true;
@@ -32,9 +41,12 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if isAdmin();
     }
-    // 그 밖의 모든 데이터(회원·대진표·회비·정산 등): 운영진만
+    // 그 밖의 모든 데이터(회원·대진표·회비·정산 등): 운영진만 쓰기 · 회원은 공개 범위만 읽기
+    // pub/roster: 이름 · 성별 · 생년월일 · 상태만 담은 공개 명단 (운영진 앱이 자동 갱신)
+    // secure/member: 회원 비밀번호 (운영진만)
     match /{col}/{docId} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin() || (isMember() && memberReadable(col));
+      allow write: if isAdmin();
     }
   }
 }

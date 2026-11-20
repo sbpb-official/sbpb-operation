@@ -451,6 +451,13 @@ body.ro [data-act="m-new"],body.ro [data-act="m-sample"],body.ro [data-act="m-cl
 body.ro .mcard,body.ro .tbl tbody tr{cursor:default!important}
 body.ro [data-act="backup-open"]{display:none!important}
 .conn.click{cursor:pointer}
+/* 운영실 ↔ 회원 화면 전환 버튼 */
+.mode-btn{min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--brand-2);background:transparent;color:var(--brand-ink);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
+.mode-btn:hover{border-color:var(--brand-muted)}
+.gate-card .btn.gate-alt{background:transparent;border-color:transparent;color:var(--gate-muted);font-weight:600;min-height:40px}
+/* 회원 화면: 운영 전용 탭 · 섹션 숨김 */
+body.mv #tabs a[href="#members"],body.mv #tabs a[href="#money"],body.mv #tabs a[href="#settings"],body.mv .conn,body.mv .brand .sub b,body.mv .memo-fold,body.mv section.rent,body.mv .prio{display:none!important}
+.kpis.mv2{grid-template-columns:1fr 1fr}
 .conn.click{cursor:pointer;border:1px solid var(--brand-2);border-radius:999px;padding:4px 10px}
 .conn.click:hover{color:var(--brand-ink);border-color:var(--brand-muted)}
 .hist{max-height:420px;overflow:auto}
@@ -904,6 +911,7 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
   .logic ol{grid-template-columns:1fr}
   .cards{grid-template-columns:minmax(0,1fr)}
   .conn{display:none}
+  .mode-btn{margin-left:auto;order:2}
   .brand .sub{display:none}
   .page-head h1{font-size:20px}
 }
