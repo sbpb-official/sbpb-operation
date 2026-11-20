@@ -460,6 +460,7 @@ body.ro [data-act="backup-open"]{display:none!important}
 /* 운영실 입장 화면: 헤더와 같은 딥그린 테마 (회원 입장 화면은 크림색) */
 .gate.staff{background:var(--brand);color:var(--brand-ink)}
 .gate.staff .gate-card h2{color:var(--brand-ink)}
+.gate.staff .gate-card img{-webkit-mask-image:radial-gradient(ellipse at center,#000 72%,transparent 100%);mask-image:radial-gradient(ellipse at center,#000 72%,transparent 100%)}
 .gate.staff .gate-card p{color:var(--brand-muted)}
 .gate.staff .gate-card .in{background:var(--brand-2);border-color:#2E6B4D;color:var(--brand-ink)}
 .gate.staff .gate-card .in::placeholder{color:var(--brand-muted)}
