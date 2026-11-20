@@ -481,6 +481,7 @@ body.ro [data-act="backup-open"]{display:none!important}
 /* 운영실 입장 화면: 헤더와 같은 딥그린 테마 (회원 입장 화면은 크림색) */
 .gate.staff{background:var(--brand);color:var(--brand-ink)}
 .gate.staff .gate-card h2{color:var(--brand-ink)}
+.gate.staff .gate-card img{-webkit-mask-image:radial-gradient(ellipse at center,#000 72%,transparent 100%);mask-image:radial-gradient(ellipse at center,#000 72%,transparent 100%)}
 .gate.staff .gate-card p{color:var(--brand-muted)}
 .gate.staff .gate-card .in{background:var(--brand-2);border-color:#2E6B4D;color:var(--brand-ink)}
 .gate.staff .gate-card .in::placeholder{color:var(--brand-muted)}
@@ -1319,7 +1320,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=af3c1d4692';
+const CUR_APP = 'app.js?v=8328135ad9';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1347,7 +1348,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=af3c1d4692';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=8328135ad9';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
