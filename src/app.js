@@ -114,6 +114,8 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    화면·기능이 바뀌는 배포마다 맨 위에 항목 추가 (id는 겹치지 않게, 날짜순).
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
+  {id:'2026-11-22',v:'1.10',date:'2026-11-22',items:[
+    {k:'medit-fix',t:'회원 정보 수정 · 삭제 오류 수정 (행사 매치 수정과 버튼 충돌)'}]},
   {id:'2026-11-21',v:'1.9',date:'2026-11-21',items:[
     {k:'courtgo',t:'대시보드 예약 오픈 임박 클릭 시 코트 탭 해당 코트 카드 이동 (캘린더 날짜 팝업 예약 오픈 항목 포함)'},
     {k:'regleg',t:'캘린더 정기모임 범례 수정 (사각형>원형 · 시간 표기 제거 · 딥그린 컬러 적용), 범례 점 · 글자 간격 통일 (4px)'},
@@ -797,7 +799,7 @@ document.addEventListener('submit',async e=>{
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('#daypop')&&!$('#modal-root').innerHTML){closeDayPop();return}if($('#wheel')){closeWheel();return}if(document.querySelector('.lv-pop:not([hidden])')){closeLv();return}if($('#modal-root').innerHTML)closeModal()});
 
 /* ---------- actions ---------- */
-const WRITE_ACTS=new Set(['admin-open','data-import','bank-cfg','rent-pay','cp-open','cp-pick','due-set','due-cfg','led-new','led-edit','led-del','led-row','reg-makeup','mk-clear','reg-mk-at','m-to-guest','g-to-member','renew-open','rn-yes','rn-undo','rn-guest','rn-out','rn-back','reg-cancel','reg-del','reg-restore','ev-cancel','ev-restore','rent-edit','m-new','m-edit','m-del','m-sample','m-clear-sample','ev-new','ev-edit','ev-del','note-add','note-del','note-edit','cheer','c-new','c-edit','c-del','gen','br-save','br-confirm','br-unconfirm','br-load','bv-del','guest-new','guest-edit','guest-del','slot','reg-defaults','reg-draw','pick-all','pick-none','court-n','pub-open']);
+const WRITE_ACTS=new Set(['admin-open','data-import','bank-cfg','rent-pay','cp-open','cp-pick','due-set','due-cfg','led-new','led-edit','led-del','led-row','reg-makeup','mk-clear','reg-mk-at','m-to-guest','g-to-member','renew-open','rn-yes','rn-undo','rn-guest','rn-out','rn-back','reg-cancel','reg-del','reg-restore','ev-cancel','ev-restore','rent-edit','m-new','m-edit','m-del','mt-edit','mt-del','m-sample','m-clear-sample','ev-new','ev-edit','ev-del','note-add','note-del','note-edit','cheer','c-new','c-edit','c-del','gen','br-save','br-confirm','br-unconfirm','br-load','bv-del','guest-new','guest-edit','guest-del','slot','reg-defaults','reg-draw','pick-all','pick-none','court-n','pub-open']);
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('dp-it')&&e.target.dataset.act){e.preventDefault();e.target.click()}});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.id==='conn'&&e.target.dataset.act){e.preventDefault();ACT['pub-open']()}});
 document.addEventListener('click',e=>{
@@ -2158,7 +2160,7 @@ function matchesHtml(ev){const ms=evMatches(ev);const board=ms.map(m=>({m,p:mPod
 function matchCard(ev,m){const n=(m.entries||[]).length;const unit=m.fmt==='rot'||mSingle(m)?'명':'팀';const b=mBracket(m);
   const acts=RO?'':`<div class="row">${m.fmt!=='rank'?`<button class="btn sm" data-act="m-entries">참가${m.fmt==='rot'||mSingle(m)?'자':' 페어'}</button>`:`<button class="btn sm" data-act="m-entries">참가자</button>`}
     ${m.fmt==='rank'?'<button class="btn sm pri" data-act="m-rank">결과 입력</button>':m.fmt==='rot'?`<button class="btn sm pri" data-act="m-make">${b?'대진 다시 만들기':'대진 만들기'}</button>`:`<button class="btn sm pri" data-act="m-make">${m.tr?'대진 다시 만들기':'대진 만들기'}</button>`}
-    <button class="btn sm ghost" data-act="m-edit">수정</button></div>`;
+    <button class="btn sm ghost" data-act="mt-edit">수정</button></div>`;
   let body='';
   if(m.fmt==='rank'){const es=(m.entries||[]).map((e,i)=>({e,i})).sort((x,y)=>(x.e.rank||999)-(y.e.rank||999));
     body=es.length?`<div class="rk-list">${es.map(({e})=>`<div class="rk-row">${e.rank&&e.rank<=3?medal(e.rank,''):`<span class="rk-n num">${e.rank?e.rank+'위':'–'}</span>`}<span class="rk-name">${h(entName(e))}</span>${e.rec?`<span class="small muted">${h(e.rec)}</span>`:''}</div>`).join('')}</div>`:''}
@@ -2184,11 +2186,11 @@ const mFromFd=fd=>({name:(fd.name||'').trim()||MK_L[fd.kind],kind:fd.kind,fmt:fd
 ACT['m-add']=()=>{const ev=curEv();if(!ev)return;openModal('매치 추가',matchForm({kind:'XD',fmt:'league-ko',groups:2,adv:2}),async fd=>{const m={id:'m-'+uid(),...mFromFd(fd),entries:[]};if(m.kind==='EV'&&fd.fmt==='rot')m.fmt='rank';
   await mSaveAll(ev,evMatches(ev).concat(m));toast(`${m.name} 추가`)})};
 document.addEventListener('change',e=>{if(e.target.name!=='kind'||!e.target.closest('#mform'))return;const f=e.target.closest('#mform');const fmt=f.querySelector('[name=fmt]');if(fmt&&e.target.value==='EV')fmt.value='rank'});
-ACT['m-edit']=t=>{const ev=curEv(),mid=midOf(t);const m=ev&&mGet(ev,mid);if(!m)return;
+ACT['mt-edit']=t=>{const ev=curEv(),mid=midOf(t);const m=ev&&mGet(ev,mid);if(!m)return;
   openModal('매치 수정',matchForm(m),async fd=>{const p=mFromFd(fd);const changed=p.kind!==m.kind||p.fmt!==m.fmt||p.groups!==(+m.groups||0)||p.adv!==(+m.adv||2);
     const patch={...p};if(changed){if(m.tr)patch.tr=null;if(mSingle(p)!==mSingle(m)||(p.fmt==='rot')!==(m.fmt==='rot'))patch.entries=[]}
-    await mSave(ev,mid,patch);toast(changed&&m.tr?'형식이 바뀌어 대진 초기화 · "대진 만들기"로 다시 생성':'매치 수정')},`<button type="button" class="btn danger" data-act="m-del" data-mid="${h(mid)}">삭제</button>`)};
-ACT['m-del']=async t=>{const ev=curEv();if(!ev)return;const mm=evMatches(ev).find(m=>m.id===t.dataset.mid);if(!await askDel(mm?mm.name:'매치','대진 · 결과 포함 삭제'))return;closeModal();await mSaveAll(ev,evMatches(ev).filter(m=>m.id!==t.dataset.mid));toast('매치 삭제')};
+    await mSave(ev,mid,patch);toast(changed&&m.tr?'형식이 바뀌어 대진 초기화 · "대진 만들기"로 다시 생성':'매치 수정')},`<button type="button" class="btn danger" data-act="mt-del" data-mid="${h(mid)}">삭제</button>`)};
+ACT['mt-del']=async t=>{const ev=curEv();if(!ev)return;const mm=evMatches(ev).find(m=>m.id===t.dataset.mid);if(!await askDel(mm?mm.name:'매치','대진 · 결과 포함 삭제'))return;closeModal();await mSaveAll(ev,evMatches(ev).filter(m=>m.id!==t.dataset.mid));toast('매치 삭제')};
 /* 참가 설정: 단식 · 로테이션 · 이벤트 게임은 사람 고르기, 복식은 페어 칸에 배치 */
 function mPeople(ev,m){let ppl=evPeople(ev);if(!ppl.length)ppl=activeMembers().map(x=>x.id);return byName(ppl.filter(k=>mGenderOk(m,k)).map(k=>({key:k,name:keyName(k)}))).map(x=>x.key)}
 ACT['m-entries']=t=>{const ev=curEv(),mid=midOf(t);const m=ev&&mGet(ev,mid);if(!m)return;const ppl=mPeople(ev,m);
