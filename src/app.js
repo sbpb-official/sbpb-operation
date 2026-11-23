@@ -1063,7 +1063,7 @@ const tierLv=(key,lv)=>{const ts=tierScores();return ts&&ts[key]!=null?ts[key]:l
 let tierTab=lsGet('sbpb-tier-g','M');
 function tierListHtml(g){const order=tierOrder(g);
   return `<div class="tier-col${tierTab===g?' on':''}" data-g="${g}"><h3 class="tier-h">${g==='M'?'남자':'여자'} <span class="muted small">${order.length}명</span></h3><div class="tier-list" data-g="${g}">${order.map((id,i)=>{const m=memberById(id);const prev=i?lvOfM(memberById(order[i-1])):null;const lv=lvOfM(m);
-    return `${prev!==null&&prev!==lv?'<div class="tier-sep" aria-hidden="true"></div>':''}<div class="tier-row" data-id="${h(id)}"><span class="tier-grip" aria-label="끌어 순위 변경">⋮⋮</span><span class="num tier-n">${i+1}</span><b class="tier-nm">${h(m.name)}</b><span class="tier-lv">${stars(lv)}</span></div>`}).join('')||'<div class="muted small" style="padding:8px">활동 회원 없음</div>'}</div></div>`}
+    return `<div class="tier-row" data-id="${h(id)}"><span class="tier-grip" aria-label="끌어 순위 변경">⋮⋮</span><span class="num tier-n">${i+1}</span><b class="tier-nm">${h(m.name)}</b><span class="tier-lv">${stars(lv)}</span></div>`}).join('')||'<div class="muted small" style="padding:8px">활동 회원 없음</div>'}</div></div>`}
 function tierSection(){if(MV||RO)return '';const t=tierDoc();const nM=tierOrder('M').length,nF=tierOrder('F').length;
   return `<section class="panel tier" style="margin-top:16px"><details class="due-yr st-fold" id="tier-box"${lsGet('sbpb-tier-box',false)?' open':''}><summary><h2 style="margin:0">티어리스트 <span class="small muted" style="font-weight:500">활동 회원 ${nM+nF}명 · 대진 실력 균형에 반영</span></h2><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
     ${guide('⋮⋮ 끌어 순위 변경 · 성별마다 따로 순위')}
