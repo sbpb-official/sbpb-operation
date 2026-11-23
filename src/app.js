@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-23',v:'1.11',date:'2026-11-23',items:[
+    {k:'slotdnd',t:'대진표 이름 끌어 놓기 교체 추가 (같은 타임 · 같은 성별끼리, 휴대폰 길게 눌러 시작)'},
     {k:'drawcheck',t:'대진 생성 필수 조건 6가지 적용 (경기 수 균등 · 연속 휴식 제거 · 팀 평균 차 0.5 이하 · 전원 혼복 1회 · 같은 페어 최대 2회 · 상하위 우위 금지, 번호 = 우선순위), 대진표 하단 조건 검증 결과 표시'},
     {k:'lgdrag',t:'리그 경기 순서 끌어 놓기 저장 오류 수정'},
     {k:'tier',t:'회원 티어리스트 추가 (남녀 구분 · 끌어 놓기 순위 저장 · 운영진 전용), 대진 생성 실력 균형에 같은 성별 · 같은 레벨 안 순위 반영'},
@@ -1439,7 +1440,36 @@ function openMenu(t){
 }
 document.addEventListener('click',e=>{if(menuCtx&&!e.target.closest('#slotmenu')&&!e.target.closest('.nm'))closeMenu()},true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&menuCtx)closeMenu();if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('nm')){e.preventDefault();openMenu(e.target)}});
-ACT['slot']=t=>openMenu(t);
+ACT['slot']=t=>{if(slotDrag.just)return;openMenu(t)};
+/* 대진표 이름 끌어 놓기: 같은 타임 · 같은 성별끼리 자리 교체 (휴대폰은 길게 눌러 시작) */
+const slotDrag={just:false};
+(function(){let st=null;
+  const gender=k=>draft&&draft.players[k]?draft.players[k].gender:'';
+  const begin=()=>{if(!st)return;st.on=true;const k=getSlot(st.r,st.slot);st.k=k;const g=gender(k);
+    const gh=document.createElement('div');gh.className='nm-ghost';gh.textContent=st.el.textContent;document.body.appendChild(gh);st.gh=gh;move(st.x,st.y);
+    document.body.classList.add('slot-dragging');st.el.classList.add('dz-src');
+    document.querySelectorAll(`#stage .nm[data-r="${st.r}"]`).forEach(n=>{if(n===st.el)return;const k2=getSlot(st.r,n.dataset.slot);n.classList.add(!k2||gender(k2)===g?'dz-ok':'dz-no')});
+    document.querySelectorAll('#stage .nm[data-slot]').forEach(n=>{if(n.dataset.r!==String(st.r))n.classList.add('dz-no')});
+    if(navigator.vibrate)try{navigator.vibrate(10)}catch(e){}};
+  const move=(x,y)=>{if(!st)return;st.x=x;st.y=y;if(st.gh){st.gh.style.left=x+'px';st.gh.style.top=y+'px';
+    document.querySelectorAll('#stage .nm.dz-hover').forEach(n=>n.classList.remove('dz-hover'));const t=document.elementFromPoint(x,y);const nmEl=t&&t.closest&&t.closest('#stage .nm.dz-ok');if(nmEl)nmEl.classList.add('dz-hover')}};
+  const clear=()=>{if(!st)return;clearTimeout(st.timer);if(st.gh)st.gh.remove();document.body.classList.remove('slot-dragging');document.querySelectorAll('#stage .nm').forEach(n=>n.classList.remove('dz-ok','dz-no','dz-src','dz-hover'))};
+  const drop=()=>{if(!st)return;const s=st;clear();st=null;if(!s.on)return;slotDrag.just=true;setTimeout(()=>slotDrag.just=false,350);
+    const t=document.elementFromPoint(s.x,s.y);const tg=t&&t.closest&&t.closest('#stage .nm[data-slot]');if(!tg||tg===s.el)return;
+    const r=+tg.dataset.r,sb=tg.dataset.slot;if(r!==s.r){toast('같은 타임 안에서만 교체 가능');return}
+    const kb=getSlot(r,sb);if(kb&&gender(kb)!==gender(s.k)){toast('같은 성별끼리만 교체 가능');return}
+    if(kb){setSlot(r,s.slot,kb);setSlot(r,sb,s.k)}else{setSlot(r,sb,s.k);setSlot(r,s.slot,null);if(s.slot[0]==='r')cleanBench(r)}
+    commit();toast(kb?'자리 교체':'빈자리로 이동')};
+  const start=(e,x,y,touch)=>{if(RO||!draft)return;const el=e.target.closest&&e.target.closest('#stage .nm[data-slot]');if(!el||el.classList.contains('empty'))return;
+    st={el,r:+el.dataset.r,slot:el.dataset.slot,x,y,x0:x,y0:y,on:false,touch};if(touch)st.timer=setTimeout(begin,300)};
+  document.addEventListener('mousedown',e=>{if(e.button===0)start(e,e.clientX,e.clientY,false)});
+  document.addEventListener('mousemove',e=>{if(!st||st.touch)return;if(!st.on&&Math.hypot(e.clientX-st.x0,e.clientY-st.y0)>6)begin();if(st&&st.on){e.preventDefault();move(e.clientX,e.clientY)}});
+  document.addEventListener('mouseup',()=>{if(st&&!st.touch)drop()});
+  document.addEventListener('touchstart',e=>{if(e.touches.length===1)start(e,e.touches[0].clientX,e.touches[0].clientY,true)},{passive:true});
+  document.addEventListener('touchmove',e=>{if(!st||!st.touch)return;const p=e.touches[0];if(!st.on){if(Math.hypot(p.clientX-st.x0,p.clientY-st.y0)>8){clear();st=null}return}e.preventDefault();move(p.clientX,p.clientY)},{passive:false});
+  document.addEventListener('touchend',()=>{if(st&&st.touch){if(st.on)drop();else{clearTimeout(st.timer);st=null}}});
+  document.addEventListener('touchcancel',()=>{if(st){clear();st=null}});
+})();
 ACT['sm-change']=()=>{const {r,slot}=menuCtx;closeMenu();openPicker(r,slot)};
 ACT['sm-delete']=()=>{const {r,slot}=menuCtx;const k=getSlot(r,slot);setSlot(r,slot,null);draft.rounds[r].rest.push(k);closeMenu();commit()};
 ACT['sm-out']=()=>{const {r,slot}=menuCtx;const k=getSlot(r,slot);closeMenu();draft.rounds.forEach((R,i)=>{const s=slotOf(i,k);if(s){setSlot(i,s,null);cleanBench(i)}});commit();toast(`${dn(draft.players[k]?.name)} 님 전체 타임 제외 완료. 빈자리 선택 후 대체 인원 지정 가능`)};
@@ -1521,7 +1551,7 @@ function logicHtml(){
   <ol class="logic-pri">${DC_ITEMS.map(([t,d],i)=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
   <div class="logic-sec"><b>추가 기준</b></div>
   <ol class="logic-ex">${items.map(([t,d])=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
-  <div class="edit"><b>수동 수정 방법</b><span>이름 눌러 변경·삭제 · 빈자리 남으면 확정 불가</span></div>
+  <div class="edit"><b>수동 수정 방법</b><span>이름 눌러 변경·삭제 · 길게 눌러 끌어 같은 성별끼리 교체 · 빈자리 남으면 확정 불가</span></div>
   </details>`;
 }
 document.addEventListener('toggle',e=>{if(e.target.id==='logic'){lsSet('sbpb-logic-open',e.target.open);const s=e.target.querySelector('summary span');if(s)s.textContent=e.target.open?'접기':'펼치기'}},true);
@@ -1689,7 +1719,7 @@ function viewDraw(){
   let selbar='';
   if(draft&&sel){const k=getSlot(sel.r,sel.slot);const inMatch=sel.slot[0]==='m';selbar=`<div class="selbar"><span><b>${h(dn(draft.players[k]?.name))}</b> 선택됨 (${sel.r+1}타임) · 같은 타임의 다른 이름 또는 빈자리 선택</span><span class="row" style="margin-left:auto"><button class="btn sm" data-act="sel-clear">${inMatch?'자리 비우기 (벤치로)':'이 타임에서 빼기'}</button><button class="btn sm danger" data-act="sel-out">모든 타임에서 빼기</button><button class="btn sm ghost" data-act="sel-cancel">취소</button></span></div>`}
   const zIco=posterZoom==='fit'?'<path d="M11 8v6M8 11h6"/>':'<path d="M8 11h6"/>';
-  const stage=draft?`${guide('이름 눌러 변경·삭제',`<button type="button" class="btn zoom-btn" data-act="zoom-toggle"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>${zIco}</svg>${posterZoom==='fit'?'크게 보기':'화면에 맞추기'}</button>`)}
+  const stage=draft?`${guide('이름 눌러 변경·삭제 · 길게 눌러 끌어 같은 성별끼리 교체',`<button type="button" class="btn zoom-btn" data-act="zoom-toggle"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>${zIco}</svg>${posterZoom==='fit'?'크게 보기':'화면에 맞추기'}</button>`)}
     ${selbar}<div class="stage" id="stage">${posterHtml()}</div>
     <div class="stage-bar stage-acts">${(()=>{const ec=emptyCount();const lock=ec&&!draft.allowBlank;const tip=lock?` class="tipwrap" data-tip="대진표 입력 완료 필요 (빈자리 ${ec}곳)" tabindex="0"`:' class="tipwrap"';const dis=lock?' disabled':'';
       return `<div class="row"><button class="btn" data-act="br-save">${draft.id?'저장':'초안 저장'}</button>${draft.status==='확정'?'<button class="btn" data-act="br-unconfirm">확정 해제</button>':`<span${tip}><button class="btn pri" data-act="br-confirm"${dis}>확정</button></span>`}<span${tip}><button class="btn ball" data-act="br-img"${dis}>이미지 다운로드</button></span>${ec||draft.allowBlank?`<div class="emptywarn${draft.allowBlank?' ok':''}">${ec?`빈자리 ${ec}곳 · `:''}${draft.allowBlank?'공란 허용: 빈자리는 – 로 두고 확정·다운로드 가능 (현장에서 채움)':'모두 채워야 확정·다운로드 가능'}<label class="check blank-tg"><input type="checkbox" data-blank="1"${draft.allowBlank?' checked':''}> 공란 허용</label></div>`:''}</div>`})()}</div>${drawCheckHtml()}`:

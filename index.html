@@ -1252,6 +1252,15 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .logic ol.logic-ex li::before{content:"";width:6px;height:6px;top:7px;left:6px;background:var(--muted)}
 .logic .logic-sec{margin:16px 0 0}.logic .logic-sec+ol{margin-top:8px}
 
+/* 대진표 이름 끌어 놓기 */
+#stage .nm[data-slot]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.slot-dragging,body.slot-dragging *{cursor:grabbing!important}
+#stage .nm.dz-src{opacity:.35}
+#stage .nm.dz-ok{box-shadow:0 0 0 2px var(--court);border-radius:6px}
+#stage .nm.dz-hover{background:color-mix(in srgb,var(--court) 22%,transparent)}
+#stage .nm.dz-no{opacity:.3}
+.nm-ghost{position:fixed;z-index:60;pointer-events:none;transform:translate(-50%,-130%);padding:6px 12px;border-radius:8px;background:var(--court);color:var(--on-court);font-weight:700;font-size:14px;box-shadow:0 6px 18px rgba(0,0,0,.25);white-space:nowrap}
+
 </style>
 </head>
 <body>
@@ -1418,7 +1427,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=161d45dece';
+const CUR_APP = 'app.js?v=57a86cccc2';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1446,7 +1455,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=161d45dece';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=57a86cccc2';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
