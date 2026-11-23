@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-23',v:'1.11',date:'2026-11-23',items:[
+    {k:'drawcheck',t:'대진 생성 필수 조건 6가지 적용 (경기 수 균등 · 연속 휴식 제거 · 팀 평균 차 0.5 이하 · 전원 혼복 1회 · 같은 페어 최대 2회 · 상하위 우위 금지, 번호 = 우선순위), 대진표 하단 조건 검증 결과 표시'},
     {k:'lgdrag',t:'리그 경기 순서 끌어 놓기 저장 오류 수정'},
     {k:'tier',t:'회원 티어리스트 추가 (남녀 구분 · 끌어 놓기 순위 저장 · 운영진 전용), 대진 생성 실력 균형에 같은 성별 · 같은 레벨 안 순위 반영'},
     {k:'evedit',t:'행사 상세 수정 버튼 위치 이동 (박스 우상단 코너 · 연필 아이콘)'},
@@ -1285,12 +1286,37 @@ document.addEventListener('toggle',e=>{if(e.target.id==='st-box')lsSet('sbpb-st-
 /* 대진 생성용: 최근 정기모임에서 함께 페어한 정도 (최근일수록 크게, 최근 10회) */
 function recentPairWeight(before){const B=pastBrackets().filter(b=>b.cfg.date<before).slice(-10).reverse();const w={};const pk=(a,b)=>a<b?a+'|'+b:b+'|'+a;
   B.forEach((b,i)=>{const d=Math.pow(.8,i);(b.rounds||[]).forEach(R=>(R.matches||[]).forEach(m=>{if(!m)return;[m.a,m.b].forEach(t=>{if(t&&t.length===2&&t[0]&&t[1]){const k=pk(t[0],t[1]);w[k]=(w[k]||0)+d}})}))});return w}
+/* 한 팀이 상위끼리 · 하위끼리 모두 앞서면 우위 */
+const dominates=(x,y)=>{const A=x.slice().sort((p,q)=>q-p),B=y.slice().sort((p,q)=>q-p);return (A[0]>B[0]+1e-9&&A[1]>B[1]+1e-9)||(B[0]>A[0]+1e-9&&B[1]>A[1]+1e-9)};
+/* 대진 조건 검증: 번호 = 우선순위 (모두 지킬 수 없으면 앞 번호 우선) */
+const DC_ITEMS=[['경기 수 균등','전원 경기 수 차이 최대 1경기'],['연속 휴식 제거','2타임 연속 휴식 없음 (휴식 인원이 많으면 최소화)'],['팀 실력 균형','양 팀 평균 실력 차 0.5 이하'],['전원 혼복 1회 이상','남녀 모두 참석 시 모든 참여자 혼복 최소 1회'],['같은 페어 최대 2회','같은 두 사람 페어 2회 이하'],['상하위 우위 금지','한 팀이 상위 멤버끼리 · 하위 멤버끼리 모두 앞서는 편성 없음']];
+function drawCheck(d,P){const nm=k=>(P[k]&&P[k].name)||'';const lv=k=>P[k]?P[k].level:3;const rounds=d.rounds||[];
+  const keys=Object.keys(P);const games={},mix={},pairs={};keys.forEach(k=>{games[k]=0;mix[k]=0});
+  const consec=[],avgBad=[],dom=[];const pk=(x,y)=>x<y?x+'|'+y:y+'|'+x;
+  rounds.forEach((R,ri)=>{(R.matches||[]).forEach((m,ci)=>{if(!m||!m.a||!m.b)return;const all=[...m.a,...m.b].filter(Boolean);all.forEach(k=>{if(k in games)games[k]++});
+      if(m.a.some(k=>!k)||m.b.some(k=>!k))return;
+      const gx=t=>t.map(k=>P[k]&&P[k].gender).sort().join('');if(gx(m.a)==='FM'&&gx(m.b)==='FM')all.forEach(k=>mix[k]++);
+      [m.a,m.b].forEach(t=>{const q=pk(t[0],t[1]);pairs[q]=(pairs[q]||0)+1});
+      const tag=`${ri+1}타임 ${ci+1}코트`;if(Math.abs((lv(m.a[0])+lv(m.a[1]))/2-(lv(m.b[0])+lv(m.b[1]))/2)>0.5+1e-9)avgBad.push(tag);
+      if(dominates(m.a.map(lv),m.b.map(lv)))dom.push(tag)});
+    if(ri>0)(R.rest||[]).forEach(k=>{if((rounds[ri-1].rest||[]).includes(k))consec.push(`${nm(k)} ${ri}–${ri+1}타임`)})});
+  const gv=keys.map(k=>games[k]);const spread=gv.length?Math.max(...gv)-Math.min(...gv):0;
+  const both=keys.some(k=>P[k].gender==='F')&&keys.some(k=>P[k].gender!=='F');const noMix=both?keys.filter(k=>!mix[k]).map(nm):[];
+  const over=Object.entries(pairs).filter(([,v])=>v>2).map(([q,v])=>q.split('|').map(nm).join('·')+` ${v}회`);
+  const res=[[spread>1?spread-1:0,spread>1?`최대 ${Math.max(...gv)}경기 · 최소 ${Math.min(...gv)}경기`:''],[consec.length,consec.join(', ')],[avgBad.length,avgBad.join(', ')],[noMix.length,noMix.length?'혼복 미참여: '+noMix.join(', '):''],[over.length,over.join(', ')],[dom.length,dom.join(', ')]];
+  return {key:res.map(r=>r[0]),items:res}}
+function drawCheckHtml(){if(!draft||!draft.rounds)return '';const P={};Object.entries(draft.players||{}).forEach(([k,p])=>P[k]={...p,level:p.guest?(Number(p.level)||3):tierLv(k,Number(p.level)||3)});
+  const c=drawCheck(draft,P);const bad=c.key.filter(v=>v).length;
+  return `<section class="dcheck"><div class="dc-h"><b>조건 검증 ${bad?`<span class="dc-cnt bad">${bad}개 미충족</span>`:'<span class="dc-cnt ok">모두 충족</span>'}</b><span class="small muted">번호 = 우선순위 · 모두 지킬 수 없으면 앞 번호 우선</span></div>
+    <ol class="dc-list">${DC_ITEMS.map(([t,d],i)=>{const [n,det]=c.items[i];return `<li class="${n?'bad':'ok'}"><span class="dc-n">${i+1}</span><div class="dc-b"><div class="dc-t"><b>${t}</b><span class="dc-r">${n?`✗ ${n}건`:'✓'}</span></div><div class="dc-d">${n?h(det):h(d)}</div></div></li>`}).join('')}</ol></section>`}
 function generate(){
   const pool=rosterAll().filter(p=>cfg.picked.includes(p.key));
   if(pool.length<4){toast('참석자 4명 이상 선택 필요');return}
   const P={};pool.forEach(p=>P[p.key]={name:p.name,gender:p.gender,level:p.guest?p.level:tierLv(p.key,p.level),guest:p.guest});
   const courts=cfg.courtList,C=courts.length,R=roundsOf(cfg);
+  const once=TRIES=>{
   const st={};pool.forEach(p=>st[p.key]={games:0,bench:0,last:null});
+  const mixN={};pool.forEach(p=>mixN[p.key]=0);
   const partner={},opp={};const pk=(a,b)=>a<b?a+'|'+b:b+'|'+a;
   /* 최근에 많이 붙은 페어는 약하게 피함: 팀당 최대 0.9점 (실력 차 0.5 = 2점보다 작게 → 실력 밸런스가 항상 우선) */
   const RW=recentPairWeight(cfg.date||ymd(today0()));
@@ -1319,6 +1345,10 @@ function generate(){
       let s=(partner[pk(a[0],a[1])]||0)*12+(partner[pk(b[0],b[1])]||0)*12+hist(a)+hist(b);
       for(const x of a)for(const y of b)s+=(opp[pk(x,y)]||0)*2;
       s+=Math.abs(P[a[0]].level+P[a[1]].level-P[b[0]].level-P[b[1]].level)*4;
+      /* 검증 조건 반영: 평균 차 0.5 초과 · 한쪽 우위 · 같은 페어 3회째 · 혼복 미참여자 우선 혼복 */
+      {const sa=P[a[0]].level+P[a[1]].level,sb=P[b[0]].level+P[b[1]].level;if(Math.abs(sa-sb)>1+1e-9)s+=30;if(dominates(a.map(k=>P[k].level),b.map(k=>P[k].level)))s+=6}
+      if((partner[pk(a[0],a[1])]||0)>=2||(partner[pk(b[0],b[1])]||0)>=2)s+=60;
+      if(type==='혼복')for(const k of [...a,...b])if(!mixN[k])s-=4;
       if(cfg.mode==='tier'){const ls=g4.map(k=>P[k].level);s+=(Math.max(...ls)-Math.min(...ls))*3}
       if(type==='잡복')s+=8;
       // 게스트끼리 한 팀(파트너)은 되도록 피함 (불가피하면 허용)
@@ -1344,7 +1374,7 @@ function generate(){
         if(prefM&&comp.m===0&&Ms.length>=4)cp+=4;
         if(prefF&&comp.w===0&&Fs.length>=4)cp+=1.5;
       }
-      for(let t=0;t<260;t++){
+      for(let t=0;t<TRIES;t++){
         const jit=arr=>cfg.mode==='tier'?arr.map(p=>[p,p.level+Math.random()*1.2]).sort((a,b)=>b[1]-a[1]).map(x=>x[0].key):shuffle(arr.map(p=>p.key));
         let score=cp;const ms=[];
         if(comp.generic){const all=jit(play);for(let c=0;c<nC;c++){const [m,s]=bestPair(all.slice(c*4,c*4+4),null);ms.push(m);score+=s}}
@@ -1359,10 +1389,16 @@ function generate(){
     }
     const types=best.map(m=>mtype(P,m));
     const placed=assignCourts(best,types,courts);
-    best.forEach((m,i)=>{partner[pk(...m.a)]=(partner[pk(...m.a)]||0)+1;partner[pk(...m.b)]=(partner[pk(...m.b)]||0)+1;for(const x of m.a)for(const y of m.b)opp[pk(x,y)]=(opp[pk(x,y)]||0)+1;[...m.a,...m.b].forEach(k=>{st[k].games++;st[k].bench=0;st[k].last=types[i]})});
+    best.forEach((m,i)=>{partner[pk(...m.a)]=(partner[pk(...m.a)]||0)+1;partner[pk(...m.b)]=(partner[pk(...m.b)]||0)+1;for(const x of m.a)for(const y of m.b)opp[pk(x,y)]=(opp[pk(x,y)]||0)+1;[...m.a,...m.b].forEach(k=>{st[k].games++;st[k].bench=0;st[k].last=types[i];if(types[i]==='혼복')mixN[k]++})});
     rest.forEach(p=>st[p.key].bench++);
     rounds.push({matches:placed,rest:rest.map(p=>p.key)});
   }
+  return rounds};
+  /* 대진표 전체를 여러 번 만들어 조건 검증이 가장 좋은 것 선택 (우선순위 순 비교 · 최대 약 1초) */
+  const T0=performance.now();let rounds=null,bestK=null;
+  for(let run=0;run<60;run++){const rr=once(run===0?260:80);const k=drawCheck({rounds:rr},P).key;
+    const j=bestK?k.findIndex((v,i)=>v!==bestK[i]):-1;if(!bestK||(j>=0&&k[j]<bestK[j])){bestK=k;rounds=rr}
+    if(bestK.every(v=>v===0)||performance.now()-T0>900)break}
   const {picked:_p,...cfgRest}=cfg;
   draft={id:draft&&draft.status!=='확정'?draft.id:null,cfg:JSON.parse(JSON.stringify(cfgRest)),players:P,rounds,status:'초안'};
   sel=null;saveDraft();render();
@@ -1469,12 +1505,11 @@ function logicHtml(){
   const courtTxt=courts.map(c=>`${h(c.name)} ${PREF[c.pref]||'자유'}`).join(', ');
   const open=lsGet('sbpb-logic-open',window.innerWidth>640);
   const items=[
-    ['경기 수 균등 배분','누적 경기 수가 적은 인원 우선 출전, 1인당 경기 수 차이 1경기 이내 유지'],
-    ['연속 휴식 최소화','경기 수가 같으면 직전 타임 벤치 인원 우선 출전, 2타임 연속 휴식 방지'],
     ['남복·여복·혼복만 편성','타임별 출전 인원의 남녀 수를 짝수로 조정, 성비가 맞지 않는 경기 배제'],
     // 운영 메모: 1번 코트는 공이 밖으로 나가기 쉬워(공 유실 우려) 남복 우선 배정. 화면에는 표시하지 않음.
     ['코트 배정','코트별 우선 종류(모임 설정 › 코트) 설정에 맞춰 경기 배정, 맞는 경기가 없으면 남은 경기 배정'],
-    ['레벨 균형','양 팀 레벨 합 차이가 가장 작은 조합 선택, 레벨 모름 게스트는 중간 레벨 적용'],
+    ['레벨 균형','필수 조건 외에도 양 팀 실력 합 차이가 가장 작은 조합 선택, 레벨 모름 게스트는 중간 레벨 적용'],
+    ['전체 비교 선택','대진표 전체를 여러 번 생성해 필수 조건 검증 결과가 가장 좋은 대진 선택 (약 1초 이내)'],
     ['티어리스트 반영','회원 › 티어리스트 순위로 같은 성별 · 같은 레벨 안 실력 차이 반영 (레벨 구간 내 보정), 저장 전에는 레벨만 적용'],
     ['파트너·상대 다양화','같은 파트너 재편성 회피, 같은 상대와의 반복 대결 최소화'],
     ['최근 페어 분산','직전 10회 정기모임 기준 동일 파트너 편성 빈도가 낮은 조합 우선 편성, 레벨 균형 기준에 우선하지 않음'],
@@ -1482,7 +1517,10 @@ function logicHtml(){
     ['편성 방식',`${MODES[cfg.mode]} · ${MODE_DESC[cfg.mode]}`]
   ];
   return `<details class="logic" id="logic"${open?' open':''}><summary>대진표 생성 로직 <span>${open?'접기':'펼치기'}</span></summary>
-  <ol>${items.map(([t,d])=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
+  <div class="logic-sec"><b>필수 조건</b><span>번호 = 우선순위 · 모두 지킬 수 없으면 앞 번호 우선</span></div>
+  <ol class="logic-pri">${DC_ITEMS.map(([t,d],i)=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
+  <div class="logic-sec"><b>추가 기준</b></div>
+  <ol class="logic-ex">${items.map(([t,d])=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
   <div class="edit"><b>수동 수정 방법</b><span>이름 눌러 변경·삭제 · 빈자리 남으면 확정 불가</span></div>
   </details>`;
 }
@@ -1654,7 +1692,7 @@ function viewDraw(){
   const stage=draft?`${guide('이름 눌러 변경·삭제',`<button type="button" class="btn zoom-btn" data-act="zoom-toggle"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>${zIco}</svg>${posterZoom==='fit'?'크게 보기':'화면에 맞추기'}</button>`)}
     ${selbar}<div class="stage" id="stage">${posterHtml()}</div>
     <div class="stage-bar stage-acts">${(()=>{const ec=emptyCount();const lock=ec&&!draft.allowBlank;const tip=lock?` class="tipwrap" data-tip="대진표 입력 완료 필요 (빈자리 ${ec}곳)" tabindex="0"`:' class="tipwrap"';const dis=lock?' disabled':'';
-      return `<div class="row"><button class="btn" data-act="br-save">${draft.id?'저장':'초안 저장'}</button>${draft.status==='확정'?'<button class="btn" data-act="br-unconfirm">확정 해제</button>':`<span${tip}><button class="btn pri" data-act="br-confirm"${dis}>확정</button></span>`}<span${tip}><button class="btn ball" data-act="br-img"${dis}>이미지 다운로드</button></span>${ec||draft.allowBlank?`<div class="emptywarn${draft.allowBlank?' ok':''}">${ec?`빈자리 ${ec}곳 · `:''}${draft.allowBlank?'공란 허용: 빈자리는 – 로 두고 확정·다운로드 가능 (현장에서 채움)':'모두 채워야 확정·다운로드 가능'}<label class="check blank-tg"><input type="checkbox" data-blank="1"${draft.allowBlank?' checked':''}> 공란 허용</label></div>`:''}</div>`})()}</div>`:
+      return `<div class="row"><button class="btn" data-act="br-save">${draft.id?'저장':'초안 저장'}</button>${draft.status==='확정'?'<button class="btn" data-act="br-unconfirm">확정 해제</button>':`<span${tip}><button class="btn pri" data-act="br-confirm"${dis}>확정</button></span>`}<span${tip}><button class="btn ball" data-act="br-img"${dis}>이미지 다운로드</button></span>${ec||draft.allowBlank?`<div class="emptywarn${draft.allowBlank?' ok':''}">${ec?`빈자리 ${ec}곳 · `:''}${draft.allowBlank?'공란 허용: 빈자리는 – 로 두고 확정·다운로드 가능 (현장에서 채움)':'모두 채워야 확정·다운로드 가능'}<label class="check blank-tg"><input type="checkbox" data-blank="1"${draft.allowBlank?' checked':''}> 공란 허용</label></div>`:''}</div>`})()}</div>${drawCheckHtml()}`:
     `<div class="empty" style="padding:60px 16px"><b>참석자 목록에서 인원 선택 후 '대진표 생성' 버튼으로 생성</b>기존 카톡 공지와 같은 형식(타임 · 코트 1–3 · 벤치)으로 생성</div>`;
   return `<div class="page-head"><div><h1>대진표</h1><p>매주 토요일 정기모임 대진 자동 생성, 수정 후 이미지 다운로드 및 카톡방 공지</p></div></div>
   ${logicHtml()}

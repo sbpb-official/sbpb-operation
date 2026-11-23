@@ -1209,3 +1209,24 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .tier-row{grid-template-columns:auto 28px 1fr auto}
 @media (max-width:640px){.tier-tabs{display:flex;width:100%}.tier-tabs button{flex:1;box-sizing:border-box;min-height:40px;text-align:center;font-size:14px}.tier-cols{grid-template-columns:1fr}.tier-col{display:none}.tier-col.on{display:block}.tier-h{display:none}}
 .tier>.due-yr{margin-top:0;border-top:0}.tier>.due-yr>summary{padding-top:0}
+
+/* 대진 조건 검증 */
+.dcheck{margin-top:16px;padding:12px 16px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.dc-h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px;margin-bottom:8px}
+.dc-cnt{margin-left:8px;font-size:12px;padding:2px 8px;border-radius:999px}
+.dc-cnt.ok{background:color-mix(in srgb,var(--court) 14%,var(--surface));color:var(--court)}
+.dc-cnt.bad{background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--warn)}
+.dc-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.dc-list li{display:flex;gap:8px;align-items:flex-start}
+.dc-n{flex:none;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--surface-2);color:var(--ink);font-size:12px;font-weight:700;margin-right:4px}
+.dc-b{flex:1;min-width:0}
+.dc-t{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.dc-d{font-size:12px;color:var(--muted);line-height:1.5}
+.dc-list li.ok .dc-r{color:var(--court);font-weight:700}
+.dc-list li.bad .dc-r{color:var(--warn);font-weight:700}
+.dc-list li.bad .dc-n{background:var(--warn);color:var(--surface)}
+.dc-list li.bad .dc-d{color:var(--ink)}
+.logic-sec{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;margin:12px 0 8px}
+.logic-sec span{font-size:12px;color:var(--muted)}
+.logic ol.logic-ex li::before{content:"";width:6px;height:6px;top:7px;left:6px;background:var(--muted)}
+.logic .logic-sec{margin:16px 0 0}.logic .logic-sec+ol{margin-top:8px}
