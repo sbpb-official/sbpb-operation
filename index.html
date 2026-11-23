@@ -1185,6 +1185,16 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 
 .li-go{color:var(--muted);font-size:18px;line-height:1;margin-left:4px}
 
+/* 대진표 편집 안내 바 · 하단 저장 버튼 */
+.stage-guide{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;margin-bottom:12px;border-radius:10px;background:color-mix(in srgb,var(--court) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--court) 24%,var(--surface))}
+.sg-i{flex:none;width:20px;height:20px;border-radius:50%;background:var(--court);color:var(--on-court);font:700 12px/20px var(--f-body);text-align:center;font-style:italic}
+.sg-t{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--ink);line-height:1.4}
+.zoom-btn{flex:none;min-height:40px;display:inline-flex;align-items:center;gap:4px;background:var(--surface)}
+.zoom-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.stage-acts{margin:12px 0 0}
+.stage-acts .btn{min-height:44px}
+@media (max-width:640px){.stage-acts .row{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px;width:100%}.stage-acts .row>*{min-width:0}.stage-acts .row>.emptywarn{grid-column:1/-1}.stage-acts .tipwrap{display:flex}.stage-acts .btn{white-space:nowrap;padding:0 8px;width:100%}}
+
 </style>
 </head>
 <body>
@@ -1351,7 +1361,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=520cc58f4c';
+const CUR_APP = 'app.js?v=6c68e473be';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1379,7 +1389,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=520cc58f4c';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=6c68e473be';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();

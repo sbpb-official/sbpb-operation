@@ -114,6 +114,8 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    화면·기능이 바뀌는 배포마다 맨 위에 항목 추가 (id는 겹치지 않게, 날짜순).
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
+  {id:'2026-11-23',v:'1.11',date:'2026-11-23',items:[
+    {k:'stageui',t:'대진표 편집 안내 바 추가 (안내 문구 14px · 크게 보기 버튼 40px · 돋보기 아이콘), 저장 · 확정 · 이미지 다운로드 버튼 대진표 이미지 하단 이동'}]},
   {id:'2026-11-22',v:'1.10',date:'2026-11-22',items:[
     {k:'medit-fix',t:'회원 정보 수정 · 삭제 오류 수정 (행사 매치 수정과 버튼 충돌)'}]},
   {id:'2026-11-21',v:'1.9',date:'2026-11-21',items:[
@@ -1587,10 +1589,11 @@ function viewDraw(){
     </section>`;
   let selbar='';
   if(draft&&sel){const k=getSlot(sel.r,sel.slot);const inMatch=sel.slot[0]==='m';selbar=`<div class="selbar"><span><b>${h(dn(draft.players[k]?.name))}</b> 선택됨 (${sel.r+1}타임) · 같은 타임의 다른 이름 또는 빈자리 선택</span><span class="row" style="margin-left:auto"><button class="btn sm" data-act="sel-clear">${inMatch?'자리 비우기 (벤치로)':'이 타임에서 빼기'}</button><button class="btn sm danger" data-act="sel-out">모든 타임에서 빼기</button><button class="btn sm ghost" data-act="sel-cancel">취소</button></span></div>`}
-  const stage=draft?`<div class="stage-bar"><div class="hint">이름 선택 시 변경·삭제 메뉴 표시 <button class="btn sm ghost" data-act="zoom-toggle">${posterZoom==='fit'?'크게 보기':'화면에 맞추기'}</button></div>
-    ${(()=>{const ec=emptyCount();const lock=ec&&!draft.allowBlank;const tip=lock?` class="tipwrap" data-tip="대진표 입력 완료 필요 (빈자리 ${ec}곳)" tabindex="0"`:' class="tipwrap"';const dis=lock?' disabled':'';
-      return `<div class="row"><button class="btn" data-act="br-save">${draft.id?'저장':'초안 저장'}</button>${draft.status==='확정'?'<button class="btn" data-act="br-unconfirm">확정 해제</button>':`<span${tip}><button class="btn pri" data-act="br-confirm"${dis}>확정</button></span>`}<span${tip}><button class="btn ball" data-act="br-img"${dis}>이미지 다운로드</button></span>${ec||draft.allowBlank?`<div class="emptywarn${draft.allowBlank?' ok':''}">${ec?`빈자리 ${ec}곳 · `:''}${draft.allowBlank?'공란 허용: 빈자리는 – 로 두고 확정·다운로드 가능 (현장에서 채움)':'모두 채워야 확정·다운로드 가능'}<label class="check blank-tg"><input type="checkbox" data-blank="1"${draft.allowBlank?' checked':''}> 공란 허용</label></div>`:''}</div>`})()}</div>
-    ${selbar}<div class="stage" id="stage">${posterHtml()}</div>`:
+  const zIco=posterZoom==='fit'?'<path d="M11 8v6M8 11h6"/>':'<path d="M8 11h6"/>';
+  const stage=draft?`<div class="stage-guide"><span class="sg-i" aria-hidden="true">i</span><span class="sg-t">이름 누르면 변경 · 삭제 메뉴</span><button type="button" class="btn zoom-btn" data-act="zoom-toggle"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>${zIco}</svg>${posterZoom==='fit'?'크게 보기':'화면에 맞추기'}</button></div>
+    ${selbar}<div class="stage" id="stage">${posterHtml()}</div>
+    <div class="stage-bar stage-acts">${(()=>{const ec=emptyCount();const lock=ec&&!draft.allowBlank;const tip=lock?` class="tipwrap" data-tip="대진표 입력 완료 필요 (빈자리 ${ec}곳)" tabindex="0"`:' class="tipwrap"';const dis=lock?' disabled':'';
+      return `<div class="row"><button class="btn" data-act="br-save">${draft.id?'저장':'초안 저장'}</button>${draft.status==='확정'?'<button class="btn" data-act="br-unconfirm">확정 해제</button>':`<span${tip}><button class="btn pri" data-act="br-confirm"${dis}>확정</button></span>`}<span${tip}><button class="btn ball" data-act="br-img"${dis}>이미지 다운로드</button></span>${ec||draft.allowBlank?`<div class="emptywarn${draft.allowBlank?' ok':''}">${ec?`빈자리 ${ec}곳 · `:''}${draft.allowBlank?'공란 허용: 빈자리는 – 로 두고 확정·다운로드 가능 (현장에서 채움)':'모두 채워야 확정·다운로드 가능'}<label class="check blank-tg"><input type="checkbox" data-blank="1"${draft.allowBlank?' checked':''}> 공란 허용</label></div>`:''}</div>`})()}</div>`:
     `<div class="empty" style="padding:60px 16px"><b>참석자 목록에서 인원 선택 후 '대진표 생성' 버튼으로 생성</b>기존 카톡 공지와 같은 형식(타임 · 코트 1–3 · 벤치)으로 생성</div>`;
   return `<div class="page-head"><div><h1>대진표</h1><p>매주 토요일 정기모임 대진 자동 생성, 수정 후 이미지 다운로드 및 카톡방 공지</p></div></div>
   ${logicHtml()}
