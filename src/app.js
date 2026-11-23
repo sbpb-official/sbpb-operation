@@ -119,7 +119,7 @@ const NEWS=[
     {k:'slotdnd',t:'대진표 이름 끌어 놓기 교체 추가 (같은 타임 · 동성끼리, 휴대폰 길게 눌러 시작 · 교체 대상 확대 강조 · 근처 자리 자동 선택 · 딥그린 이름표 흰 글씨)'},
     {k:'drawcheck',t:'대진 생성 필수 조건 5가지 적용 (경기 수 균등 · 팀 평균 차 0.5 이하 · 연속 휴식 지양 · 전원 혼복 1회 · 같은 페어 최대 2회, 번호 = 우선순위) · 추가 조건 상하위 우위 금지, 대진표 하단 조건 검증 결과 표시'},
     {k:'lgdrag',t:'리그 경기 순서 끌어 놓기 저장 오류 수정'},
-    {k:'tier',t:'회원 티어리스트 추가 (남녀 구분 · 편집 버튼으로 끌어 놓기 · 저장 시 반영 · 날짜별 히스토리 · 되돌리기 · 운영진 전용), 대진 생성 실력 균형에 같은 성별 · 같은 레벨 안 순위 반영'},
+    {k:'tier',t:'회원 티어리스트 추가 (남녀 구분 · 편집 버튼으로 끌어 놓기 · 저장 시 반영 · 날짜별 히스토리 (변동 있을 때만 기록) · 되돌리기 · 운영진 전용), 대진 생성 실력 균형에 같은 성별 · 같은 레벨 안 순위 반영'},
     {k:'evedit',t:'행사 상세 수정 버튼 위치 이동 (박스 우상단 코너 · 연필 아이콘)'},
     {k:'regtime',t:'시립대 정기모임 행사 시간 일괄 입력 (09:00–12:00)'},
     {k:'evtime',t:'행사 시작 · 종료 시간 입력 추가 (10분 단위 · 선택 입력, 행사 상세 · 목록 · 대시보드 · 캘린더 표시)'},
@@ -1088,7 +1088,10 @@ ACT['tier-cancel']=async()=>{if(tierDirty){const ch=await choiceDialog({title:'�
 /* 저장: 현재 순위 + 히스토리 한 줄 (이전 저장분이 히스토리에 없으면 함께 옮김) */
 async function tierSaveOrder(order,label){const t=tierDoc()||{};let hist=(t.hist||[]).slice();if(!hist.length&&t.order&&t.order.length&&t.at)hist.push({at:t.at,order:t.order});
   const at=Date.now();hist.push({at,order,...(label?{note:label}:{})});if(hist.length>200)hist=hist.slice(-200);await put('dues','tier',{order,at,hist})}
-ACT['tier-save']=async()=>{if(!tierDraft)return;const order=TIER_G.flatMap(([g])=>tierDraft[g]);try{await tierSaveOrder(order)}catch(e){return}tierEdit=false;tierDraft=null;tierDirty=false;toast('티어리스트 저장');render()};
+ACT['tier-save']=async()=>{if(!tierDraft)return;const order=TIER_G.flatMap(([g])=>tierDraft[g]);
+  /* 저장된 순위와 같으면 히스토리를 남기지 않고 편집만 종료 */
+  const cur=TIER_G.flatMap(([g])=>tierOrder(g));const t=tierDoc();if(t&&t.order&&t.order.length&&order.join()===cur.join()){tierEdit=false;tierDraft=null;tierDirty=false;toast('변경 없음 · 저장 생략');render();return}
+  try{await tierSaveOrder(order)}catch(e){return}tierEdit=false;tierDraft=null;tierDirty=false;toast('티어리스트 저장');render()};
 ACT['tier-reset']=async()=>{const ch=await choiceDialog({title:'레벨 순으로 초기화',msg:'편집 중인 순위를 레벨 높은 순 · 가나다순으로 되돌림 (저장 눌러 반영)',choices:[{key:'go',label:'초기화',cls:'danger'},{key:'no',label:'취소'}]});if(ch!=='go')return;
   const base=g=>byName(activeMembers().filter(m=>(m.gender==='F'?'F':'M')===g)).sort((x,y)=>lvOfM(y)-lvOfM(x)).map(m=>m.id);tierDraft={M:base('M'),F:base('F')};tierDirty=true;render()};
 /* 히스토리: 날짜별 저장 목록 → 그때 순위 보기 (지금과 비교 ▲▼) · 되돌리기 */
@@ -1102,6 +1105,7 @@ ACT['tier-hview']=t=>{const at=+t.dataset.at;const x=tierHist().find(y=>y.at===a
     return `<div class="tier-row"><span class="num tier-n">${i+1}</span><b class="tier-nm">${h(m.name)}</b><span class="th-d${d>0?' down':d<0?' up':''}" title="지금 순위와 비교">${d===null?'':d>0?`지금 ▼${d}`:d<0?`지금 ▲${-d}`:''}</span></div>`}).join('')}</div>`};
   openModal(`${fmtAt(at)} 티어리스트`,`<p class="small muted" style="margin:0 0 12px">${isCur?'현재 저장된 순위':'▲▼ = 이 날짜 이후 지금까지 순위 변화'}</p><div class="th-cols">${col('M')}${col('F')}</div>`,null,isCur?'':`<button type="button" class="btn" data-act="tier-restore" data-at="${at}">이 순위로 되돌리기</button>`)};
 ACT['tier-restore']=async t=>{const at=+t.dataset.at;const x=tierHist().find(y=>y.at===at);if(!x)return;
+  if(x.order.join()===TIER_G.flatMap(([g])=>tierOrder(g)).join()){toast('현재 순위와 같음 · 저장 생략');return}
   const ch=await choiceDialog({title:'이 순위로 되돌리기',msg:`${fmtAt(at)} 순위를 현재 순위로 저장 · 새 히스토리로 기록`,choices:[{key:'go',label:'되돌리기',cls:'pri'},{key:'no',label:'취소'}]});if(ch!=='go')return;
   try{await tierSaveOrder(x.order,`${fmtAt(at)} 순위로 되돌림`)}catch(e){return}closeModal();tierEdit=false;tierDraft=null;tierDirty=false;toast('티어리스트 되돌리기 완료');render()};
 /* 편집 중 다른 화면으로 나가면 저장 여부 확인 */
@@ -2931,7 +2935,7 @@ async function archiveImport(list,people={}){const ix=nameIndex();const plan=[],
       const k='n:'+n;unknown.add(n);if(!players[k])players[k]={name:n,gender:people[n]||'',level:3,guest:true,unreg:true};if(!players[k].gender&&ARCH_GUESS[t])players[k].gender=ARCH_GUESS[t];return k};
     const rounds=e.rounds.map(R=>({matches:R.matches.map(m=>{const all=[...m.a,...m.b].every(x=>!x);const o={a:m.a.map(n=>key(n,m.t)),b:m.b.map(n=>key(n,m.t))};if(!all&&m.t)o.t=m.t;return o}),rest:R.rest.map(n=>key(n)),...(R.time?{time:R.time}:{})}));
     const first=(e.rounds[0]||{}).time;const start=first?first.split('–')[0].padStart(5,'0'):'09:30';
-    try{await put('brackets','arch-'+e.date,{cfg:{title:'SBPB 정기모임',date:e.date,place:REG.place,start,end:'12:00',mins:30,courtList:[1,2,3].map(i=>({name:`코트 ${i}`,pref:''}))},players,rounds,status:'확정',archive:true,allowBlank:!!e.blank,createdBy:myId||null});done++}catch(err){}}
+    try{await put('brackets','arch-'+e.date,{cfg:{title:'SBPB 정기모임',date:e.date,place:e.place||REG.place,start,end:'12:00',mins:30,courtList:[1,2,3].map(i=>({name:`코트 ${i}`,pref:''}))},players,rounds,status:'확정',archive:true,allowBlank:!!e.blank,createdBy:myId||null});done++}catch(err){}}
   alert(`대진 기록 가져오기 완료 ${done}건${skipRain.length?`\n우천 취소일 제외: ${skipRain.join(', ')}`:''}${skipHas.length?`\n이미 대진표가 있어 제외: ${skipHas.join(', ')}`:''}${unknown.size?`\n\n회원·게스트 목록에 없는 이름 ${unknown.size}명 (대진표 › 대진 히스토리 › 미등록 이름에서 확인)`:''}`);render()}
 /* 회원 정보(생년월일 · 거주지) 파일: 이름으로 찾아 빈 칸은 채우고, 이미 다른 값이 있으면 목록으로 보여주고 고른 것만 변경 */
 /* 대진표가 없는 정기모임: 출석 투표 기록으로 출석만 저장 (attend 컬렉션, 문서 id = 날짜) */
