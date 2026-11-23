@@ -116,7 +116,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
 const NEWS=[
   {id:'2026-11-23',v:'1.11',date:'2026-11-23',items:[
     {k:'lgdrag',t:'리그 경기 순서 끌어 놓기 저장 오류 수정'},
-    {k:'tier',t:'회원 티어리스트 추가 (끌어 놓기 순위 저장 · 운영진 전용), 대진 생성 실력 균형에 같은 레벨 안 순위 반영'},
+    {k:'tier',t:'회원 티어리스트 추가 (남녀 구분 · 끌어 놓기 순위 저장 · 운영진 전용), 대진 생성 실력 균형에 같은 성별 · 같은 레벨 안 순위 반영'},
     {k:'evedit',t:'행사 상세 수정 버튼 위치 이동 (박스 우상단 코너 · 연필 아이콘)'},
     {k:'regtime',t:'시립대 정기모임 행사 시간 일괄 입력 (09:00–12:00)'},
     {k:'evtime',t:'행사 시작 · 종료 시간 입력 추가 (10분 단위 · 선택 입력, 행사 상세 · 목록 · 대시보드 · 캘린더 표시)'},
@@ -1043,28 +1043,34 @@ function viewMembers(){
 /* ---------- 티어리스트: 활동 회원 실력 순위 (운영진 전용 · dues/tier) ---------- */
 const tierDoc=()=>S.dues.find(d=>d.id==='tier');
 const lvOfM=m=>Number(m&&m.level)||3;
-/* 저장된 순서 + 새 활동 회원은 자기 레벨 구간 맨 아래에 끼움 */
-function tierOrder(){const act=activeMembers();const ids=new Set(act.map(m=>m.id));const t=tierDoc();
+/* 성별별 순서: 저장된 순서 + 새 활동 회원은 자기 레벨 구간 맨 아래에 끼움 */
+const TIER_G=[['M','남자'],['F','여자']];
+function tierOrder(g){const act=activeMembers().filter(m=>(m.gender==='F'?'F':'M')===g);const ids=new Set(act.map(m=>m.id));const t=tierDoc();
   let order=t&&t.order?t.order.filter(id=>ids.has(id)):[];
   const base=byName(act).sort((x,y)=>lvOfM(y)-lvOfM(x));
   if(!order.length)return base.map(m=>m.id);
   base.filter(m=>!order.includes(m.id)).forEach(m=>{const lv=lvOfM(m);let at=order.length;for(let i=0;i<order.length;i++){if(lvOfM(memberById(order[i]))<lv){at=i;break}}
     let last=-1;order.forEach((id,i)=>{if(lvOfM(memberById(id))===lv)last=i});if(last>=0)at=last+1;order.splice(at,0,m.id)});
   return order}
-/* 대진 실력 점수: 순위대로 줄 세워 레벨을 다시 매기고, 같은 레벨 안은 순위로 ±0.2 미만 보정 (반 단계 레벨 구간을 넘지 않음) */
-function tierScores(){const t=tierDoc();if(!t||!(t.order||[]).length)return null;const order=tierOrder();
-  const lv=order.map(id=>lvOfM(memberById(id))).sort((a,b)=>b-a);const out={};let i=0;
-  while(i<lv.length){let j=i;while(j+1<lv.length&&lv[j+1]===lv[i])j++;const n=j-i+1;const step=Math.min(0.1,0.38/n);
-    for(let k=i;k<=j;k++)out[order[k]]=+(lv[i]+step*((n-1)/2-(k-i))).toFixed(3);i=j+1}
+/* 대진 실력 점수: 성별마다 순위대로 줄 세워 레벨을 다시 매기고, 같은 레벨 안은 순위로 ±0.2 미만 보정 (남녀 사이 보정 없음) */
+function tierScores(){const t=tierDoc();if(!t||!(t.order||[]).length)return null;const out={};
+  TIER_G.forEach(([g])=>{const order=tierOrder(g);const lv=order.map(id=>lvOfM(memberById(id))).sort((a,b)=>b-a);let i=0;
+    while(i<lv.length){let j=i;while(j+1<lv.length&&lv[j+1]===lv[i])j++;const n=j-i+1;const step=Math.min(0.1,0.38/n);
+      for(let k=i;k<=j;k++)out[order[k]]=+(lv[i]+step*((n-1)/2-(k-i))).toFixed(3);i=j+1}});
   return out}
 const tierLv=(key,lv)=>{const ts=tierScores();return ts&&ts[key]!=null?ts[key]:lv};
-function tierSection(){if(MV||RO)return '';const order=tierOrder();const t=tierDoc();
-  return `<section class="panel tier" style="margin-top:16px"><details class="due-yr st-fold" id="tier-box"${lsGet('sbpb-tier-box',false)?' open':''}><summary><h2 style="margin:0">티어리스트 <span class="small muted" style="font-weight:500">활동 회원 ${order.length}명 · 대진 실력 균형에 반영</span></h2><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
-    ${guide('⋮⋮ 끌어 순위 변경')}
-    <div class="tier-bar"><span class="small muted">${t&&t.at?`저장 ${new Date(t.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})} · 같은 레벨 안 순위로 실력 차이 반영`:'저장 전 · 대진은 레벨만 사용'}</span><button type="button" class="btn sm ghost" data-act="tier-reset">레벨 순으로 초기화</button></div>
-    <div class="tier-list" id="tier-list">${order.map((id,i)=>{const m=memberById(id);const prev=i?lvOfM(memberById(order[i-1])):null;const lv=lvOfM(m);
-      return `${prev!==null&&prev!==lv?'<div class="tier-sep" aria-hidden="true"></div>':''}<div class="tier-row" data-id="${h(id)}"><span class="tier-grip" aria-label="끌어 순위 변경">⋮⋮</span><span class="num tier-n">${i+1}</span><b class="tier-nm">${h(m.name)}</b><span class="g-${h(m.gender)} small">${m.gender==='M'?'남':'여'}</span><span class="tier-lv">${stars(lv)}</span></div>`}).join('')}</div>
+let tierTab=lsGet('sbpb-tier-g','M');
+function tierListHtml(g){const order=tierOrder(g);
+  return `<div class="tier-col${tierTab===g?' on':''}" data-g="${g}"><h3 class="tier-h">${g==='M'?'남자':'여자'} <span class="muted small">${order.length}명</span></h3><div class="tier-list" data-g="${g}">${order.map((id,i)=>{const m=memberById(id);const prev=i?lvOfM(memberById(order[i-1])):null;const lv=lvOfM(m);
+    return `${prev!==null&&prev!==lv?'<div class="tier-sep" aria-hidden="true"></div>':''}<div class="tier-row" data-id="${h(id)}"><span class="tier-grip" aria-label="끌어 순위 변경">⋮⋮</span><span class="num tier-n">${i+1}</span><b class="tier-nm">${h(m.name)}</b><span class="tier-lv">${stars(lv)}</span></div>`}).join('')||'<div class="muted small" style="padding:8px">활동 회원 없음</div>'}</div></div>`}
+function tierSection(){if(MV||RO)return '';const t=tierDoc();const nM=tierOrder('M').length,nF=tierOrder('F').length;
+  return `<section class="panel tier" style="margin-top:16px"><details class="due-yr st-fold" id="tier-box"${lsGet('sbpb-tier-box',false)?' open':''}><summary><h2 style="margin:0">티어리스트 <span class="small muted" style="font-weight:500">활동 회원 ${nM+nF}명 · 대진 실력 균형에 반영</span></h2><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
+    ${guide('⋮⋮ 끌어 순위 변경 · 성별마다 따로 순위')}
+    <div class="tier-bar"><span class="small muted">${t&&t.at?`저장 ${new Date(t.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})} · 같은 성별 · 같은 레벨 안 순위로 실력 차이 반영`:'저장 전 · 대진은 레벨만 사용'}</span><button type="button" class="btn sm ghost" data-act="tier-reset">레벨 순으로 초기화</button></div>
+    <div class="seg tier-tabs">${TIER_G.map(([g,l])=>`<button type="button" class="${tierTab===g?'on':''}" data-act="tier-tab" data-g="${g}" aria-pressed="${tierTab===g}">${l} ${g==='M'?nM:nF}</button>`).join('')}</div>
+    <div class="tier-cols">${TIER_G.map(([g])=>tierListHtml(g)).join('')}</div>
   </details></section>`}
+ACT['tier-tab']=t=>{tierTab=t.dataset.g;lsSet('sbpb-tier-g',tierTab);render()};
 document.addEventListener('toggle',e=>{if(e.target.id==='tier-box')lsSet('sbpb-tier-box',e.target.open)},true);
 ACT['tier-reset']=async()=>{const ch=await choiceDialog({title:'레벨 순으로 초기화',msg:'저장된 순위를 지우고 레벨 높은 순 · 가나다순으로 되돌림',choices:[{key:'go',label:'초기화',cls:'danger'},{key:'no',label:'취소'}]});if(ch!=='go')return;
   await put('dues','tier',{order:[],at:0});toast('티어리스트 초기화 완료')};
@@ -1076,7 +1082,7 @@ document.addEventListener('pointerdown',e=>{const gp=e.target.closest('.tier-gri
   const move=ev=>{lastY=ev.clientY;place(lastY)};raf=requestAnimationFrame(auto);
   /* 행을 옮기면 포인터 캡처가 풀리므로 문서 전체에서 이동 · 놓기 감지 */
   const up=async()=>{cancelAnimationFrame(raf);document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);row.classList.remove('drag');
-    const order=[...list.querySelectorAll('.tier-row')].map(r=>r.dataset.id);try{await put('dues','tier',{order,at:Date.now()});toast('티어리스트 저장')}catch(err){render()}};
+    const g=list.dataset.g;const mine=[...list.querySelectorAll('.tier-row')].map(r=>r.dataset.id);const order=TIER_G.flatMap(([x])=>x===g?mine:tierOrder(x));try{await put('dues','tier',{order,at:Date.now()});toast('티어리스트 저장')}catch(err){render()}};
   document.addEventListener('pointermove',move);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)});
 document.addEventListener('input',e=>{
   const t=e.target;
@@ -1469,7 +1475,7 @@ function logicHtml(){
     // 운영 메모: 1번 코트는 공이 밖으로 나가기 쉬워(공 유실 우려) 남복 우선 배정. 화면에는 표시하지 않음.
     ['코트 배정','코트별 우선 종류(모임 설정 › 코트) 설정에 맞춰 경기 배정, 맞는 경기가 없으면 남은 경기 배정'],
     ['레벨 균형','양 팀 레벨 합 차이가 가장 작은 조합 선택, 레벨 모름 게스트는 중간 레벨 적용'],
-    ['티어리스트 반영','회원 › 티어리스트 순위로 같은 레벨 안 실력 차이 반영 (레벨 구간 내 보정), 저장 전에는 레벨만 적용'],
+    ['티어리스트 반영','회원 › 티어리스트 순위로 같은 성별 · 같은 레벨 안 실력 차이 반영 (레벨 구간 내 보정), 저장 전에는 레벨만 적용'],
     ['파트너·상대 다양화','같은 파트너 재편성 회피, 같은 상대와의 반복 대결 최소화'],
     ['최근 페어 분산','직전 10회 정기모임 기준 동일 파트너 편성 빈도가 낮은 조합 우선 편성, 레벨 균형 기준에 우선하지 않음'],
     ['게스트 분산','게스트끼리 같은 팀 편성 지양, 회원과 짝을 지어 편성 (인원 구성상 불가피할 때만 허용)'],

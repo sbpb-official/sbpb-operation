@@ -1202,3 +1202,10 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .tier-lv{font-size:12px}
 .tier-sep{height:1px;background:var(--line);margin:4px 0}
 .tier-grip{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;color:var(--muted);font-size:16px;line-height:1;padding:12px 8px;letter-spacing:-2px}
+
+.tier-tabs{display:none;margin-bottom:12px}
+.tier-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.tier-h{margin:0 0 8px;font-size:15px}
+.tier-row{grid-template-columns:auto 28px 1fr auto}
+@media (max-width:640px){.tier-tabs{display:flex;width:100%}.tier-tabs button{flex:1;box-sizing:border-box;min-height:40px;text-align:center;font-size:14px}.tier-cols{grid-template-columns:1fr}.tier-col{display:none}.tier-col.on{display:block}.tier-h{display:none}}
+.tier>.due-yr{margin-top:0;border-top:0}.tier>.due-yr>summary{padding-top:0}
