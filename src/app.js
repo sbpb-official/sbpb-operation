@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-23',v:'1.11',date:'2026-11-23',items:[
+    {k:'extraord',t:'대진 생성 추가 기준 우선순위 지정 (상하위 우위 금지 · 티어리스트 반영 · 최근 페어 분산 순), 게스트 분산 기준 제거'},
     {k:'slotdnd',t:'대진표 이름 끌어 놓기 교체 추가 (같은 타임 · 같은 성별끼리, 휴대폰 길게 눌러 시작)'},
     {k:'drawcheck',t:'대진 생성 필수 조건 5가지 적용 (경기 수 균등 · 팀 평균 차 0.5 이하 · 연속 휴식 지양 · 전원 혼복 1회 · 같은 페어 최대 2회, 번호 = 우선순위) · 추가 조건 상하위 우위 금지, 대진표 하단 조건 검증 결과 표시'},
     {k:'lgdrag',t:'리그 경기 순서 끌어 놓기 저장 오류 수정'},
@@ -1354,8 +1355,6 @@ function generate(){
       if(type==='혼복')for(const k of [...a,...b])if(!mixN[k])s-=4;
       if(cfg.mode==='tier'){const ls=g4.map(k=>P[k].level);s+=(Math.max(...ls)-Math.min(...ls))*3}
       if(type==='잡복')s+=8;
-      // 게스트끼리 한 팀(파트너)은 되도록 피함 (불가피하면 허용)
-      for(const t of [a,b])if(P[t[0]].guest&&P[t[1]].guest)s+=15;
       if(TM){if(TM[a[0]]!==TM[a[1]]||TM[b[0]]!==TM[b[1]])s+=500;else if(TM[a[0]]===TM[b[0]])s+=500}
       return s;
     };
@@ -1536,23 +1535,23 @@ function logicHtml(){
   const courts=cfg.courtList;const R=roundsOf(cfg),st=toMin(cfg.start),mins=Number(cfg.mins)||30;
   const courtTxt=courts.map(c=>`${h(c.name)} ${PREF[c.pref]||'자유'}`).join(', ');
   const open=lsGet('sbpb-logic-open',window.innerWidth>640);
+  /* 추가 기준: 번호 = 우선순위 (1 상하위 우위 금지는 DC_EXTRA로 앞에 붙음) */
   const items=[
+    ['티어리스트 반영','회원 › 티어리스트 순위로 같은 성별 · 같은 레벨 안 실력 차이 반영 (레벨 구간 내 보정), 저장 전에는 레벨만 적용'],
+    ['최근 페어 분산','직전 10회 정기모임 기준 동일 파트너 편성 빈도가 낮은 조합 우선 편성, 필수 조건에 우선하지 않음'],
+    ['파트너·상대 다양화','같은 파트너 재편성 회피, 같은 상대와의 반복 대결 최소화'],
+    ['레벨 균형','필수 조건 외에도 양 팀 실력 합 차이가 가장 작은 조합 선택, 레벨 모름 게스트는 중간 레벨 적용'],
     ['남복·여복·혼복만 편성','타임별 출전 인원의 남녀 수를 짝수로 조정, 성비가 맞지 않는 경기 배제'],
     // 운영 메모: 1번 코트는 공이 밖으로 나가기 쉬워(공 유실 우려) 남복 우선 배정. 화면에는 표시하지 않음.
     ['코트 배정','코트별 우선 종류(모임 설정 › 코트) 설정에 맞춰 경기 배정, 맞는 경기가 없으면 남은 경기 배정'],
-    ['레벨 균형','필수 조건 외에도 양 팀 실력 합 차이가 가장 작은 조합 선택, 레벨 모름 게스트는 중간 레벨 적용'],
     ['전체 비교 선택','대진표 전체를 여러 번 생성해 필수 조건 검증 결과가 가장 좋은 대진 선택 (약 1초 이내)'],
-    ['티어리스트 반영','회원 › 티어리스트 순위로 같은 성별 · 같은 레벨 안 실력 차이 반영 (레벨 구간 내 보정), 저장 전에는 레벨만 적용'],
-    ['파트너·상대 다양화','같은 파트너 재편성 회피, 같은 상대와의 반복 대결 최소화'],
-    ['최근 페어 분산','직전 10회 정기모임 기준 동일 파트너 편성 빈도가 낮은 조합 우선 편성, 레벨 균형 기준에 우선하지 않음'],
-    ['게스트 분산','게스트끼리 같은 팀 편성 지양, 회원과 짝을 지어 편성 (인원 구성상 불가피할 때만 허용)'],
     ['편성 방식',`${MODES[cfg.mode]} · ${MODE_DESC[cfg.mode]}`]
   ];
   return `<details class="logic" id="logic"${open?' open':''}><summary>대진표 생성 로직 <span>${open?'접기':'펼치기'}</span></summary>
   <div class="logic-sec"><b>필수 조건</b><span>번호 = 우선순위 · 모두 지킬 수 없으면 앞 번호 우선</span></div>
   <ol class="logic-pri">${DC_ITEMS.map(([t,d],i)=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
-  <div class="logic-sec"><b>추가 기준</b><span>필수 조건 다음으로 반영 · 상하위 우위 금지를 가장 먼저 검사</span></div>
-  <ol class="logic-ex">${[DC_EXTRA].concat(items).map(([t,d])=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
+  <div class="logic-sec"><b>추가 기준</b><span>번호 = 우선순위 · 필수 조건 다음으로 반영</span></div>
+  <ol>${[DC_EXTRA].concat(items).map(([t,d])=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
   <div class="edit"><b>수동 수정 방법</b><span>이름 눌러 변경·삭제 · 길게 눌러 끌어 같은 성별끼리 교체 · 빈자리 남으면 확정 불가</span></div>
   </details>`;
 }
