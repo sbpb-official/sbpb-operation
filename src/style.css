@@ -1228,7 +1228,7 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .dc-list li.bad .dc-d{color:var(--ink)}
 .logic-sec{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;margin:12px 0 8px}
 .logic-sec span{font-size:12px;color:var(--muted)}
-.logic ol.logic-ex li::before{content:"";width:6px;height:6px;top:7px;left:6px;background:var(--muted)}
+.logic ol.logic-ex li::before{background:var(--surface-2);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
 .logic .logic-sec{margin:16px 0 0}.logic .logic-sec+ol{margin-top:8px}
 
 /* 대진표 이름 끌어 놓기 */

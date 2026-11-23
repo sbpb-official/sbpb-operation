@@ -115,7 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-23',v:'1.11',date:'2026-11-23',items:[
-    {k:'extraord',t:'대진 생성 추가 기준 우선순위 지정 (상하위 우위 금지 · 티어리스트 반영 · 최근 페어 분산 순), 게스트 분산 기준 제거'},
+    {k:'extraord',t:'대진 생성 추가 기준 우선순위 지정 (상하위 우위 금지 · 티어리스트 반영 · 최근 페어 분산 순), 게스트 분산 기준 제거 · 번호 회색 표시'},
     {k:'slotdnd',t:'대진표 이름 끌어 놓기 교체 추가 (같은 타임 · 같은 성별끼리, 휴대폰 길게 눌러 시작 · 교체 대상 확대 강조 · 근처 자리 자동 선택 · 딥그린 이름표 흰 글씨)'},
     {k:'drawcheck',t:'대진 생성 필수 조건 5가지 적용 (경기 수 균등 · 팀 평균 차 0.5 이하 · 연속 휴식 지양 · 전원 혼복 1회 · 같은 페어 최대 2회, 번호 = 우선순위) · 추가 조건 상하위 우위 금지, 대진표 하단 조건 검증 결과 표시'},
     {k:'lgdrag',t:'리그 경기 순서 끌어 놓기 저장 오류 수정'},
@@ -1556,7 +1556,7 @@ function logicHtml(){
   <div class="logic-sec"><b>필수 조건</b><span>번호 = 우선순위 · 모두 지킬 수 없으면 앞 번호 우선</span></div>
   <ol class="logic-pri">${DC_ITEMS.map(([t,d],i)=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
   <div class="logic-sec"><b>추가 기준</b><span>번호 = 우선순위 · 필수 조건 다음으로 반영</span></div>
-  <ol>${[DC_EXTRA].concat(items).map(([t,d])=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
+  <ol class="logic-ex">${[DC_EXTRA].concat(items).map(([t,d])=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
   <div class="edit"><b>수동 수정 방법</b><span>이름 눌러 변경·삭제 · 길게 눌러 끌어 같은 성별끼리 교체 · 빈자리 남으면 확정 불가</span></div>
   </details>`;
 }

@@ -1249,7 +1249,7 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .dc-list li.bad .dc-d{color:var(--ink)}
 .logic-sec{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;margin:12px 0 8px}
 .logic-sec span{font-size:12px;color:var(--muted)}
-.logic ol.logic-ex li::before{content:"";width:6px;height:6px;top:7px;left:6px;background:var(--muted)}
+.logic ol.logic-ex li::before{background:var(--surface-2);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
 .logic .logic-sec{margin:16px 0 0}.logic .logic-sec+ol{margin-top:8px}
 
 /* 대진표 이름 끌어 놓기 */
@@ -1431,7 +1431,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=19e9e79a35';
+const CUR_APP = 'app.js?v=fba6fef392';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1459,7 +1459,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=19e9e79a35';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=fba6fef392';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
