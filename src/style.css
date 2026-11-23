@@ -1236,10 +1236,10 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 body.slot-dragging,body.slot-dragging *{cursor:grabbing!important}
 #stage .nm.dz-src{opacity:.35}
 #stage .nm.dz-ok{box-shadow:0 0 0 2px color-mix(in srgb,var(--court) 55%,transparent);border-radius:6px}
-#stage .nm.dz-hover{background:var(--court);color:var(--on-court);box-shadow:0 0 0 3px var(--court),0 4px 12px rgba(0,0,0,.25);transform:scale(1.18);position:relative;z-index:3;transition:transform .12s ease}
-#stage .nm.dz-hover .gbadge{background:var(--on-court);color:var(--court)}
+#stage .nm.dz-hover{background:var(--brand);color:var(--brand-ink);box-shadow:0 0 0 3px var(--brand),0 4px 12px rgba(0,0,0,.25);transform:scale(1.18);position:relative;z-index:3;transition:transform .12s ease}
+#stage .nm.dz-hover .gbadge{background:var(--brand-ink);color:var(--brand)}
 #stage .nm.dz-no{opacity:.3}
 .nm-ghost{position:fixed;z-index:60;pointer-events:none;transform:translate(-50%,-150%);padding:6px 12px;border-radius:8px;background:var(--court);color:var(--on-court);font-weight:700;font-size:14px;box-shadow:0 6px 18px rgba(0,0,0,.25);white-space:nowrap}
 .dc-list li.ex .dc-n{width:auto;padding:0 6px;border-radius:999px;font-size:11px}
-.nm-ghost b{margin:0 4px;color:var(--ball)}.nm-ghost.on{background:var(--brand)}
+.nm-ghost b{margin:0 4px;color:var(--ball)}.nm-ghost.on{background:var(--brand);color:var(--brand-ink)}
 #stage .nm.dz-hover{pointer-events:none}
