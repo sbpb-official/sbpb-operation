@@ -1164,10 +1164,12 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 
 .li-go{color:var(--muted);font-size:18px;line-height:1;margin-left:4px}
 
-/* 대진표 편집 안내 바 · 하단 저장 버튼 */
-.stage-guide{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;margin-bottom:12px;border-radius:10px;background:color-mix(in srgb,var(--court) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--court) 24%,var(--surface))}
-.sg-i{flex:none;width:20px;height:20px;border-radius:50%;background:var(--court);color:var(--on-court);font:700 12px/20px var(--f-body);text-align:center;font-style:italic}
-.sg-t{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--ink);line-height:1.4}
+/* 기능 안내 바 (공통): i 아이콘 + [대상] 눌러 [동작] */
+.guide{display:flex;align-items:center;gap:8px;min-height:40px;padding:8px 12px;margin-bottom:12px;border-radius:10px;background:color-mix(in srgb,var(--court) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--court) 24%,var(--surface))}
+.guide:has(.zoom-btn){padding:4px 4px 4px 12px}
+.g-i{flex:none;width:20px;height:20px;border-radius:50%;background:var(--court);color:var(--on-court);display:inline-flex;align-items:center;justify-content:center;font:700 13px/1 Georgia,'Times New Roman',serif}
+.g-t{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--ink);line-height:1.4}
+.modal .guide{margin:0 0 12px}
 .zoom-btn{flex:none;min-height:40px;display:inline-flex;align-items:center;gap:4px;background:var(--surface)}
 .zoom-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .stage-acts{margin:12px 0 0}

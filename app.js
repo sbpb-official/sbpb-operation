@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-23',v:'1.11',date:'2026-11-23',items:[
+    {k:'guides',t:'기능 안내 문구 형식 통일 (i 아이콘 안내 바 · [대상] 눌러 [동작] 형식, 대진표 · 페어 · 대진 직접 입력 · 팀 · 리그 · 토너먼트 · 회비 · 정산 · 문구 복사 · 이미지 저장 12곳)'},
     {k:'stageui',t:'대진표 편집 안내 바 추가 (안내 문구 14px · 크게 보기 버튼 40px · 돋보기 아이콘), 저장 · 확정 · 이미지 다운로드 버튼 대진표 이미지 하단 이동'}]},
   {id:'2026-11-22',v:'1.10',date:'2026-11-22',items:[
     {k:'medit-fix',t:'회원 정보 수정 · 삭제 오류 수정 (행사 매치 수정과 버튼 충돌)'}]},
@@ -923,6 +924,8 @@ function viewHome(){
 /* 회원 화면 대시보드: 회원 개요 대신 다가오는 생일 (이름 · 생년월일) */
 function mvBdays(){const ub=activeMembers().filter(m=>m.birth).map(m=>({m,d:nextBday(m.birth)})).filter(x=>diffDays(x.d)<=30).sort((a,b)=>a.d.localeCompare(b.d));
   return `<section class="panel" id="dash-bd"><div class="panel-h"><h2>다가오는 생일</h2><span class="small muted">30일 이내</span></div><div class="list">${ub.length?ub.map(x=>`<div class="li"><span class="dot" style="background:var(--t-bd)"></span><div class="grow"><div class="ttl">${h(x.m.name)}</div><div class="sub">${x.m.birth.replace(/-/g,'.')}</div></div><span class="small muted">${ddayLabel(x.d)}</span></div>`).join(''):'<div class="li muted">30일 이내 생일 없음</div>'}</div></section>`}
+/* 기능 안내 바: [대상] 눌러 [동작] 형식 · 모든 화면 공통 */
+const guide=(t,extra='')=>`<div class="guide"><span class="g-i" aria-hidden="true">i</span><span class="g-t">${t}</span>${extra}</div>`;
 let calMon=null;/* [연, 월(0~11)] · 기본 이번 달 */
 function monthCal(t){if(!calMon)calMon=[t.getFullYear(),t.getMonth()];const [y,m]=calMon;
   const first=new Date(y,m,1),days=new Date(y,m+1,0).getDate();const lead=first.getDay();const total=Math.ceil((lead+days)/7)*7;
@@ -1422,7 +1425,7 @@ function logicHtml(){
   ];
   return `<details class="logic" id="logic"${open?' open':''}><summary>대진표 생성 로직 <span>${open?'접기':'펼치기'}</span></summary>
   <ol>${items.map(([t,d])=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
-  <div class="edit"><b>수동 수정 방법</b><span>이름 선택 시 변경·삭제 메뉴 표시. 변경은 이름 검색과 성별 필터로 대상 선택, 삭제는 해당 자리 공석 처리(점선 표시). 공석이 남아 있으면 확정·이미지 다운로드 불가</span></div>
+  <div class="edit"><b>수동 수정 방법</b><span>이름 눌러 변경·삭제 · 빈자리 남으면 확정 불가</span></div>
   </details>`;
 }
 document.addEventListener('toggle',e=>{if(e.target.id==='logic'){lsSet('sbpb-logic-open',e.target.open);const s=e.target.querySelector('summary span');if(s)s.textContent=e.target.open?'접기':'펼치기'}},true);
@@ -1590,7 +1593,7 @@ function viewDraw(){
   let selbar='';
   if(draft&&sel){const k=getSlot(sel.r,sel.slot);const inMatch=sel.slot[0]==='m';selbar=`<div class="selbar"><span><b>${h(dn(draft.players[k]?.name))}</b> 선택됨 (${sel.r+1}타임) · 같은 타임의 다른 이름 또는 빈자리 선택</span><span class="row" style="margin-left:auto"><button class="btn sm" data-act="sel-clear">${inMatch?'자리 비우기 (벤치로)':'이 타임에서 빼기'}</button><button class="btn sm danger" data-act="sel-out">모든 타임에서 빼기</button><button class="btn sm ghost" data-act="sel-cancel">취소</button></span></div>`}
   const zIco=posterZoom==='fit'?'<path d="M11 8v6M8 11h6"/>':'<path d="M8 11h6"/>';
-  const stage=draft?`<div class="stage-guide"><span class="sg-i" aria-hidden="true">i</span><span class="sg-t">이름 누르면 변경 · 삭제 메뉴</span><button type="button" class="btn zoom-btn" data-act="zoom-toggle"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>${zIco}</svg>${posterZoom==='fit'?'크게 보기':'화면에 맞추기'}</button></div>
+  const stage=draft?`${guide('이름 눌러 변경·삭제',`<button type="button" class="btn zoom-btn" data-act="zoom-toggle"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>${zIco}</svg>${posterZoom==='fit'?'크게 보기':'화면에 맞추기'}</button>`)}
     ${selbar}<div class="stage" id="stage">${posterHtml()}</div>
     <div class="stage-bar stage-acts">${(()=>{const ec=emptyCount();const lock=ec&&!draft.allowBlank;const tip=lock?` class="tipwrap" data-tip="대진표 입력 완료 필요 (빈자리 ${ec}곳)" tabindex="0"`:' class="tipwrap"';const dis=lock?' disabled':'';
       return `<div class="row"><button class="btn" data-act="br-save">${draft.id?'저장':'초안 저장'}</button>${draft.status==='확정'?'<button class="btn" data-act="br-unconfirm">확정 해제</button>':`<span${tip}><button class="btn pri" data-act="br-confirm"${dis}>확정</button></span>`}<span${tip}><button class="btn ball" data-act="br-img"${dis}>이미지 다운로드</button></span>${ec||draft.allowBlank?`<div class="emptywarn${draft.allowBlank?' ok':''}">${ec?`빈자리 ${ec}곳 · `:''}${draft.allowBlank?'공란 허용: 빈자리는 – 로 두고 확정·다운로드 가능 (현장에서 채움)':'모두 채워야 확정·다운로드 가능'}<label class="check blank-tg"><input type="checkbox" data-blank="1"${draft.allowBlank?' checked':''}> 공란 허용</label></div>`:''}</div>`})()}</div>`:
@@ -1634,7 +1637,7 @@ document.addEventListener('click',e=>{const d=e.target.closest&&e.target.closest
 document.addEventListener('toggle',e=>{if(e.target.id==='recruit')lsSet('sbpb-recruit-open',e.target.open)},true);
 ACT['recruit-copy']=async t=>{
   const n=+t.dataset.n||1;const txt=recruitText(n);
-  try{await navigator.clipboard.writeText(txt);toast('모집 문구 복사 완료')}catch(e){openModal('모집 공지 문구',`<textarea class="in" rows="6" readonly>${h(txt)}</textarea><p class="small muted" style="margin:0">문구 칸을 길게 눌러 복사</p>`,async()=>{})}
+  try{await navigator.clipboard.writeText(txt);toast('모집 문구 복사 완료')}catch(e){openModal('모집 공지 문구',`<textarea class="in" rows="6" readonly>${h(txt)}</textarea><div class="guide"><span class="g-i" aria-hidden="true">i</span><span class="g-t">문구 길게 눌러 복사</span></div>`,async()=>{})}
 };
 /* ---- guests ---- */
 const nk=s=>{s=String(s||'');return [...s].length>5?[...s].slice(0,5).join('')+'…':s};
@@ -1700,7 +1703,7 @@ async function exportPoster(el,d){
   canvas.toBlob(async blob=>{
     if(dl){try{await dl.save({filename:fname,data:blob});toast('이미지 저장 완료');return}catch(e){if(e&&e.code==='declined')return}}
     const url=URL.createObjectURL(blob);
-    openModal('대진표 이미지',`<p class="small muted" style="margin:0">이미지를 길게 누르거나 우클릭하여 저장</p><img class="imgprev" src="${url}" alt="대진표 이미지">`,async()=>{});
+    openModal('대진표 이미지',`<div class="guide"><span class="g-i" aria-hidden="true">i</span><span class="g-t">이미지 길게 눌러 저장</span></div><img class="imgprev" src="${url}" alt="대진표 이미지">`,async()=>{});
   },'image/png');
 }
 ACT['br-img']=async()=>{
@@ -1836,7 +1839,7 @@ ACT['eg-award-del']=async t=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)ret
 ACT['eg-teams']=(_t,_e,n)=>{const ev=S.events.find(e=>e.id===evSel);if(!ev)return;const T=(ev.teams&&ev.teams.length?ev.teams:Array.from({length:Math.max(2,+n||2)},(_,i)=>({name:`팀 ${i+1}`,members:[]})));const tm=teamMap({teams:T});
   const ppl=byName(S.members.filter(isCur).map(m=>({key:m.id,name:m.name}))).concat(byName(S.guests.map(g=>({key:g.id,name:g.name,g:true}))).filter(p=>tm[p.key]!=null));
   openModal('팀 설정',`<div class="grid2">${T.map((t,i)=>`<div class="f"><label class="f" style="margin:0">팀 ${i+1} 이름<input class="in" name="tn${i}" value="${h(t.name)}"></label><label class="f" style="margin:6px 0 0">색<select class="in" name="tc${i}">${TEAM_C.map((c,ci)=>`<option value="${ci}"${(t.color!=null?t.color:i)===ci?' selected':''}>${TEAM_CN[ci]}</option>`).join('')}</select></label></div>`).join('')}</div>
-    <p class="small muted" style="margin:4px 0 8px">사람마다 팀 선택 · 다시 누르면 해제</p><div class="eg-pick">${ppl.map(p=>`<div class="eg-prow"><span>${h(p.name)}${p.g?' <span class="gmark">G</span>':''}</span><span class="seg">${T.map((t,i)=>`<button type="button" data-act="eg-tpick" data-k="${h(p.key)}" data-i="${i}" class="${tm[p.key]===i?'on':''}">${i+1}</button>`).join('')}</span><input type="hidden" name="tk_${h(p.key)}" value="${tm[p.key]==null?'':tm[p.key]}"></div>`).join('')}</div>`,
+    <div class="guide"><span class="g-i" aria-hidden="true">i</span><span class="g-t">이름 눌러 팀 지정 · 다시 눌러 해제</span></div><div class="eg-pick">${ppl.map(p=>`<div class="eg-prow"><span>${h(p.name)}${p.g?' <span class="gmark">G</span>':''}</span><span class="seg">${T.map((t,i)=>`<button type="button" data-act="eg-tpick" data-k="${h(p.key)}" data-i="${i}" class="${tm[p.key]===i?'on':''}">${i+1}</button>`).join('')}</span><input type="hidden" name="tk_${h(p.key)}" value="${tm[p.key]==null?'':tm[p.key]}"></div>`).join('')}</div>`,
     async fd=>{const teams=T.map((t,i)=>({name:(fd['tn'+i]||'').trim()||`팀 ${i+1}`,color:Number(fd['tc'+i]??i),members:[]}));Object.keys(fd).filter(k=>k.startsWith('tk_')&&fd[k]!=='').forEach(k=>teams[+fd[k]].members.push(k.slice(3)));
       const {id,...rest}=ev;await put('events',ev.id,{...rest,teams});toast('팀 저장');render()})};
 ACT['eg-tpick']=t=>{const row=t.closest('.eg-prow');const inp=row.querySelector('input');const on=t.classList.contains('on');row.querySelectorAll('button').forEach(b=>b.classList.remove('on'));if(on)inp.value='';else{t.classList.add('on');inp.value=t.dataset.i}};
@@ -1981,8 +1984,8 @@ function tourHtml(ev,mm){const tr=mm?mm.tr:ev.tourney;if(!tr)return '';tr.groups
     ${tr.fmt&&!mm?`<p class="small muted" style="margin:0">${h(UNIT_L[tr.fmt.unit]||'')} · ${h(PROG_L[tr.fmt.prog]||'')}</p>`:''}
     ${champ?`<div class="tr-champ">우승 <b>${h(trName(champ))}</b></div>`:''}${ko}
     ${tr.groups.length?`<div class="eg-h"><h4 class="tr-sec">${tr.ko.length?'조별 예선':'리그'}</h4>${RO||tr.lg.length?'':'<button class="btn sm" data-act="tr-rank">조 순위 입력</button>'}</div>${stand}`:''}
-    ${lg?`<h4 class="tr-sec">리그 경기 <span class="small muted" style="font-weight:500">${RO?'':'⋮⋮을 끌어 순서 변경 · '}</span></h4>${lg}`:''}
-    ${RO?'':'<p class="small muted" style="margin:0">이긴 팀을 누르면 기록 · 다시 누르면 해제 · 점수는 "점수 입력"에서 (기억나지 않으면 승자만 기록)</p>'}</div>`}
+    ${lg?`<h4 class="tr-sec">리그 경기</h4>${RO?'':guide('⋮⋮ 끌어 순서 변경')}${lg}`:''}
+    ${RO?'':guide('이긴 팀 눌러 승리 기록 · 다시 눌러 해제')}</div>`}
 const saveTr=async(ev,tr,mid)=>{if(mid){await mSave(ev,mid,{tr});return}const {id,...rest}=ev;await put('events',ev.id,{...rest,tourney:tr});render()};
 const trCtx=t=>{const ev=curEv();if(!ev)return {};const mid=midOf(t);const m=mid&&mGet(ev,mid);return {ev,mid,tr:m?m.tr:ev.tourney}};
 ACT['tr-win']=async t=>{const c=trCtx(t),ev=c.ev;if(!ev||!c.tr)return;const tr=JSON.parse(JSON.stringify(c.tr));const m=tr.ko[+t.dataset.i];m.w=m.w===t.dataset.s?null:t.dataset.s;
@@ -2050,7 +2053,7 @@ function openPairEditor(ppl,cur,onSave,mixed){const N=Math.ceil(ppl.length/2);co
   cur.slice(0,N).forEach((p,i)=>p.forEach((k,j)=>{if(ppl.includes(k)&&j<2&&!used.has(k)){slots[i][j]=k;used.add(k)}}));
   PE={pool:ppl.filter(k=>!used.has(k)),slots,sel:null};
   openModal('페어 설정',`<div class="pe-top"><span class="small muted">대상 ${ppl.length}명 · <b id="pe-count"></b></span><div class="row"><button type="button" class="btn sm" data-act="ev-pairs-rand">무작위${mixed?' (남녀 혼합)':''}</button><button type="button" class="btn sm ghost" data-act="ev-pairs-clear">모두 비우기</button></div></div>
-    <p class="small muted" style="margin:0 0 8px">이름을 페어 칸으로 끌어다 놓기 · 빈 칸을 누르면 목록에서 선택 · 칸의 이름을 누르면 빼기</p><div id="pe">${peHtml()}</div>`,
+    <div class="guide"><span class="g-i" aria-hidden="true">i</span><span class="g-t">이름 끌어 페어 칸에 놓기 · 빈칸 눌러 선택 · 이름 눌러 빼기</span></div><div id="pe">${peHtml()}</div>`,
     async()=>{const bad=PE.slots.filter(s=>(s[0]?1:0)+(s[1]?1:0)===1);if(bad.length){toast('한 명만 들어간 페어가 있음');throw new Error('keep')}
       await onSave(PE.slots.filter(s=>s[0]&&s[1]).map(s=>[s[0],s[1]]))});
   peDraw()}
@@ -2100,7 +2103,7 @@ function trManual(items,o,save){if(!Array.isArray(items)){const ev=items;o=ev.fm
   if(o.prog==='ko'){mode='ko';boxes=Array.from({length:Math.ceil(n/2)},(_,i)=>({label:`1차전 ${i+1}경기`,cap:2,slots:[null,null]}))}
   else{mode='group';const G=Math.max(1,+o.groups||0);const cap=Math.ceil(n/G);boxes=Array.from({length:G},(_,i)=>({label:G>1?'ABCD'[i]+'조':'리그',cap,slots:Array(cap).fill(null)}))}
   SE={items,pool:items.map((_,i)=>i),boxes,sel:null,mode};
-  openModal('대진 직접 입력',`<p class="small muted" style="margin:0 0 8px">${h(o.name||'')} · ${mode==='ko'?'1라운드 대진 칸에':'조 칸에'} 끌어다 놓기 · 빈 칸을 누르면 목록에서 선택 · 칸의 이름을 누르면 빼기${mode==='group'?' · 리그 경기는 조 안에서 모두 한 번씩 자동 구성':''}</p><div id="se">${seHtml()}</div>`,
+  openModal('대진 직접 입력',`${guide('이름 끌어 칸에 놓기 · 빈칸 눌러 선택 · 이름 눌러 빼기')}${mode==='group'?'<p class="small muted" style="margin:0 0 8px">리그 경기는 조 안에서 모두 한 번씩 자동 구성</p>':''}<div id="se">${seHtml()}</div>`,
     async()=>{if(SE.pool.length){toast(`배치 안 된 ${SE.pool.length}팀 있음`);throw new Error('keep')}
       const title=o.name&&o.name!=='직접 조합'?o.name.replace(/\s*\(.*\)$/,''):PROG_L[o.prog];let tr;
       if(mode==='ko'){const teams=[];const refs=[];const ko=[];SE.boxes.forEach(b=>{const [x,y]=b.slots;const rx=x!=null?(teams.push({p:SE.items[x].p,rank:null}),'T'+(teams.length-1)):null,ry=y!=null?(teams.push({p:SE.items[y].p,rank:null}),'T'+(teams.length-1)):null;
@@ -2128,7 +2131,7 @@ document.addEventListener('click',e=>{if(!SE||!$('#se'))return;if(SE.tapAt&&Date
 ACT['gen-blank']=()=>{const pool=rosterAll().filter(p=>cfg.picked.includes(p.key));if(!pool.length){toast('참석자 먼저 선택');return}
   const P={};pool.forEach(p=>P[p.key]={name:p.name,gender:p.gender,level:p.level,guest:p.guest});const courts=cfg.courtList,R=roundsOf(cfg);
   const rounds=Array.from({length:R},()=>({matches:courts.map(()=>({a:[null,null],b:[null,null]})),rest:[]}));const {picked:_p,...cfgRest}=cfg;
-  draft={id:draft&&draft.status!=='확정'?draft.id:null,cfg:JSON.parse(JSON.stringify(cfgRest)),players:P,rounds,status:'초안',allowBlank:true};sel=null;saveDraft();render();toast('빈 대진표 · 빈자리를 눌러 사람 넣기')};
+  draft={id:draft&&draft.status!=='확정'?draft.id:null,cfg:JSON.parse(JSON.stringify(cfgRest)),players:P,rounds,status:'초안',allowBlank:true};sel=null;saveDraft();render();toast('빈자리 눌러 인원 배정')};
 
 /* ---------- 행사 매치: 행사 하나에 매치 여러 개 (종목 × 형식) ----------
    ev.matches=[{id,name,kind,fmt,groups,adv,entries:[{p:[keys],rank,rec}],tr,bracketId}]
@@ -2534,7 +2537,7 @@ function viewMoney(){
     <div class="due-list">${rows}</div>
     ${cnt.none&&!RO?`<details class="recruit" id="due-pv"${lsGet('sbpb-due-pv',false)?' open':''}><summary><span>미납 안내 문구 미리보기</span><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary><pre class="rtext">${h(dueText())}</pre><button class="btn sm" data-act="due-copy">문구 복사</button></details>`:''}
     <details class="due-yr" id="due-yr"${lsGet('sbpb-due-yr',false)?' open':''}><summary><h3>${Y}년 납부 현황</h3><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
-    <div class="small muted" style="margin:0 0 8px">● 납부 · ○ 미납 · 면 면제 · 월 선택 시 해당 월 납부 체크로 이동</div>
+    ${guide('월 선택 시 납부 체크로 이동')}<div class="small muted" style="margin:0 0 8px">● 납부 · ○ 미납 · 면 면제</div>
     <div class="xwrap"><table class="dtbl"><thead><tr><th>이름</th>${Array.from({length:12},(_,i)=>`<td class="${i+1===M?'cur':''}">${i+1}</td>`).join('')}<td>횟수</td><td>금액</td></tr></thead><tbody>${yRows}</tbody>
     <tfoot><tr><th>합계</th>${colSum.map((n,i)=>`<td class="num${i+1===M?' cur':''}">${n||''}</td>`).join('')}<td class="num">${yTot}</td><td class="num">${fee?won(yTot*fee):'–'}</td></tr></tfoot></table></div></details></section>`;
   // ----- event ledger (accordion + editable sheet) -----
@@ -2549,7 +2552,7 @@ function viewMoney(){
       ${RO?'':`<button class="btn led-add" data-act="led-row" data-id="${id}">+ 행 추가</button>`}
       ${Object.keys(byCat).length>1?`<div class="small muted" style="margin-top:8px">분류별 지출 · ${Object.entries(byCat).sort((x,y)=>y[1]-x[1]).map(([k,v])=>`${h(k)} ${won(v)}`).join(' · ')}</div>`:''}</div>`:'';
     return `<div class="led-acc${open?' open':''}"><div class="led-hd" data-act="led-tog" data-id="${id}" role="button" tabindex="0" aria-expanded="${open}"><div class="grow"><div class="ttl">${h(title)}</div><div class="sub">${sub}</div></div><div class="led-mini">${s.es.length?`<span class="num">-${won(s.out)}</span>${s.inc?`<span class="num inc">+${won(s.inc)}</span>`:''}`:'<span class="muted small">기록 없음</span>'}</div><span class="led-tg">${open?'접기':'펼치기'}<i aria-hidden="true">▾</i></span></div>${body}</div>`};
-  const ledger=`<section class="panel" style="margin-top:16px"><div class="panel-h"><div><h2>행사 정산</h2><div class="small muted">행사 선택 시 펼쳐짐 · 칸에 바로 입력하면 자동 저장 · '+ 행 추가'로 줄 추가 · 표는 옆으로 밀어서 확인</div></div></div>
+  const ledger=`<section class="panel" style="margin-top:16px"><div class="panel-h"><div><h2>행사 정산</h2></div></div>${guide('행사 눌러 펼치기 · 칸 입력 시 자동 저장')}
     <div class="led-accs">${evs.map(e=>acc(e.id,e.title,`${fmtD(e.date)} · ${h(e.type)}`)).join('')}${acc('','행사 외 일반','공·용품 구입 등 행사와 무관한 지출·수입')}</div>
     <datalist id="led-cats">${LED_OUT.concat(LED_IN).map(v=>`<option value="${v}">`).join('')}</datalist><datalist id="led-payers">${S.members.filter(m=>isStaff(m)&&isCur(m)).map(m=>`<option value="${h(m.name)}">`).join('')}<option value="총무 카드"><option value="회비 통장"></datalist></section>`;
   // ----- regular court quarterly -----
@@ -2571,7 +2574,7 @@ function dueText(){const Y=monY,M=monM;const fee=Number(duesCfg().fee)||0;const 
   return `[SBPB ${M}월 회비 안내]\n${M}월 회비 ${won(fee)} 미납 확인 부탁드립니다 🙏\n${un.map(m=>m.name).join(', ')}`}
 document.addEventListener('toggle',e=>{if(e.target.id==='due-pv')lsSet('sbpb-due-pv',e.target.open);if(e.target.id==='due-yr')lsSet('sbpb-due-yr',e.target.open)},true);
 ACT['due-copy']=async()=>{const txt=dueText();
-  try{await navigator.clipboard.writeText(txt);toast('미납 안내 문구 복사 완료')}catch(e){openModal('미납 안내 문구',`<textarea class="in" rows="5" readonly>${h(txt)}</textarea><p class="small muted" style="margin:0">문구 칸을 길게 눌러 복사</p>`,async()=>{})}};
+  try{await navigator.clipboard.writeText(txt);toast('미납 안내 문구 복사 완료')}catch(e){openModal('미납 안내 문구',`<textarea class="in" rows="5" readonly>${h(txt)}</textarea><div class="guide"><span class="g-i" aria-hidden="true">i</span><span class="g-t">문구 길게 눌러 복사</span></div>`,async()=>{})}};
 // ledger entries
 function ledForm(x={}){
   const evs=S.events.filter(e=>e.date).sort((p,q)=>(q.date||'').localeCompare(p.date||'')).slice(0,60);
