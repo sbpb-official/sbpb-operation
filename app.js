@@ -116,7 +116,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
 const NEWS=[
   {id:'2026-11-23',v:'1.11',date:'2026-11-23',items:[
     {k:'extraord',t:'대진 생성 추가 기준 우선순위 지정 (상하위 우위 금지 · 티어리스트 반영 · 최근 페어 분산 순), 게스트 분산 기준 제거'},
-    {k:'slotdnd',t:'대진표 이름 끌어 놓기 교체 추가 (같은 타임 · 같은 성별끼리, 휴대폰 길게 눌러 시작)'},
+    {k:'slotdnd',t:'대진표 이름 끌어 놓기 교체 추가 (같은 타임 · 같은 성별끼리, 휴대폰 길게 눌러 시작 · 교체 대상 확대 강조 · 근처 자리 자동 선택)'},
     {k:'drawcheck',t:'대진 생성 필수 조건 5가지 적용 (경기 수 균등 · 팀 평균 차 0.5 이하 · 연속 휴식 지양 · 전원 혼복 1회 · 같은 페어 최대 2회, 번호 = 우선순위) · 추가 조건 상하위 우위 금지, 대진표 하단 조건 검증 결과 표시'},
     {k:'lgdrag',t:'리그 경기 순서 끌어 놓기 저장 오류 수정'},
     {k:'tier',t:'회원 티어리스트 추가 (남녀 구분 · 끌어 놓기 순위 저장 · 운영진 전용), 대진 생성 실력 균형에 같은 성별 · 같은 레벨 안 순위 반영'},
@@ -1446,17 +1446,22 @@ ACT['slot']=t=>{if(slotDrag.just)return;openMenu(t)};
 const slotDrag={just:false};
 (function(){let st=null;
   const gender=k=>draft&&draft.players[k]?draft.players[k].gender:'';
-  const begin=()=>{if(!st)return;st.on=true;const k=getSlot(st.r,st.slot);st.k=k;const g=gender(k);
-    const gh=document.createElement('div');gh.className='nm-ghost';gh.textContent=st.el.textContent;document.body.appendChild(gh);st.gh=gh;move(st.x,st.y);
+  const begin=()=>{if(!st)return;st.on=true;const k=getSlot(st.r,st.slot);st.k=k;st.name=dn(draft.players[k].name);const g=gender(k);
+    const gh=document.createElement('div');gh.className='nm-ghost';gh.textContent=dn(draft.players[k].name);document.body.appendChild(gh);st.gh=gh;move(st.x,st.y);
     document.body.classList.add('slot-dragging');st.el.classList.add('dz-src');
     document.querySelectorAll(`#stage .nm[data-r="${st.r}"]`).forEach(n=>{if(n===st.el)return;const k2=getSlot(st.r,n.dataset.slot);n.classList.add(!k2||gender(k2)===g?'dz-ok':'dz-no')});
     document.querySelectorAll('#stage .nm[data-slot]').forEach(n=>{if(n.dataset.r!==String(st.r))n.classList.add('dz-no')});
     if(navigator.vibrate)try{navigator.vibrate(10)}catch(e){}};
-  const move=(x,y)=>{if(!st)return;st.x=x;st.y=y;if(st.gh){st.gh.style.left=x+'px';st.gh.style.top=y+'px';
-    document.querySelectorAll('#stage .nm.dz-hover').forEach(n=>n.classList.remove('dz-hover'));const t=document.elementFromPoint(x,y);const nmEl=t&&t.closest&&t.closest('#stage .nm.dz-ok');if(nmEl)nmEl.classList.add('dz-hover')}};
-  const clear=()=>{if(!st)return;clearTimeout(st.timer);if(st.gh)st.gh.remove();document.body.classList.remove('slot-dragging');document.querySelectorAll('#stage .nm').forEach(n=>n.classList.remove('dz-ok','dz-no','dz-src','dz-hover'))};
+  /* 손가락 아래 · 근처(36px)에서 가장 가까운 교체 가능 자리를 대상으로 선택 */
+  const pick=(x,y)=>{const u=document.elementFromPoint(x,y);const on=u&&u.closest&&u.closest('#stage .nm[data-slot]');if(on)return on.classList.contains('dz-ok')?on:null;/* 이름 위가 아닐 때만 근처 자리 */let best=null,bd=1e9;document.querySelectorAll('#stage .nm.dz-ok').forEach(n=>{const b=n.getBoundingClientRect();const dx=x<b.left?b.left-x:x>b.right?x-b.right:0,dy=y<b.top?b.top-y:y>b.bottom?y-b.bottom:0;const d=Math.hypot(dx,dy);if(d<bd){bd=d;best=n}});return bd<=36?best:null};
+  const move=(x,y)=>{if(!st)return;st.x=x;st.y=y;if(!st.gh)return;st.gh.style.left=x+'px';st.gh.style.top=y+'px';
+    const tg=pick(x,y);if(tg!==st.tg){if(st.tg)st.tg.classList.remove('dz-hover');st.tg=tg;if(tg){tg.classList.add('dz-hover');if(navigator.vibrate)try{navigator.vibrate(5)}catch(e){}}
+      const k2=tg?getSlot(st.r,tg.dataset.slot):null;st.gh.innerHTML=tg?`${h(st.name)} <b>⇄</b> ${k2?h(dn(draft.players[k2].name)):'빈자리'}`:h(st.name);st.gh.classList.toggle('on',!!tg)}
+    const H=(document.querySelector('.top')||{getBoundingClientRect:()=>({bottom:0})}).getBoundingClientRect().bottom;cancelAnimationFrame(st.raf);
+    const edge=56,d=y<H+edge?-10:y>innerHeight-edge?10:0;if(d){const go=()=>{if(!st)return;window.scrollBy(0,d);move(st.x,st.y)};st.raf=requestAnimationFrame(go)}};
+  const clear=()=>{if(!st)return;clearTimeout(st.timer);cancelAnimationFrame(st.raf);if(st.gh)st.gh.remove();document.body.classList.remove('slot-dragging');document.querySelectorAll('#stage .nm').forEach(n=>n.classList.remove('dz-ok','dz-no','dz-src','dz-hover'))};
   const drop=()=>{if(!st)return;const s=st;clear();st=null;if(!s.on)return;slotDrag.just=true;setTimeout(()=>slotDrag.just=false,350);
-    const t=document.elementFromPoint(s.x,s.y);const tg=t&&t.closest&&t.closest('#stage .nm[data-slot]');if(!tg||tg===s.el)return;
+    let tg=s.tg;if(!tg){const t=document.elementFromPoint(s.x,s.y);tg=t&&t.closest&&t.closest('#stage .nm[data-slot]')}if(!tg||tg===s.el)return;
     const r=+tg.dataset.r,sb=tg.dataset.slot;if(r!==s.r){toast('같은 타임 안에서만 교체 가능');return}
     const kb=getSlot(r,sb);if(kb&&gender(kb)!==gender(s.k)){toast('같은 성별끼리만 교체 가능');return}
     if(kb){setSlot(r,s.slot,kb);setSlot(r,sb,s.k)}else{setSlot(r,sb,s.k);setSlot(r,s.slot,null);if(s.slot[0]==='r')cleanBench(r)}
