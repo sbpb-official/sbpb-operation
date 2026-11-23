@@ -1265,6 +1265,18 @@ body.slot-dragging,body.slot-dragging *{cursor:grabbing!important}
 .nm-ghost b{margin:0 4px;color:var(--ball)}.nm-ghost.on{background:var(--brand);color:var(--brand-ink)}
 #stage .nm.dz-hover{pointer-events:none}
 
+/* 티어리스트 편집 · 히스토리 */
+.tier-bar .row{gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.tier-bar .btn{min-height:40px}
+.tier:not(.editing) .tier-row{grid-template-columns:28px 1fr auto;padding-left:12px}
+.tier.editing .tier-row{border-color:color-mix(in srgb,var(--court) 35%,var(--line))}
+.th-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.th-col{display:flex;flex-direction:column;gap:4px;min-width:0}
+.th-col .tier-row{grid-template-columns:24px 1fr auto;padding:0 8px;min-height:36px}
+.th-d{font-size:12px;color:var(--muted);white-space:nowrap}
+.th-d.up{color:var(--court)}.th-d.down{color:var(--warn)}
+@media (max-width:640px){.tier-bar{flex-direction:column;align-items:stretch}.tier-bar .row{justify-content:stretch}.tier-bar .row .btn{flex:1}}
+
 </style>
 </head>
 <body>
@@ -1431,7 +1443,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=732dd8bc18';
+const CUR_APP = 'app.js?v=7dccf49c0e';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1459,7 +1471,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=732dd8bc18';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=7dccf49c0e';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();

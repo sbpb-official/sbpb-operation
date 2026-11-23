@@ -1243,3 +1243,15 @@ body.slot-dragging,body.slot-dragging *{cursor:grabbing!important}
 .dc-list li.ex .dc-n{width:auto;padding:0 6px;border-radius:999px;font-size:11px}
 .nm-ghost b{margin:0 4px;color:var(--ball)}.nm-ghost.on{background:var(--brand);color:var(--brand-ink)}
 #stage .nm.dz-hover{pointer-events:none}
+
+/* 티어리스트 편집 · 히스토리 */
+.tier-bar .row{gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.tier-bar .btn{min-height:40px}
+.tier:not(.editing) .tier-row{grid-template-columns:28px 1fr auto;padding-left:12px}
+.tier.editing .tier-row{border-color:color-mix(in srgb,var(--court) 35%,var(--line))}
+.th-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.th-col{display:flex;flex-direction:column;gap:4px;min-width:0}
+.th-col .tier-row{grid-template-columns:24px 1fr auto;padding:0 8px;min-height:36px}
+.th-d{font-size:12px;color:var(--muted);white-space:nowrap}
+.th-d.up{color:var(--court)}.th-d.down{color:var(--warn)}
+@media (max-width:640px){.tier-bar{flex-direction:column;align-items:stretch}.tier-bar .row{justify-content:stretch}.tier-bar .row .btn{flex:1}}

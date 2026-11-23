@@ -119,7 +119,7 @@ const NEWS=[
     {k:'slotdnd',t:'대진표 이름 끌어 놓기 교체 추가 (같은 타임 · 동성끼리, 휴대폰 길게 눌러 시작 · 교체 대상 확대 강조 · 근처 자리 자동 선택 · 딥그린 이름표 흰 글씨)'},
     {k:'drawcheck',t:'대진 생성 필수 조건 5가지 적용 (경기 수 균등 · 팀 평균 차 0.5 이하 · 연속 휴식 지양 · 전원 혼복 1회 · 같은 페어 최대 2회, 번호 = 우선순위) · 추가 조건 상하위 우위 금지, 대진표 하단 조건 검증 결과 표시'},
     {k:'lgdrag',t:'리그 경기 순서 끌어 놓기 저장 오류 수정'},
-    {k:'tier',t:'회원 티어리스트 추가 (남녀 구분 · 끌어 놓기 순위 저장 · 운영진 전용), 대진 생성 실력 균형에 같은 성별 · 같은 레벨 안 순위 반영'},
+    {k:'tier',t:'회원 티어리스트 추가 (남녀 구분 · 편집 버튼으로 끌어 놓기 · 저장 시 반영 · 날짜별 히스토리 · 되돌리기 · 운영진 전용), 대진 생성 실력 균형에 같은 성별 · 같은 레벨 안 순위 반영'},
     {k:'evedit',t:'행사 상세 수정 버튼 위치 이동 (박스 우상단 코너 · 연필 아이콘)'},
     {k:'regtime',t:'시립대 정기모임 행사 시간 일괄 입력 (09:00–12:00)'},
     {k:'evtime',t:'행사 시작 · 종료 시간 입력 추가 (10분 단위 · 선택 입력, 행사 상세 · 목록 · 대시보드 · 캘린더 표시)'},
@@ -797,7 +797,7 @@ window.addEventListener('hashchange',()=>{const back=route==='events'&&evRoute&&
 let modalSubmit=null;
 function openModal(title,body,onSubmit,extraActs='',cls=''){
   modalSubmit=onSubmit;
-  $('#modal-root').innerHTML=`<div class="ov" data-act="ov-close"><div class="modal fm${cls?' '+cls:''}" role="dialog" aria-modal="true" aria-label="${h(title)}"><div class="m-head"><h2>${h(title)}</h2><button type="button" class="modal-x" data-act="close-modal" aria-label="닫기">×</button></div><form id="mform" novalidate><div class="m-body">${body}</div><div class="acts"><div class="row">${extraActs}</div><div class="row"><button type="button" class="btn" data-act="close-modal">취소</button><button class="btn pri" type="submit">저장</button></div></div></form></div></div>`;
+  $('#modal-root').innerHTML=`<div class="ov" data-act="ov-close"><div class="modal fm${cls?' '+cls:''}" role="dialog" aria-modal="true" aria-label="${h(title)}"><div class="m-head"><h2>${h(title)}</h2><button type="button" class="modal-x" data-act="close-modal" aria-label="닫기">×</button></div><form id="mform" novalidate><div class="m-body">${body}</div><div class="acts"><div class="row">${extraActs}</div><div class="row">${onSubmit?'<button type="button" class="btn" data-act="close-modal">취소</button><button class="btn pri" type="submit">저장</button>':'<button type="button" class="btn" data-act="close-modal">닫기</button>'}</div></div></form></div></div>`;
   const f=$('#mform');f.querySelectorAll('.starpick').forEach(paintPicker);f.querySelectorAll('.lvsel:not(.areaf):not(.dfield):not(.optsel)').forEach(paintLv);lockPage();if(window.matchMedia&&matchMedia('(pointer:fine)').matches){const first=f.querySelector('input:not([type=hidden]),select,textarea');first&&first.focus()}
 }
 let lockY=0;
@@ -1063,29 +1063,60 @@ function tierScores(){const t=tierDoc();if(!t||!(t.order||[]).length)return null
   return out}
 const tierLv=(key,lv)=>{const ts=tierScores();return ts&&ts[key]!=null?ts[key]:lv};
 let tierTab=lsGet('sbpb-tier-g','M');
-function tierListHtml(g){const order=tierOrder(g);
-  return `<div class="tier-col${tierTab===g?' on':''}" data-g="${g}"><h3 class="tier-h">${g==='M'?'남자':'여자'} <span class="muted small">${order.length}명</span></h3><div class="tier-list" data-g="${g}">${order.map((id,i)=>{const m=memberById(id);const prev=i?lvOfM(memberById(order[i-1])):null;const lv=lvOfM(m);
-    return `<div class="tier-row" data-id="${h(id)}"><span class="tier-grip" aria-label="끌어 순위 변경">⋮⋮</span><span class="num tier-n">${i+1}</span><b class="tier-nm">${h(m.name)}</b><span class="tier-lv">${stars(lv)}</span></div>`}).join('')||'<div class="muted small" style="padding:8px">활동 회원 없음</div>'}</div></div>`}
-function tierSection(){if(MV||RO)return '';const t=tierDoc();const nM=tierOrder('M').length,nF=tierOrder('F').length;
-  return `<section class="panel tier" style="margin-top:16px"><details class="due-yr st-fold" id="tier-box"${lsGet('sbpb-tier-box',false)?' open':''}><summary><h2 style="margin:0">티어리스트 <span class="small muted" style="font-weight:500">활동 회원 ${nM+nF}명 · 대진 실력 균형에 반영</span></h2><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
-    ${guide('⋮⋮ 끌어 순위 변경 · 성별마다 따로 순위')}
-    <div class="tier-bar"><span class="small muted">${t&&t.at?`저장 ${new Date(t.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})} · 같은 성별 · 같은 레벨 안 순위로 실력 차이 반영`:'저장 전 · 대진은 레벨만 사용'}</span><button type="button" class="btn sm ghost" data-act="tier-reset">레벨 순으로 초기화</button></div>
+/* 편집 상태: 끌어 놓아도 저장 전까지는 초안(tierDraft)만 바뀜 · 저장 시 히스토리 기록 */
+let tierEdit=false,tierDraft=null,tierDirty=false;
+const tierCur=g=>tierEdit&&tierDraft?tierDraft[g]:tierOrder(g);
+const tierHist=()=>{const t=tierDoc();if(!t)return [];if(t.hist&&t.hist.length)return t.hist;return t.order&&t.order.length&&t.at?[{at:t.at,order:t.order}]:[]};
+const fmtAt=at=>{const d=new Date(at);return `${fmtD(ymd(d))} ${pad(d.getHours())}:${pad(d.getMinutes())}`};
+function tierListHtml(g){const order=tierCur(g);
+  return `<div class="tier-col${tierTab===g?' on':''}" data-g="${g}"><h3 class="tier-h">${g==='M'?'남자':'여자'} <span class="muted small">${order.length}명</span></h3><div class="tier-list" data-g="${g}">${order.map((id,i)=>{const m=memberById(id);if(!m)return '';const lv=lvOfM(m);
+    return `<div class="tier-row" data-id="${h(id)}">${tierEdit?'<span class="tier-grip" aria-label="끌어 순위 변경">⋮⋮</span>':''}<span class="num tier-n">${i+1}</span><b class="tier-nm">${h(m.name)}</b><span class="tier-lv">${stars(lv)}</span></div>`}).join('')||'<div class="muted small" style="padding:8px">활동 회원 없음</div>'}</div></div>`}
+function tierSection(){if(MV||RO)return '';const t=tierDoc();const nM=tierCur('M').length,nF=tierCur('F').length;const hs=tierHist();
+  const acts=tierEdit?`<button type="button" class="btn sm ghost" data-act="tier-reset">레벨 순으로 초기화</button><button type="button" class="btn sm" data-act="tier-cancel">취소</button><button type="button" class="btn sm pri" data-act="tier-save">저장${tierDirty?' •':''}</button>`
+    :`<button type="button" class="btn sm" data-act="tier-hist"${hs.length?'':' disabled'}>히스토리 ${hs.length}</button><button type="button" class="btn sm pri" data-act="tier-edit">편집</button>`;
+  return `<section class="panel tier${tierEdit?' editing':''}" style="margin-top:16px"><details class="due-yr st-fold" id="tier-box"${tierEdit||lsGet('sbpb-tier-box',false)?' open':''}><summary><h2 style="margin:0">티어리스트 <span class="small muted" style="font-weight:500">활동 회원 ${nM+nF}명 · 대진 실력 균형에 반영</span></h2><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
+    ${tierEdit?guide('⋮⋮ 끌어 순위 변경 · 저장 눌러 반영 · 성별마다 따로 순위'):guide('편집 눌러 순위 변경 · 히스토리 눌러 날짜별 순위 확인')}
+    <div class="tier-bar"><span class="small muted">${tierEdit?(tierDirty?'저장하지 않은 변경 있음':'편집 중 · 변경 없음'):t&&t.at?`마지막 저장 ${fmtAt(t.at)} · 같은 성별 · 같은 레벨 안 순위로 실력 차이 반영`:'저장 전 · 대진은 레벨만 사용'}</span><div class="row">${acts}</div></div>
     <div class="seg tier-tabs">${TIER_G.map(([g,l])=>`<button type="button" class="${tierTab===g?'on':''}" data-act="tier-tab" data-g="${g}" aria-pressed="${tierTab===g}">${l} ${g==='M'?nM:nF}</button>`).join('')}</div>
     <div class="tier-cols">${TIER_G.map(([g])=>tierListHtml(g)).join('')}</div>
   </details></section>`}
 ACT['tier-tab']=t=>{tierTab=t.dataset.g;lsSet('sbpb-tier-g',tierTab);render()};
 document.addEventListener('toggle',e=>{if(e.target.id==='tier-box')lsSet('sbpb-tier-box',e.target.open)},true);
-ACT['tier-reset']=async()=>{const ch=await choiceDialog({title:'레벨 순으로 초기화',msg:'저장된 순위를 지우고 레벨 높은 순 · 가나다순으로 되돌림',choices:[{key:'go',label:'초기화',cls:'danger'},{key:'no',label:'취소'}]});if(ch!=='go')return;
-  await put('dues','tier',{order:[],at:0});toast('티어리스트 초기화 완료')};
-/* 끌어 놓기 (터치 · 마우스) + 화면 끝 자동 스크롤 */
-document.addEventListener('pointerdown',e=>{const gp=e.target.closest('.tier-grip');if(!gp||RO)return;e.preventDefault();const row=gp.closest('.tier-row'),list=row.parentElement;row.classList.add('drag');
-  list.querySelectorAll('.tier-sep').forEach(s=>s.remove());try{gp.setPointerCapture(e.pointerId)}catch(_){}
+ACT['tier-edit']=()=>{tierEdit=true;tierDirty=false;tierDraft={M:tierOrder('M'),F:tierOrder('F')};render()};
+ACT['tier-cancel']=async()=>{if(tierDirty){const ch=await choiceDialog({title:'편집 취소',msg:'저장하지 않은 순위 변경을 버리고 마지막 저장 상태로 되돌림',choices:[{key:'go',label:'변경 버리기',cls:'danger'},{key:'no',label:'계속 편집'}]});if(ch!=='go')return}
+  tierEdit=false;tierDraft=null;tierDirty=false;render()};
+/* 저장: 현재 순위 + 히스토리 한 줄 (이전 저장분이 히스토리에 없으면 함께 옮김) */
+async function tierSaveOrder(order,label){const t=tierDoc()||{};let hist=(t.hist||[]).slice();if(!hist.length&&t.order&&t.order.length&&t.at)hist.push({at:t.at,order:t.order});
+  const at=Date.now();hist.push({at,order,...(label?{note:label}:{})});if(hist.length>200)hist=hist.slice(-200);await put('dues','tier',{order,at,hist})}
+ACT['tier-save']=async()=>{if(!tierDraft)return;const order=TIER_G.flatMap(([g])=>tierDraft[g]);try{await tierSaveOrder(order)}catch(e){return}tierEdit=false;tierDraft=null;tierDirty=false;toast('티어리스트 저장');render()};
+ACT['tier-reset']=async()=>{const ch=await choiceDialog({title:'레벨 순으로 초기화',msg:'편집 중인 순위를 레벨 높은 순 · 가나다순으로 되돌림 (저장 눌러 반영)',choices:[{key:'go',label:'초기화',cls:'danger'},{key:'no',label:'취소'}]});if(ch!=='go')return;
+  const base=g=>byName(activeMembers().filter(m=>(m.gender==='F'?'F':'M')===g)).sort((x,y)=>lvOfM(y)-lvOfM(x)).map(m=>m.id);tierDraft={M:base('M'),F:base('F')};tierDirty=true;render()};
+/* 히스토리: 날짜별 저장 목록 → 그때 순위 보기 (지금과 비교 ▲▼) · 되돌리기 */
+const tierSplit=order=>{const out={M:[],F:[]};(order||[]).forEach(id=>{const m=memberById(id);if(m)out[m.gender==='F'?'F':'M'].push(id)});return out};
+function tierDiff(a,b){let n=0;['M','F'].forEach(g=>{const pb={};b[g].forEach((id,i)=>pb[id]=i);a[g].forEach((id,i)=>{if(pb[id]!==undefined&&pb[id]!==i)n++})});return n}
+ACT['tier-hist']=()=>{const hs=tierHist().slice().reverse();
+  openModal('티어리스트 히스토리',`${guide('날짜 눌러 그때 순위 보기')}<div class="list th-list">${hs.map((x,i)=>{const prev=hs[i+1];const n=prev?tierDiff(tierSplit(x.order),tierSplit(prev.order)):null;
+    return `<div class="li click" data-act="tier-hview" data-at="${x.at}" role="button" tabindex="0"><div class="grow"><div class="ttl">${fmtAt(x.at)}${i===0?' <span class="chip court">현재</span>':''}</div><div class="sub">${prev?(n?`이전 저장 대비 ${n}명 순위 변경`:'이전 저장과 같음'):'첫 저장'}${x.note?' · '+h(x.note):''}</div></div><span class="li-go" aria-hidden="true">›</span></div>`}).join('')}</div>`,null)};
+ACT['tier-hview']=t=>{const at=+t.dataset.at;const x=tierHist().find(y=>y.at===at);if(!x)return;const then=tierSplit(x.order),now={M:tierOrder('M'),F:tierOrder('F')};const isCur=tierDoc()&&tierDoc().at===at;
+  const col=g=>{const pn={};now[g].forEach((id,i)=>pn[id]=i);return `<div class="th-col"><h3 class="tier-h" style="display:block">${g==='M'?'남자':'여자'}</h3>${then[g].map((id,i)=>{const m=memberById(id);const d=pn[id]===undefined?null:pn[id]-i;
+    return `<div class="tier-row"><span class="num tier-n">${i+1}</span><b class="tier-nm">${h(m.name)}</b><span class="th-d${d>0?' down':d<0?' up':''}" title="지금 순위와 비교">${d===null?'':d>0?`지금 ▼${d}`:d<0?`지금 ▲${-d}`:''}</span></div>`}).join('')}</div>`};
+  openModal(`${fmtAt(at)} 티어리스트`,`<p class="small muted" style="margin:0 0 12px">${isCur?'현재 저장된 순위':'▲▼ = 이 날짜 이후 지금까지 순위 변화'}</p><div class="th-cols">${col('M')}${col('F')}</div>`,null,isCur?'':`<button type="button" class="btn" data-act="tier-restore" data-at="${at}">이 순위로 되돌리기</button>`)};
+ACT['tier-restore']=async t=>{const at=+t.dataset.at;const x=tierHist().find(y=>y.at===at);if(!x)return;
+  const ch=await choiceDialog({title:'이 순위로 되돌리기',msg:`${fmtAt(at)} 순위를 현재 순위로 저장 · 새 히스토리로 기록`,choices:[{key:'go',label:'되돌리기',cls:'pri'},{key:'no',label:'취소'}]});if(ch!=='go')return;
+  try{await tierSaveOrder(x.order,`${fmtAt(at)} 순위로 되돌림`)}catch(e){return}closeModal();tierEdit=false;tierDraft=null;tierDirty=false;toast('티어리스트 되돌리기 완료');render()};
+/* 편집 중 다른 화면으로 나가면 저장 여부 확인 */
+window.addEventListener('hashchange',async()=>{if(!tierEdit||!tierDirty||(location.hash||'').startsWith('#members'))return;
+  const ch=await choiceDialog({title:'티어리스트 저장하지 않은 변경 있음',msg:'편집한 순위를 저장할지 선택',choices:[{key:'save',label:'저장',cls:'pri'},{key:'drop',label:'버리기'}]});
+  if(ch==='save')await ACT['tier-save']();else{tierEdit=false;tierDraft=null;tierDirty=false;render()}});
+/* 끌어 놓기 (편집 상태만 · 터치 · 마우스) + 화면 끝 자동 스크롤 */
+document.addEventListener('pointerdown',e=>{const gp=e.target.closest('.tier-grip');if(!gp||RO||!tierEdit)return;e.preventDefault();const row=gp.closest('.tier-row'),list=row.parentElement;row.classList.add('drag');
+  try{gp.setPointerCapture(e.pointerId)}catch(_){}
   let lastY=e.clientY,raf=0;const auto=()=>{const H=(document.querySelector('.top')||{getBoundingClientRect:()=>({bottom:0})}).getBoundingClientRect().bottom;const edge=64;let d=0;if(lastY<H+edge)d=-8;else if(lastY>innerHeight-edge)d=8;if(d){window.scrollBy(0,d);place(lastY)}raf=requestAnimationFrame(auto)};
   const place=y=>{const rows=[...list.querySelectorAll('.tier-row:not(.drag)')];let before=null;for(const r of rows){const b=r.getBoundingClientRect();if(y<b.top+b.height/2){before=r;break}}if(before!==row.nextSibling)list.insertBefore(row,before)};
   const move=ev=>{lastY=ev.clientY;place(lastY)};raf=requestAnimationFrame(auto);
   /* 행을 옮기면 포인터 캡처가 풀리므로 문서 전체에서 이동 · 놓기 감지 */
-  const up=async()=>{cancelAnimationFrame(raf);document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);row.classList.remove('drag');
-    const g=list.dataset.g;const mine=[...list.querySelectorAll('.tier-row')].map(r=>r.dataset.id);const order=TIER_G.flatMap(([x])=>x===g?mine:tierOrder(x));try{await put('dues','tier',{order,at:Date.now()});toast('티어리스트 저장')}catch(err){render()}};
+  const up=()=>{cancelAnimationFrame(raf);document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);row.classList.remove('drag');
+    const g=list.dataset.g;const mine=[...list.querySelectorAll('.tier-row')].map(r=>r.dataset.id);if(tierDraft&&mine.join()!==tierDraft[g].join()){tierDraft[g]=mine;tierDirty=true}render()};
   document.addEventListener('pointermove',move);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)});
 document.addEventListener('input',e=>{
   const t=e.target;
