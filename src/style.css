@@ -1179,3 +1179,9 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 /* 화면 모드 · TOP 버튼: 연한 초록 바탕 + 초록 아이콘 (배경에 묻히지 않게) */
 .theme-fab,.top-fab{background:color-mix(in srgb,var(--court) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--court) 35%,var(--surface));color:var(--court);box-shadow:0 2px 8px rgba(0,0,0,.12)}
 .theme-fab:hover,.top-fab:hover{color:var(--court);border-color:var(--court)}
+
+/* 행사 시간: 지우기 버튼 · 다음 모임 카드 시간 */
+.tfield.tclear{position:relative}
+.tfield .t-x{position:absolute;right:32px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:var(--muted);font-size:18px;line-height:1;cursor:pointer}
+.tfield .t-x:hover{color:var(--ink);background:var(--surface-2)}
+.dh-tm{font-size:14px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
