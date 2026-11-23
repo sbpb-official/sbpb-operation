@@ -1175,3 +1175,7 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .stage-acts{margin:12px 0 0}
 .stage-acts .btn{min-height:44px}
 @media (max-width:640px){.stage-acts .row{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px;width:100%}.stage-acts .row>*{min-width:0}.stage-acts .row>.emptywarn{grid-column:1/-1}.stage-acts .tipwrap{display:flex}.stage-acts .btn{white-space:nowrap;padding:0 8px;width:100%}}
+
+/* 화면 모드 · TOP 버튼: 연한 초록 바탕 + 초록 아이콘 (배경에 묻히지 않게) */
+.theme-fab,.top-fab{background:color-mix(in srgb,var(--court) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--court) 35%,var(--surface));color:var(--court);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.theme-fab:hover,.top-fab:hover{color:var(--court);border-color:var(--court)}

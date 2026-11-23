@@ -1197,6 +1197,10 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .stage-acts .btn{min-height:44px}
 @media (max-width:640px){.stage-acts .row{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px;width:100%}.stage-acts .row>*{min-width:0}.stage-acts .row>.emptywarn{grid-column:1/-1}.stage-acts .tipwrap{display:flex}.stage-acts .btn{white-space:nowrap;padding:0 8px;width:100%}}
 
+/* 화면 모드 · TOP 버튼: 연한 초록 바탕 + 초록 아이콘 (배경에 묻히지 않게) */
+.theme-fab,.top-fab{background:color-mix(in srgb,var(--court) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--court) 35%,var(--surface));color:var(--court);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.theme-fab:hover,.top-fab:hover{color:var(--court);border-color:var(--court)}
+
 </style>
 </head>
 <body>
@@ -1363,7 +1367,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=ddd747c855';
+const CUR_APP = 'app.js?v=8bcfb57aff';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1391,7 +1395,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=ddd747c855';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=8bcfb57aff';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
