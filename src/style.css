@@ -1191,3 +1191,14 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 #evdetail .evhead{padding-right:96px}
 .ev-edit-corner{position:absolute;top:12px;right:12px;z-index:1;min-height:40px;display:inline-flex;align-items:center;gap:4px;border-color:var(--court);color:var(--court);background:var(--surface)}
 .ev-edit-corner svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+
+/* 티어리스트 */
+.tier-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.tier-list{display:flex;flex-direction:column;gap:4px}
+.tier-row{display:grid;grid-template-columns:auto 28px 1fr auto auto;align-items:center;gap:8px;min-height:44px;padding:0 12px 0 4px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.tier-row.drag{opacity:.9;box-shadow:0 8px 24px rgba(0,0,0,.25);border-color:var(--court);position:relative;z-index:2}
+.tier-n{color:var(--muted);text-align:right;font-size:13px}
+.tier-nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tier-lv{font-size:12px}
+.tier-sep{height:1px;background:var(--line);margin:4px 0}
+.tier-grip{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;color:var(--muted);font-size:16px;line-height:1;padding:12px 8px;letter-spacing:-2px}

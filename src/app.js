@@ -115,6 +115,8 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-23',v:'1.11',date:'2026-11-23',items:[
+    {k:'lgdrag',t:'리그 경기 순서 끌어 놓기 저장 오류 수정'},
+    {k:'tier',t:'회원 티어리스트 추가 (끌어 놓기 순위 저장 · 운영진 전용), 대진 생성 실력 균형에 같은 레벨 안 순위 반영'},
     {k:'evedit',t:'행사 상세 수정 버튼 위치 이동 (박스 우상단 코너 · 연필 아이콘)'},
     {k:'regtime',t:'시립대 정기모임 행사 시간 일괄 입력 (09:00–12:00)'},
     {k:'evtime',t:'행사 시작 · 종료 시간 입력 추가 (10분 단위 · 선택 입력, 행사 상세 · 목록 · 대시보드 · 캘린더 표시)'},
@@ -1034,9 +1036,48 @@ function viewMembers(){
   ${list.map((m,i)=>`<tr class="${ST(m)!=='활동'?'dim':''}" data-act="m-edit" data-id="${m.id}" style="cursor:pointer"><td class="num muted">${i+1}</td><td><b>${h(m.name)}</b>${staffChip(m)}${m.sample?' <span class="chip">예시</span>':''}</td><td class="g-${m.gender}">${m.gender==='M'?'남':m.gender==='F'?'여':''}${m.birth?` <span class="muted small">만 ${ageOf(m.birth)}세</span>`:''}</td><td>${stars(m.level)}</td><td><span class="num">${h(career(m.since))}</span> <span class="muted small">${m.since?h(m.since.replace('-','.')):''}</span></td><td>${h(areaLabel(m.district))}</td><td class="muted">${h(areaLabel(m.work))}</td><td class="small">${m.phone?telLink(m.phone):''}</td><td>${stChip(m)}${yrsHtml(m)}</td><td class="muted small" style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${h(m.memo)}</td></tr>`).join('')}
   ${!list.length?'<tr><td colspan="10" class="muted" style="text-align:center;padding:24px">조건에 맞는 회원 없음</td></tr>':''}</tbody></table></div>`;
   return `<div class="page-head"><div><h1>회원 관리</h1><p>현 회원 ${S.members.filter(isCur).length}명 · 활동 ${activeMembers().length}명 · 운영진 ${S.members.filter(m=>isStaff(m)&&isCur(m)).length}명 · ${regYears().map(y=>`${y}년 등록 ${S.members.filter(m=>yearsOf(m).includes(y)).length}명`).join(' · ')}. 항목 선택 시 수정 가능</p></div><div class="row"><button class="btn" data-act="renew-open">연장 관리</button>${samples?`<button class="btn danger" data-act="m-clear-sample">예시 회원 ${samples}명 삭제</button>`:''}<button class="btn pri" data-act="m-new">회원 추가</button></div></div>${body}
+  ${tierSection()}
   ${guestSection()}
   <datalist id="areas">${SEOUL.concat(NEAR).map(a=>`<option value="${a}">`).join('')}</datalist>`;
 }
+/* ---------- 티어리스트: 활동 회원 실력 순위 (운영진 전용 · dues/tier) ---------- */
+const tierDoc=()=>S.dues.find(d=>d.id==='tier');
+const lvOfM=m=>Number(m&&m.level)||3;
+/* 저장된 순서 + 새 활동 회원은 자기 레벨 구간 맨 아래에 끼움 */
+function tierOrder(){const act=activeMembers();const ids=new Set(act.map(m=>m.id));const t=tierDoc();
+  let order=t&&t.order?t.order.filter(id=>ids.has(id)):[];
+  const base=byName(act).sort((x,y)=>lvOfM(y)-lvOfM(x));
+  if(!order.length)return base.map(m=>m.id);
+  base.filter(m=>!order.includes(m.id)).forEach(m=>{const lv=lvOfM(m);let at=order.length;for(let i=0;i<order.length;i++){if(lvOfM(memberById(order[i]))<lv){at=i;break}}
+    let last=-1;order.forEach((id,i)=>{if(lvOfM(memberById(id))===lv)last=i});if(last>=0)at=last+1;order.splice(at,0,m.id)});
+  return order}
+/* 대진 실력 점수: 순위대로 줄 세워 레벨을 다시 매기고, 같은 레벨 안은 순위로 ±0.2 미만 보정 (반 단계 레벨 구간을 넘지 않음) */
+function tierScores(){const t=tierDoc();if(!t||!(t.order||[]).length)return null;const order=tierOrder();
+  const lv=order.map(id=>lvOfM(memberById(id))).sort((a,b)=>b-a);const out={};let i=0;
+  while(i<lv.length){let j=i;while(j+1<lv.length&&lv[j+1]===lv[i])j++;const n=j-i+1;const step=Math.min(0.1,0.38/n);
+    for(let k=i;k<=j;k++)out[order[k]]=+(lv[i]+step*((n-1)/2-(k-i))).toFixed(3);i=j+1}
+  return out}
+const tierLv=(key,lv)=>{const ts=tierScores();return ts&&ts[key]!=null?ts[key]:lv};
+function tierSection(){if(MV||RO)return '';const order=tierOrder();const t=tierDoc();
+  return `<section class="panel tier" style="margin-top:16px"><details class="due-yr st-fold" id="tier-box"${lsGet('sbpb-tier-box',false)?' open':''}><summary><h2 style="margin:0">티어리스트 <span class="small muted" style="font-weight:500">활동 회원 ${order.length}명 · 대진 실력 균형에 반영</span></h2><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary>
+    ${guide('⋮⋮ 끌어 순위 변경')}
+    <div class="tier-bar"><span class="small muted">${t&&t.at?`저장 ${new Date(t.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})} · 같은 레벨 안 순위로 실력 차이 반영`:'저장 전 · 대진은 레벨만 사용'}</span><button type="button" class="btn sm ghost" data-act="tier-reset">레벨 순으로 초기화</button></div>
+    <div class="tier-list" id="tier-list">${order.map((id,i)=>{const m=memberById(id);const prev=i?lvOfM(memberById(order[i-1])):null;const lv=lvOfM(m);
+      return `${prev!==null&&prev!==lv?'<div class="tier-sep" aria-hidden="true"></div>':''}<div class="tier-row" data-id="${h(id)}"><span class="tier-grip" aria-label="끌어 순위 변경">⋮⋮</span><span class="num tier-n">${i+1}</span><b class="tier-nm">${h(m.name)}</b><span class="g-${h(m.gender)} small">${m.gender==='M'?'남':'여'}</span><span class="tier-lv">${stars(lv)}</span></div>`}).join('')}</div>
+  </details></section>`}
+document.addEventListener('toggle',e=>{if(e.target.id==='tier-box')lsSet('sbpb-tier-box',e.target.open)},true);
+ACT['tier-reset']=async()=>{const ch=await choiceDialog({title:'레벨 순으로 초기화',msg:'저장된 순위를 지우고 레벨 높은 순 · 가나다순으로 되돌림',choices:[{key:'go',label:'초기화',cls:'danger'},{key:'no',label:'취소'}]});if(ch!=='go')return;
+  await put('dues','tier',{order:[],at:0});toast('티어리스트 초기화 완료')};
+/* 끌어 놓기 (터치 · 마우스) + 화면 끝 자동 스크롤 */
+document.addEventListener('pointerdown',e=>{const gp=e.target.closest('.tier-grip');if(!gp||RO)return;e.preventDefault();const row=gp.closest('.tier-row'),list=row.parentElement;row.classList.add('drag');
+  list.querySelectorAll('.tier-sep').forEach(s=>s.remove());try{gp.setPointerCapture(e.pointerId)}catch(_){}
+  let lastY=e.clientY,raf=0;const auto=()=>{const H=(document.querySelector('.top')||{getBoundingClientRect:()=>({bottom:0})}).getBoundingClientRect().bottom;const edge=64;let d=0;if(lastY<H+edge)d=-8;else if(lastY>innerHeight-edge)d=8;if(d){window.scrollBy(0,d);place(lastY)}raf=requestAnimationFrame(auto)};
+  const place=y=>{const rows=[...list.querySelectorAll('.tier-row:not(.drag)')];let before=null;for(const r of rows){const b=r.getBoundingClientRect();if(y<b.top+b.height/2){before=r;break}}if(before!==row.nextSibling)list.insertBefore(row,before)};
+  const move=ev=>{lastY=ev.clientY;place(lastY)};raf=requestAnimationFrame(auto);
+  /* 행을 옮기면 포인터 캡처가 풀리므로 문서 전체에서 이동 · 놓기 감지 */
+  const up=async()=>{cancelAnimationFrame(raf);document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);row.classList.remove('drag');
+    const order=[...list.querySelectorAll('.tier-row')].map(r=>r.dataset.id);try{await put('dues','tier',{order,at:Date.now()});toast('티어리스트 저장')}catch(err){render()}};
+  document.addEventListener('pointermove',move);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)});
 document.addEventListener('input',e=>{
   const t=e.target;
   if(t.dataset.mf){mf[t.dataset.mf]=t.value;render()}
@@ -1241,7 +1282,7 @@ function recentPairWeight(before){const B=pastBrackets().filter(b=>b.cfg.date<be
 function generate(){
   const pool=rosterAll().filter(p=>cfg.picked.includes(p.key));
   if(pool.length<4){toast('참석자 4명 이상 선택 필요');return}
-  const P={};pool.forEach(p=>P[p.key]={name:p.name,gender:p.gender,level:p.level,guest:p.guest});
+  const P={};pool.forEach(p=>P[p.key]={name:p.name,gender:p.gender,level:p.guest?p.level:tierLv(p.key,p.level),guest:p.guest});
   const courts=cfg.courtList,C=courts.length,R=roundsOf(cfg);
   const st={};pool.forEach(p=>st[p.key]={games:0,bench:0,last:null});
   const partner={},opp={};const pk=(a,b)=>a<b?a+'|'+b:b+'|'+a;
@@ -1428,6 +1469,7 @@ function logicHtml(){
     // 운영 메모: 1번 코트는 공이 밖으로 나가기 쉬워(공 유실 우려) 남복 우선 배정. 화면에는 표시하지 않음.
     ['코트 배정','코트별 우선 종류(모임 설정 › 코트) 설정에 맞춰 경기 배정, 맞는 경기가 없으면 남은 경기 배정'],
     ['레벨 균형','양 팀 레벨 합 차이가 가장 작은 조합 선택, 레벨 모름 게스트는 중간 레벨 적용'],
+    ['티어리스트 반영','회원 › 티어리스트 순위로 같은 레벨 안 실력 차이 반영 (레벨 구간 내 보정), 저장 전에는 레벨만 적용'],
     ['파트너·상대 다양화','같은 파트너 재편성 회피, 같은 상대와의 반복 대결 최소화'],
     ['최근 페어 분산','직전 10회 정기모임 기준 동일 파트너 편성 빈도가 낮은 조합 우선 편성, 레벨 균형 기준에 우선하지 않음'],
     ['게스트 분산','게스트끼리 같은 팀 편성 지양, 회원과 짝을 지어 편성 (인원 구성상 불가피할 때만 허용)'],
@@ -2014,10 +2056,10 @@ ACT['tr-rank']=t=>{const c=trCtx(t),ev=c.ev;if(!ev||!c.tr)return;const tr=c.tr;
 document.addEventListener('pointerdown',e=>{const gp=e.target.closest('.lg-grip');if(!gp||RO)return;e.preventDefault();const row=gp.closest('.lg-row'),list=row.parentElement;const ph=row.getBoundingClientRect();row.classList.add('drag');
   try{gp.setPointerCapture(e.pointerId)}catch(_){}
   const move=ev=>{const y=ev.clientY;const rows=[...list.querySelectorAll('.lg-row:not(.drag)')];let before=null;for(const r of rows){const b=r.getBoundingClientRect();if(y<b.top+b.height/2){before=r;break}}if(before!==row.nextSibling)list.insertBefore(row,before)};
-  const up=async()=>{gp.removeEventListener('pointermove',move);gp.removeEventListener('pointerup',up);gp.removeEventListener('pointercancel',up);row.classList.remove('drag');
+  const up=async()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);row.classList.remove('drag');
     const order=[...list.querySelectorAll('.lg-row')].map(r=>+r.dataset.i);if(order.every((v,i)=>v===i))return;const c=trCtx(row),ev=c.ev;if(!ev||!c.tr)return;
     const tr=JSON.parse(JSON.stringify(c.tr));tr.lg=order.map(i=>tr.lg[i]);await saveTr(ev,tr,c.mid);toast('경기 순서 변경')};
-  gp.addEventListener('pointermove',move);gp.addEventListener('pointerup',up);gp.addEventListener('pointercancel',up)});
+  document.addEventListener('pointermove',move);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)});
 function tourneyImport(j){const ev=S.events.find(e=>j.eventTitle&&e.title.includes(j.eventTitle)&&(!j.date||e.date===j.date))||(j.date&&S.events.find(e=>e.date===j.date));
   if(!ev){toast(`"${j.eventTitle||j.date}" 행사를 찾지 못함 · 이벤트에 먼저 등록 필요`);return}
   const ix=nameIndex();const unknown=new Set();const kof=n=>{const p=ix[n];if(p)return p.key;unknown.add(n);return 'n:'+n};
@@ -2140,7 +2182,7 @@ document.addEventListener('click',e=>{if(!SE||!$('#se'))return;if(SE.tapAt&&Date
     box.innerHTML=SE.pool.map(i=>`<button type="button" data-se-pick="${i}">${h(seLabel(i))}</button>`).join('');cell.appendChild(box)}});
 /* 타임표 행사: 빈 대진표로 시작해 칸마다 직접 넣기 */
 ACT['gen-blank']=()=>{const pool=rosterAll().filter(p=>cfg.picked.includes(p.key));if(!pool.length){toast('참석자 먼저 선택');return}
-  const P={};pool.forEach(p=>P[p.key]={name:p.name,gender:p.gender,level:p.level,guest:p.guest});const courts=cfg.courtList,R=roundsOf(cfg);
+  const P={};pool.forEach(p=>P[p.key]={name:p.name,gender:p.gender,level:p.guest?p.level:tierLv(p.key,p.level),guest:p.guest});const courts=cfg.courtList,R=roundsOf(cfg);
   const rounds=Array.from({length:R},()=>({matches:courts.map(()=>({a:[null,null],b:[null,null]})),rest:[]}));const {picked:_p,...cfgRest}=cfg;
   draft={id:draft&&draft.status!=='확정'?draft.id:null,cfg:JSON.parse(JSON.stringify(cfgRest)),players:P,rounds,status:'초안',allowBlank:true};sel=null;saveDraft();render();toast('빈자리 눌러 인원 배정')};
 
