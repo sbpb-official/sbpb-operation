@@ -116,7 +116,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
 const NEWS=[
   {id:'2026-11-23',v:'1.11',date:'2026-11-23',items:[
     {k:'slotdnd',t:'대진표 이름 끌어 놓기 교체 추가 (같은 타임 · 같은 성별끼리, 휴대폰 길게 눌러 시작)'},
-    {k:'drawcheck',t:'대진 생성 필수 조건 6가지 적용 (경기 수 균등 · 연속 휴식 제거 · 팀 평균 차 0.5 이하 · 전원 혼복 1회 · 같은 페어 최대 2회 · 상하위 우위 금지, 번호 = 우선순위), 대진표 하단 조건 검증 결과 표시'},
+    {k:'drawcheck',t:'대진 생성 필수 조건 5가지 적용 (경기 수 균등 · 팀 평균 차 0.5 이하 · 연속 휴식 지양 · 전원 혼복 1회 · 같은 페어 최대 2회, 번호 = 우선순위) · 추가 조건 상하위 우위 금지, 대진표 하단 조건 검증 결과 표시'},
     {k:'lgdrag',t:'리그 경기 순서 끌어 놓기 저장 오류 수정'},
     {k:'tier',t:'회원 티어리스트 추가 (남녀 구분 · 끌어 놓기 순위 저장 · 운영진 전용), 대진 생성 실력 균형에 같은 성별 · 같은 레벨 안 순위 반영'},
     {k:'evedit',t:'행사 상세 수정 버튼 위치 이동 (박스 우상단 코너 · 연필 아이콘)'},
@@ -1290,7 +1290,9 @@ function recentPairWeight(before){const B=pastBrackets().filter(b=>b.cfg.date<be
 /* 한 팀이 상위끼리 · 하위끼리 모두 앞서면 우위 */
 const dominates=(x,y)=>{const A=x.slice().sort((p,q)=>q-p),B=y.slice().sort((p,q)=>q-p);return (A[0]>B[0]+1e-9&&A[1]>B[1]+1e-9)||(B[0]>A[0]+1e-9&&B[1]>A[1]+1e-9)};
 /* 대진 조건 검증: 번호 = 우선순위 (모두 지킬 수 없으면 앞 번호 우선) */
-const DC_ITEMS=[['경기 수 균등','전원 경기 수 차이 최대 1경기'],['연속 휴식 제거','2타임 연속 휴식 없음 (휴식 인원이 많으면 최소화)'],['팀 실력 균형','양 팀 평균 실력 차 0.5 이하'],['전원 혼복 1회 이상','남녀 모두 참석 시 모든 참여자 혼복 최소 1회'],['같은 페어 최대 2회','같은 두 사람 페어 2회 이하'],['상하위 우위 금지','한 팀이 상위 멤버끼리 · 하위 멤버끼리 모두 앞서는 편성 없음']];
+const DC_ITEMS=[['경기 수 균등','전원 경기 수 차이 최대 1경기'],['팀 실력 균형','양 팀 평균 실력 차 0.5 이하'],['연속 휴식 지양','2타임 연속 휴식 없음 (휴식 인원이 많으면 최소화)'],['전원 혼복 1회 이상','남녀 모두 참석 시 모든 참여자 혼복 최소 1회'],['같은 페어 최대 2회','같은 두 사람 페어 2회 이하']];
+/* 추가 조건 (필수 조건 다음 순위): 상하위 우위 금지 · 같은 레벨은 티어리스트 순위로 판단 */
+const DC_EXTRA=['상하위 우위 금지','한 팀이 상위 멤버끼리 · 하위 멤버끼리 모두 앞서는 편성 지양 (같은 레벨은 티어리스트 순위로 판단)'];
 function drawCheck(d,P){const nm=k=>(P[k]&&P[k].name)||'';const lv=k=>P[k]?P[k].level:3;const rounds=d.rounds||[];
   const keys=Object.keys(P);const games={},mix={},pairs={};keys.forEach(k=>{games[k]=0;mix[k]=0});
   const consec=[],avgBad=[],dom=[];const pk=(x,y)=>x<y?x+'|'+y:y+'|'+x;
@@ -1304,12 +1306,12 @@ function drawCheck(d,P){const nm=k=>(P[k]&&P[k].name)||'';const lv=k=>P[k]?P[k].
   const gv=keys.map(k=>games[k]);const spread=gv.length?Math.max(...gv)-Math.min(...gv):0;
   const both=keys.some(k=>P[k].gender==='F')&&keys.some(k=>P[k].gender!=='F');const noMix=both?keys.filter(k=>!mix[k]).map(nm):[];
   const over=Object.entries(pairs).filter(([,v])=>v>2).map(([q,v])=>q.split('|').map(nm).join('·')+` ${v}회`);
-  const res=[[spread>1?spread-1:0,spread>1?`최대 ${Math.max(...gv)}경기 · 최소 ${Math.min(...gv)}경기`:''],[consec.length,consec.join(', ')],[avgBad.length,avgBad.join(', ')],[noMix.length,noMix.length?'혼복 미참여: '+noMix.join(', '):''],[over.length,over.join(', ')],[dom.length,dom.join(', ')]];
+  const res=[[spread>1?spread-1:0,spread>1?`최대 ${Math.max(...gv)}경기 · 최소 ${Math.min(...gv)}경기`:''],[avgBad.length,avgBad.join(', ')],[consec.length,consec.join(', ')],[noMix.length,noMix.length?'혼복 미참여: '+noMix.join(', '):''],[over.length,over.join(', ')],[dom.length,dom.join(', ')]];
   return {key:res.map(r=>r[0]),items:res}}
 function drawCheckHtml(){if(!draft||!draft.rounds)return '';const P={};Object.entries(draft.players||{}).forEach(([k,p])=>P[k]={...p,level:p.guest?(Number(p.level)||3):tierLv(k,Number(p.level)||3)});
-  const c=drawCheck(draft,P);const bad=c.key.filter(v=>v).length;
-  return `<section class="dcheck"><div class="dc-h"><b>조건 검증 ${bad?`<span class="dc-cnt bad">${bad}개 미충족</span>`:'<span class="dc-cnt ok">모두 충족</span>'}</b><span class="small muted">번호 = 우선순위 · 모두 지킬 수 없으면 앞 번호 우선</span></div>
-    <ol class="dc-list">${DC_ITEMS.map(([t,d],i)=>{const [n,det]=c.items[i];return `<li class="${n?'bad':'ok'}"><span class="dc-n">${i+1}</span><div class="dc-b"><div class="dc-t"><b>${t}</b><span class="dc-r">${n?`✗ ${n}건`:'✓'}</span></div><div class="dc-d">${n?h(det):h(d)}</div></div></li>`}).join('')}</ol></section>`}
+  const c=drawCheck(draft,P);const bad=c.key.slice(0,DC_ITEMS.length).filter(v=>v).length;
+  return `<section class="dcheck"><div class="dc-h"><b>조건 검증 ${bad?`<span class="dc-cnt bad">필수 ${bad}개 미충족</span>`:'<span class="dc-cnt ok">필수 조건 모두 충족</span>'}</b><span class="small muted">번호 = 우선순위 · 모두 지킬 수 없으면 앞 번호 우선 · 추가 조건은 그다음</span></div>
+    <ol class="dc-list">${DC_ITEMS.concat([DC_EXTRA]).map(([t,d],i)=>{const [n,det]=c.items[i];const ex=i>=DC_ITEMS.length;return `<li class="${n?'bad':'ok'}${ex?' ex':''}"><span class="dc-n">${ex?'추가':i+1}</span><div class="dc-b"><div class="dc-t"><b>${t}</b><span class="dc-r">${n?`✗ ${n}건`:'✓'}</span></div><div class="dc-d">${n?h(det):h(d)}</div></div></li>`}).join('')}</ol></section>`}
 function generate(){
   const pool=rosterAll().filter(p=>cfg.picked.includes(p.key));
   if(pool.length<4){toast('참석자 4명 이상 선택 필요');return}
@@ -1549,8 +1551,8 @@ function logicHtml(){
   return `<details class="logic" id="logic"${open?' open':''}><summary>대진표 생성 로직 <span>${open?'접기':'펼치기'}</span></summary>
   <div class="logic-sec"><b>필수 조건</b><span>번호 = 우선순위 · 모두 지킬 수 없으면 앞 번호 우선</span></div>
   <ol class="logic-pri">${DC_ITEMS.map(([t,d],i)=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
-  <div class="logic-sec"><b>추가 기준</b></div>
-  <ol class="logic-ex">${items.map(([t,d])=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
+  <div class="logic-sec"><b>추가 기준</b><span>필수 조건 다음으로 반영 · 상하위 우위 금지를 가장 먼저 검사</span></div>
+  <ol class="logic-ex">${[DC_EXTRA].concat(items).map(([t,d])=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
   <div class="edit"><b>수동 수정 방법</b><span>이름 눌러 변경·삭제 · 길게 눌러 끌어 같은 성별끼리 교체 · 빈자리 남으면 확정 불가</span></div>
   </details>`;
 }
