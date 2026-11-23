@@ -1185,3 +1185,9 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .tfield .t-x{position:absolute;right:32px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:var(--muted);font-size:18px;line-height:1;cursor:pointer}
 .tfield .t-x:hover{color:var(--ink);background:var(--surface-2)}
 .dh-tm{font-size:14px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* 행사 상세: 수정 버튼 우상단 코너 고정 */
+#evdetail{position:relative}
+#evdetail .evhead{padding-right:96px}
+.ev-edit-corner{position:absolute;top:12px;right:12px;z-index:1;min-height:40px;display:inline-flex;align-items:center;gap:4px;border-color:var(--court);color:var(--court);background:var(--surface)}
+.ev-edit-corner svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}

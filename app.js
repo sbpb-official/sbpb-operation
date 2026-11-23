@@ -115,6 +115,8 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-23',v:'1.11',date:'2026-11-23',items:[
+    {k:'evedit',t:'행사 상세 수정 버튼 위치 이동 (박스 우상단 코너 · 연필 아이콘)'},
+    {k:'regtime',t:'시립대 정기모임 행사 시간 일괄 입력 (09:00–12:00)'},
     {k:'evtime',t:'행사 시작 · 종료 시간 입력 추가 (10분 단위 · 선택 입력, 행사 상세 · 목록 · 대시보드 · 캘린더 표시)'},
     {k:'fabtone',t:'화면 모드 · TOP 버튼 컬러 개선 (연한 초록 바탕 · 초록 아이콘 · 그림자, 가시성 향상)'},
     {k:'guides',t:'기능 안내 문구 형식 통일 (i 아이콘 안내 바 · [대상] 눌러 [동작] 형식, 대진표 · 페어 · 대진 직접 입력 · 팀 · 리그 · 토너먼트 · 회비 · 정산 · 문구 복사 · 이미지 저장 12곳)'},
@@ -551,12 +553,13 @@ async function runMigrations(){
   const F13='mig-court-myeonmok';
   const F14='mig-court-imun';
   const F15='mig-court-fee-num';
+  const F19='mig-ev-reg-time';                       // 2026-11-23: 시립대 정기모임 행사 시간 09:00–12:00 일괄 입력 (시간 비어 있을 때만)
   const F18='mig-court-jamsil-info';                  // 2026-11-19: 잠실유수지 테니스장 송파구체육회 이용안내 반영 (요금 · 주민 우선 접수 · 운영시간)
   const F17='mig-court-jamsil-yusuji';                // 2026-11-19: 잠실유수지 테니스장 (송파구) 추가 · 송파구체육회 대관신청
   const F16='mig-staff-years';                       // 2026-11-16: 지금 운영진 3명은 2027년 임기로 기록 (2026년 운영진은 직접 입력)                     // 2026-11-16: 요금을 숫자+단위로 (단위가 분명한 코트만) · 상세 요금은 메모로 · 이문 요금표 반영                        // 2026-11-16: 이문체육문화센터 테니스장 (동대문구) 추가                    // 2026-11-15: 면목구립테니스장 추가 (공단 이용안내 기준)                    // 2026-11-15: 중랑구립테니스장 추가 (예약 링크·순위는 용마와 같은 공단 규정)                 // 2026-11-15: 용마 테니스장 공단 이용안내 반영 (요금·예약 순위·예약 사이트)                      // 2026-11-15: 용마폭포공원 테니스장 (중랑구) 추가                     // 2026-11-14: TS는 네이버 링크 예약 (스매시 아님) · 메모의 '○○에서 예약' 안내 문구 제거                       // 2026-11-14: 계남테니스장 (구로구) 추가                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
   const TS_MEMO='예약 링크는 네이버 지도 · 9호선 둔촌오륜역 1번 출구 도보 약 860m\n대관료 (개장 당시): 평일 야간·주말 주간 35,000원 · 주말 야간 40,000원\n※ 현재 요금·예약 오픈 방식은 네이버 지도 업체 정보로 확인 필요';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
   const has=id=>S.dues.find(d=>d.id===id);
-  if([F,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12,F13,F14,F15,F16,F17,F18].every(has))return /* 새 플래그는 이 목록에도 추가 */;
+  if([F,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12,F13,F14,F15,F16,F17,F18,F19].every(has))return /* 새 플래그는 이 목록에도 추가 */;
   migBusy=true;
   try{if(!has(F)){const targets=S.members.filter(m=>isCur(m)&&!m.sample);
     for(const m of targets)if(m.joined!=='2026-01-01')await put('members',m.id,{...m,joined:'2026-01-01'});
@@ -670,7 +673,9 @@ async function runMigrations(){
       await put('courts',c.id,{...c,feeN:8000,feeUnit:'1시간',fee:'',url:c.url||'https://club.esongpa.or.kr/',
         genRule:{type:'monthly',day:'21',time:'10:00'},resident:true,area:'송파구',workers:true,resRule:{type:'monthly',day:'20',time:'10:00'},
         memo:'예약: 송파구체육회 사이트 › 잠실유수지테니스장 대관신청 · 2시간 단위 사용\n다음 달 대관 접수 (10:00~18:00 선착순)\n· 매월 20일: 송파구민 · 송파구 재직자 우선 (재직자는 재직증명서를 spcosa7330@hanmail.net로 송부 후 등록)\n· 매월 21일부터: 서울시민 누구나\n· 20일이 주말 · 공휴일이면 다음 평일 접수\n이용 제한: 평일 야간 · 주말 · 공휴일은 송파구민 · 재직자만 이용 · 1개 ID당 월 총 8타임\n요금 (1시간): 평일 주간 8,000원 · 평일 야간 · 토 · 일 · 공휴일 10,400원 · 행사 · 촬영 · 체육대회 150,000원 / 195,000원\n결제: 온라인 카드결제 · 2시간 안에 미결제 시 취소\n운영: 매일 06:00~22:00\n휴관: 신정 · 설날 · 추석 당일 · 공단 지정일 · 행사 · 대관 · 시설점검 시 임시 휴관\n문의: 사무실 02-402-5526 · 관리실 02-2202-7330\n※ 면 수 · 바닥 확인 필요'});n++}
-    await put('dues',F18,{done:true,count:n,at:Date.now()});if(n)toast('잠실유수지 테니스장 정보 업데이트 완료')}}
+    await put('dues',F18,{done:true,count:n,at:Date.now()});if(n)toast('잠실유수지 테니스장 정보 업데이트 완료')}
+  if(!has(F19)){let n=0;for(const e of S.events){if(e.type!=='정기모임'||!/시립대/.test(e.place||'')||e.startTime)continue;const {id,...rest}=e;await put('events',id,{...rest,startTime:'09:00',endTime:'12:00'});n++}
+    await put('dues',F19,{done:true,count:n,at:Date.now()});if(n)toast(`시립대 정기모임 ${n}건 시간 09:00–12:00 입력 완료`)}}
   catch(e){}
   migBusy=false;
 }
@@ -2275,9 +2280,9 @@ function viewEvents(){
       ${(()=>{const past=ev.date&&diffDays(ev.endDate||ev.date)<0;  // finished: show only who went; edit via 수정
         return `<div class="cheer"><h3>응원단 <span class="cnt">${ch.length}</span><span class="small muted" style="font-weight:500">${ch.length?`${h(ch.map(nameOf).join(', '))} 님 응원 참석`:past?'응원 간 멤버 없음 · 수정에서 추가 가능':'응원 간 멤버 선택하여 체크'}</span></h3>
       ${past?(ch.length?`<div class="toggle done">${byName(ch.map(id=>({id,name:nameOf(id)}))).map(m=>`<span class="ch-on">${h(m.name)}</span>`).join('')}</div>`:''):`<div class="toggle">${byName(activeMembers().filter(m=>!(ev.entrants||[]).includes(m.id))).map(m=>`<button data-act="cheer" data-id="${m.id}" aria-pressed="${ch.includes(m.id)}">${h(m.name)}</button>`).join('')}</div>`}</div>`})()}`:'';
-    right=`<section class="panel t-${h(ev.type)}" id="evdetail"><div class="evhead" data-act="memo-toggle" role="button" tabindex="0" aria-expanded="${memoOpen}" title="${memoOpen?'메모 접기':'메모 펼치기'}"><div><span class="chip ttag">${isT?'개인 대회':h(ev.type)}</span> <span class="chip">${h(ev.status)}</span><h2 style="margin-top:6px">${h(ev.title)}</h2>
+    right=`<section class="panel t-${h(ev.type)}" id="evdetail"><button type="button" class="btn ev-edit-corner" data-act="ev-edit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>수정</button><div class="evhead" data-act="memo-toggle" role="button" tabindex="0" aria-expanded="${memoOpen}" title="${memoOpen?'메모 접기':'메모 펼치기'}"><div><span class="chip ttag">${isT?'개인 대회':h(ev.type)}</span> <span class="chip">${h(ev.status)}</span><h2 style="margin-top:6px">${h(ev.title)}</h2>
       ${ev.status==='취소'&&ev.cancelReason?`<div class="small" style="margin-top:6px;color:var(--muted)">취소 사유: <b>${h(ev.cancelReason)}</b>${ev.cancelNote?' · '+h(ev.cancelNote):''}</div>`:''}<div class="meta-row"><span>${fmtFull(ev.date)}${ev.endDate?' – '+fmtFull(ev.endDate):''}${evTime(ev)?' '+evTime(ev):''}</span>${ev.place?`<span>장소 ${h(ev.place)}</span>`:''}${ev.owner?`<span>담당 ${h(ev.owner)}</span>`:''}${ev.headcount?`<span>${h(ev.headcount)}명 예상</span>`:''}${(ev.confirmed||[]).length+(ev.confirmedExtra||[]).length?`<span>${(ev.confirmed||[]).length+(ev.confirmedExtra||[]).length}명 확정</span>`:''}${ev.budget?`<span>예산 ${Number(ev.budget).toLocaleString()}원</span>`:''}${(()=>{const s=ledSum(ev.id);return s.es.length?`<span><a href="#money" data-act="led-go" data-id="${ev.id}">정산 지출 ${won(s.out)}${s.inc?' · 수입 '+won(s.inc):''}</a></span>`:''})()}</div>${(ev.confirmed||[]).length+(ev.confirmedExtra||[]).length&&ev.type!=='개인대회'?`<div class="conf-line"><b>확정</b>${byName((ev.confirmed||[]).map(id=>({id,name:nameOf(id)}))).map(m=>`<span>${h(m.name)}</span>`).join('')}${(ev.confirmedExtra||[]).map(x=>`<span class="ex">${h(cfxName(x))}<i>G</i></span>`).join('')}</div>`:''}</div>
-      <div class="row">${ev.date&&diffDays(ev.date)>=0?`<span class="dday" style="font-size:26px;color:var(--tc)">${ddayLabel(ev.date)}</span>`:''}<button class="btn" data-act="ev-edit">수정</button></div></div>
+      <div class="row">${ev.date&&diffDays(ev.date)>=0?`<span class="dday" style="font-size:26px;color:var(--tc)">${ddayLabel(ev.date)}</span>`:''}</div></div>
       ${tour}${evGames(ev)}<details class="memo-fold" id="memo-fold"${memoOpen?' open':''}><summary><span>메모 <b class="num">${notes.length}</b>${ev.desc?' · 개요':''}</span><span class="small muted">${memoOpen?'접기':'펼치기'}</span></summary>
       ${ev.desc?`<p style="white-space:pre-wrap;margin:12px 0 14px">${h(ev.desc)}</p>`:'<div style="height:12px"></div>'}
       <div class="composer"><textarea class="in" id="note-text" placeholder="회의 내용, 할 일, 아이디어 메모" data-notedraft="1">${h(draftTxt)}</textarea>
