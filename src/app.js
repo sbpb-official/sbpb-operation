@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-24',v:'1.12',date:'2026-11-24',items:[
+    {k:'dhgap',t:'회원 화면 대시보드 상단 간격 조정 (버튼 없는 빈 줄 제거, 다음 모임 카드 · 요약 카드 간격 통일)'},
     {k:'dhwide',t:'대시보드 다음 모임 · 행사 카드 너비 조정 (아래 카드들과 좌우 끝 맞춤, PC ver. 버튼 날짜 줄 오른쪽 배치)'},
     {k:'dashout',t:'대시보드 로그아웃 버튼 추가 (행사 추가 옆 · 붉은 글씨 · 확인 창)'},
     {k:'verswipe',t:'설정 업데이트 기록 좌우 스와이프 쪽 넘기기 추가 (처음 · 끝에서 멈춤)'},
@@ -943,7 +944,7 @@ function viewHome(){
   const td0=ymd(today0()),liveEv=ds=>S.events.find(e=>e.date===ds&&e.status!=='취소'&&e.type!=='개인대회');const trs=regStat(td0);
   let nr=nextRegNow();if(trs&&trs.status==='취소'&&liveEv(td0))nr=td0;
   const nrs=regStat(nr),nrx=nrs&&nrs.status==='취소',dd=diffDays(nr);const nrEv=nrx?liveEv(nr):null;const nrMk=mkDates().find(x=>x.d===nr);
-  return `<div class="page-head dash-head"><div class="dh-main"><div class="dh-today"><span>${t.getFullYear()}년 ${t.getMonth()+1}월 ${t.getDate()}일 ${WD[t.getDay()]}요일</span><b class="num" id="clock">${clockText()}</b></div>
+  return `<div class="page-head dash-head${MV||RO?' noacts':''}"><div class="dh-main"><div class="dh-today"><span>${t.getFullYear()}년 ${t.getMonth()+1}월 ${t.getDate()}일 ${WD[t.getDay()]}요일</span><b class="num" id="clock">${clockText()}</b></div>
     ${nrEv?`<div class="dh-next rep t-${h(nrEv.type||'기타')}" data-act="ev-open" data-id="${nrEv.id}" role="button" tabindex="0"><span class="dh-l">다음 모임 · ${nrs.reason==='행사 대체'?'행사 대체':'행사'}</span><div class="dh-v"><b>${fmtD(nr)}</b><span>${h(nrEv.title)}</span>${evTime(nrEv)?`<span class="dh-tm">${evTime(nrEv)}</span>`:''}<span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${h(nrEv.place||'')}${nrEv.place?' · ':''}${nrs.reason==='행사 대체'?'정기모임 대신 행사 진행':`정기모임은 ${h(nrs.reason)}${isCourtCx(nrs)&&nrs.mkDate&&!nrs.mkUnused?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`}</span></div>`:`<div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrMk?` · 대체일 (${fmtD(nrMk.rs.id)} 코트 측 취소분)`:''}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div>`}</div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextRegNow()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button>${WEB&&mode==='db'?'<button class="btn danger" data-act="web-logout">로그아웃</button>':''}</div></div>
   ${kp}${boardHtml('m')}<div class="dash${MV||RO?' solo':''}">${cal}${boardHtml('pc')}</div><div class="side dash-row">
   <section class="panel" id="dash-ev"><div class="panel-h"><h2>다가오는 행사</h2><a href="#events">전체 보기</a></div><div class="list">${upHtml}</div></section>

@@ -1345,3 +1345,5 @@ body.slot-dragging,body.slot-dragging *{cursor:grabbing!important}
 .dash-head .dh-next{grid-area:next}
 .dash-head>.row{grid-area:acts;justify-content:flex-end}
 @media (max-width:640px){.dash-head{grid-template-columns:minmax(0,1fr);grid-template-areas:"today" "next" "acts"}.dash-head>.row{justify-content:flex-start}}
+.dash-head.noacts{grid-template-columns:minmax(0,1fr);grid-template-areas:"today" "next"}
+.dash-head.noacts>.row{display:none}
