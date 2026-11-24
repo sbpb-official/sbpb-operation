@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-24',v:'1.12',date:'2026-11-24',items:[
+    {k:'plalign',t:'대진표 참석자 목록 정렬 수정 (회원 · 게스트 성별 · 레벨 표시 시작 위치 통일)'},
     {k:'tiertab',t:'티어리스트 남자 · 여자 탭 성별 컬러 적용 (하늘색 · 분홍색, 편집 버튼과 구분)'},
     {k:'roundsbrk',t:'대진표 모임 설정 타임 수 · 쉬는 시간 입력 추가 (종료 시각 자동 계산, 정기모임 기본값 5타임 · 쉬는 시간 없음)'},
     {k:'postererr',t:'대진표 조건 검증 미충족 위치 표시 (경기 칸 · 이름 주황 표시 · 라이트 · 다크 동일 컬러, 눌러서 내용 확인, 이미지 다운로드 미반영)'},
@@ -1794,7 +1795,7 @@ function viewDraw(){
   const pc=all.filter(p=>picked.has(p.key));
   const pm=pc.filter(p=>p.gender==='M').length,pf=pc.length-pm,pg=pc.filter(p=>p.guest).length;
   const C=cfg.courtList.length,R=roundsOf(cfg),need=C*4;
-  const row=p=>`<label><input type="checkbox" data-pick="${h(p.key)}"${picked.has(p.key)?' checked':''}><span class="grow">${h(p.name)}${p.nick?` <span class="muted small">(${h(nk(p.nick))})</span>`:''}${p.guest&&p.inviter?` <span class="muted small">· ${h(memberById(p.inviter)?.name||'')} 초대</span>`:''}</span><span class="g-${p.gender} small">${p.gender==='M'?'남':'여'}</span>${p.lvUnknown?stars(null):stars(p.level)}${p.guest?`<button type="button" class="btn ghost sm" data-act="guest-edit" data-id="${h(p.key)}" aria-label="게스트 수정">수정</button>`:''}</label>`;
+  const row=p=>`<label><input type="checkbox" data-pick="${h(p.key)}"${picked.has(p.key)?' checked':''}><span class="grow">${h(p.name)}${p.nick?` <span class="muted small">(${h(nk(p.nick))})</span>`:''}${p.guest&&p.inviter?` <span class="muted small">· ${h(memberById(p.inviter)?.name||'')} 초대</span>`:''}</span><span class="g-${p.gender} small pl-g">${p.gender==='M'?'남':'여'}</span><span class="pl-lv">${p.lvUnknown?stars(null):stars(p.level)}</span><span class="pl-act">${p.guest?`<button type="button" class="btn ghost sm" data-act="guest-edit" data-id="${h(p.key)}" aria-label="게스트 수정">수정</button>`:''}</span></label>`;
   const mem=plf==='G'?[]:byName(all.filter(p=>!p.guest&&match(p))),gst=plf==='M'?[]:byName(all.filter(p=>p.guest&&match(p)));
   const plist=all.length?`<div class="plist" data-ks="plist">${mem.length?`<div class="grp">회원 ${mem.length}</div>${mem.map(row).join('')}`:''}${gst.length?`<div class="grp">게스트 ${gst.length}</div>${gst.map(row).join('')}`:''}</div>`:`<div class="empty" style="margin-top:8px">회원 등록 또는 게스트 추가 필요</div>`;
   let needBox;
