@@ -1319,3 +1319,13 @@ body.slot-dragging,body.slot-dragging *{cursor:grabbing!important}
 @media (min-width:1001px) and (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#F0F1EF;--surface:#F8F9F7;--surface-2:#ECEDEB;--line:#DEDFDC}}
 @media (min-width:1001px){:root[data-theme="light"]{--bg:#F0F1EF;--surface:#F8F9F7;--surface-2:#ECEDEB;--line:#DEDFDC}}
 .sm-err{margin:0 4px 6px;padding:6px 10px;border-radius:8px;background:color-mix(in srgb,var(--err) 20%,var(--surface));color:var(--ink);font-size:12px;line-height:1.5}
+
+/* 티어리스트 남녀 탭: 성별 컬러 (편집 버튼 초록과 구분) */
+.tier-tabs button[data-g="M"].on{background:var(--male);color:#1E2A22}
+.tier-tabs button[data-g="F"].on{background:var(--female);color:#1E2A22}
+.tier-tabs button[data-g]::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px;background:var(--male)}
+.tier-tabs button[data-g="F"]::before{background:var(--female)}
+.tier-tabs button[data-g].on::before{background:#1E2A22}
+@media (min-width:641px){.tier-h{display:flex;align-items:center;gap:8px}}
+.tier-col[data-g="M"] .tier-h::before,.tier-col[data-g="F"] .tier-h::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--male)}
+.tier-col[data-g="F"] .tier-h::before{background:var(--female)}
