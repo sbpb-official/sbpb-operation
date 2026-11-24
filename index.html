@@ -21,6 +21,7 @@
 <style id="css">
 /* Layout: quiet neutral header with logo top-left; working surfaces are soft greys (no pure white/black); club deep green and ball yellow-green only as point colors. */
 :root{
+  --err:#F2991A; --err-ink:#3A2300;
   --bg:#E2E3E1; --surface:#EBECEA; --surface-2:#D9DAD8; --ink:#252826; --muted:#636764; --line:#CBCCC9;
   --court:#1D5A3B; --court-soft:#E6E8E5; --on-court:#F7F7F4; --ball:#C9D94F; --ball-ink:#1E2A06;
   --ok:#2B8A3E; --warn:#B86E00; --bad:#C92A2A;
@@ -1236,7 +1237,7 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .dc-h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px;margin-bottom:8px}
 .dc-cnt{margin-left:8px;font-size:12px;padding:2px 8px;border-radius:999px}
 .dc-cnt.ok{background:color-mix(in srgb,var(--court) 14%,var(--surface));color:var(--court)}
-.dc-cnt.bad{background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--warn)}
+.dc-cnt.bad{background:var(--err);color:var(--err-ink)}
 .dc-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .dc-list li{display:flex;gap:8px;align-items:flex-start}
 .dc-n{flex:none;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--surface-2);color:var(--ink);font-size:12px;font-weight:700;margin-right:4px}
@@ -1244,8 +1245,8 @@ html.modal-open body{position:fixed;left:0;right:0;width:100%}
 .dc-t{display:flex;justify-content:space-between;gap:8px;font-size:14px}
 .dc-d{font-size:12px;color:var(--muted);line-height:1.5}
 .dc-list li.ok .dc-r{color:var(--court);font-weight:700}
-.dc-list li.bad .dc-r{color:var(--warn);font-weight:700}
-.dc-list li.bad .dc-n{background:var(--warn);color:var(--surface)}
+.dc-list li.bad .dc-r{color:var(--err);font-weight:700}
+.dc-list li.bad .dc-n{background:var(--err);color:var(--err-ink)}
 .dc-list li.bad .dc-d{color:var(--ink)}
 .logic-sec{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;margin:12px 0 8px}
 .logic-sec span{font-size:12px;color:var(--muted)}
@@ -1329,16 +1330,16 @@ body.slot-dragging,body.slot-dragging *{cursor:grabbing!important}
 .stepper .in{text-align:center;min-width:0}
 .stepper .btn{min-width:40px;padding:0}
 /* 조건 검증 미충족 표시 (화면 전용) */
-.p-table td.cell-err{box-shadow:inset 0 0 0 2px var(--warn)}
+.p-table td.cell-err{box-shadow:inset 0 0 0 2px var(--err)}
 .p-table td.cell-err .m{position:relative}
-.err-dot{position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:50%;border:0;background:var(--warn);color:#fff;font-weight:800;font-size:12px;line-height:20px;padding:0;cursor:pointer}
-.nm.err{box-shadow:inset 0 -2px 0 var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.err-dot{position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:50%;border:0;background:var(--err);color:var(--err-ink);font-weight:800;font-size:12px;line-height:20px;padding:0;cursor:pointer}
+.nm.err{box-shadow:inset 0 -2px 0 var(--err);background:color-mix(in srgb,var(--err) 20%,transparent)}
 .exporting .err-dot{display:none!important}
 .exporting td.cell-err{box-shadow:none!important}
 /* PC 라이트 모드: 명도 상향 (휴대폰은 그대로) */
-@media (min-width:1001px) and (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#ECEDEB;--surface:#F4F5F3;--surface-2:#E5E6E4;--line:#D6D7D4}}
-@media (min-width:1001px){:root[data-theme="light"]{--bg:#ECEDEB;--surface:#F4F5F3;--surface-2:#E5E6E4;--line:#D6D7D4}}
-.sm-err{margin:0 4px 6px;padding:6px 10px;border-radius:8px;background:color-mix(in srgb,var(--warn) 14%,var(--surface));color:var(--ink);font-size:12px;line-height:1.5}
+@media (min-width:1001px) and (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#F0F1EF;--surface:#F8F9F7;--surface-2:#ECEDEB;--line:#DEDFDC}}
+@media (min-width:1001px){:root[data-theme="light"]{--bg:#F0F1EF;--surface:#F8F9F7;--surface-2:#ECEDEB;--line:#DEDFDC}}
+.sm-err{margin:0 4px 6px;padding:6px 10px;border-radius:8px;background:color-mix(in srgb,var(--err) 20%,var(--surface));color:var(--ink);font-size:12px;line-height:1.5}
 
 </style>
 </head>
@@ -1506,7 +1507,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=b0df14b1b6';
+const CUR_APP = 'app.js?v=5ccdc2388d';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1534,7 +1535,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=b0df14b1b6';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=5ccdc2388d';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
