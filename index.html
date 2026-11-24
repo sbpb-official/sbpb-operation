@@ -1370,6 +1370,30 @@ body.slot-dragging,body.slot-dragging *{cursor:grabbing!important}
 .dash-head.noacts>.row{display:none}
 body.mv #unreg,body.mv #oneoff,body.mv #merged,body.mv .unreg,body.mv .oneoff{display:none!important}
 
+/* 결선 리그: 우승 → 결선 리그 → 조별 예선, 연결선 */
+.fl-wrap{display:flex;flex-direction:column;align-items:center;padding:4px 0 8px}
+.fl-wrap>.bk-champ.tr-side{min-width:min(100%,160px)}
+.fl-stem{width:0;height:16px;border-left:2px solid var(--tk-bd,var(--line))}.fl-stem.on{border-left-color:var(--tk,var(--court))}
+.fl-box{width:100%;display:flex;flex-direction:column;gap:12px;padding:12px;border-radius:10px;background:var(--tk-bg,var(--surface-2));border:2px solid var(--tk-bd,var(--line))}
+.fl-tbl{display:flex;flex-direction:column;gap:4px;font-size:14px}
+.fl-tr{display:grid;grid-template-columns:32px 1fr auto;gap:8px;align-items:center;min-height:32px;padding:0 8px;border-radius:8px;color:var(--ink)}
+.fl-tr.top{background:var(--ch-bg);border:2px solid var(--ch-bd);color:var(--ch);font-weight:800}
+.fl-ms{display:flex;flex-direction:column;gap:8px}.lg-row.fl-row{grid-template-columns:auto 1fr}
+.fl-fork{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px;width:100%}
+.fl-fork>i{position:relative;height:12px}
+.fl-fork>i::before{content:'';position:absolute;left:50%;top:0;bottom:0;border-left:2px solid var(--tk-bd,var(--line))}
+.fl-fork>i::after{content:'';position:absolute;top:0;left:-4px;right:-4px;border-top:2px solid var(--tk-bd,var(--line))}
+.fl-fork>i:first-child::after{left:50%}.fl-fork>i:last-child::after{right:50%}
+.fl-fork>i.on::before{border-left-color:var(--tk,var(--court))}
+.tr-groups.fl-groups{width:100%;grid-template-columns:repeat(var(--n),minmax(0,1fr))}
+.fl-groups .tr-g{padding:8px;font-size:13px}
+.fl-groups .tr-gt{grid-template-columns:auto 1fr;column-gap:6px;row-gap:0;align-items:start;word-break:keep-all}
+.fl-nm{display:flex;flex-direction:column;min-width:0}.fl-rec{grid-column:1/-1;font-size:12px;white-space:nowrap}
+.fl-groups .tr-gt+.tr-gt{padding-top:6px;border-top:1px solid var(--tk-bd,var(--line))}
+@media (max-width:520px){.tr-groups.fl-groups{grid-template-columns:repeat(var(--n),minmax(0,1fr))}}
+.rec-tag{display:inline-block;margin-left:4px;padding:0 6px;border-radius:999px;font-size:11px;font-weight:700;line-height:18px;background:var(--court);color:var(--on-court);vertical-align:1px}
+.rec-sub{display:block;margin-top:2px}
+
 </style>
 </head>
 <body>
@@ -1536,7 +1560,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=3e13d01062';
+const CUR_APP = 'app.js?v=4c6e2f373a';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1564,7 +1588,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=3e13d01062';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=4c6e2f373a';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
