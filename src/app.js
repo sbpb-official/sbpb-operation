@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-24',v:'1.12',date:'2026-11-24',items:[
+    {k:'mvdraw',t:'회원 화면 대진표 탭 구성 변경 (이번 주 정기모임 대진표 상단 · 대진 히스토리 하단, 미등록 이름 · 임시 게스트 숨김)'},
     {k:'dhgap',t:'회원 화면 대시보드 상단 간격 조정 (버튼 없는 빈 줄 제거, 다음 모임 카드 · 요약 카드 간격 통일)'},
     {k:'dhwide',t:'대시보드 다음 모임 · 행사 카드 너비 조정 (아래 카드들과 좌우 끝 맞춤, PC ver. 버튼 날짜 줄 오른쪽 배치)'},
     {k:'dashout',t:'대시보드 로그아웃 버튼 추가 (행사 추가 옆 · 붉은 글씨 · 확인 창)'},
@@ -1768,6 +1769,11 @@ document.addEventListener('toggle',e=>{if(e.target.id==='unreg')lsSet('sbpb-unre
 function viewDrawRO(){
   const list=S.brackets.slice().sort((a,b)=>(b.cfg?.date||'').localeCompare(a.cfg?.date||''));
   const latest=list.find(b=>b.status==='확정')||list[0];
+  /* 회원 화면: 이번 주 정기모임 대진표(없으면 가장 최근 정기모임)를 맨 위에 크게, 대진 히스토리는 아래 */
+  if(MV){const reg=list.filter(b=>b.status==='확정'&&b.cfg&&!b.cfg.eventId);const nx=nextRegNow();const cur=reg.find(b=>b.cfg.date===nx)||reg.find(b=>b.cfg.date<=ymd(today0()))||reg[reg.length-1];
+    return `<div class="page-head"><div><h1>대진표</h1><p>${cur?`${fmtFull(cur.cfg.date)} 정기모임 대진표`:'확정된 정기모임 대진표 없음'}</p></div></div>
+    ${cur?`<div class="stage-bar"><div class="hint"><b>${fmtFull(cur.cfg.date)}</b> ${h(cur.cfg.title||'정기모임')}</div><button class="btn ball" data-act="bv-img" data-id="${cur.id}" data-inline="1">이미지 다운로드</button></div><div class="stage" id="stage">${posterHtml(normB(cur),false)}</div>`:'<div class="empty" style="padding:60px 16px"><b>확정된 대진표 없음</b>운영진 확정 후 표시</div>'}
+    <div class="draw-hist">${historyPanel(list)}</div>`}
   return `<div class="page-head"><div><h1>대진표</h1><p>공개된 대진표 조회 및 이미지 다운로드</p></div></div>
   <div class="draw"><div>${historyPanel(list)}</div><div style="min-width:0">${latest?`<div class="stage-bar"><div class="hint"><b>${fmtFull(latest.cfg.date)}</b> ${h(latest.status)}</div><button class="btn ball" data-act="bv-img" data-id="${latest.id}" data-inline="1">이미지 다운로드</button></div><div class="stage" id="stage">${posterHtml(normB(latest),false)}</div>`:'<div class="empty" style="padding:60px 16px"><b>'+(MV?'확정된 대진표 없음</b>운영진 확정 후 표시':'공개된 대진표 없음</b>대진표 확정 및 공개본 갱신 후 표시')+'</div>'}</div></div>
   ${MV?'':`<div class="draw-hist">${statsPanel()}</div>`}`;

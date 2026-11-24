@@ -1347,3 +1347,4 @@ body.slot-dragging,body.slot-dragging *{cursor:grabbing!important}
 @media (max-width:640px){.dash-head{grid-template-columns:minmax(0,1fr);grid-template-areas:"today" "next" "acts"}.dash-head>.row{justify-content:flex-start}}
 .dash-head.noacts{grid-template-columns:minmax(0,1fr);grid-template-areas:"today" "next"}
 .dash-head.noacts>.row{display:none}
+body.mv #unreg,body.mv #oneoff,body.mv #merged,body.mv .unreg,body.mv .oneoff{display:none!important}
