@@ -115,7 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-24',v:'1.12',date:'2026-11-24',items:[
-    {k:'board',t:'대시보드 공유게시판 추가 (칠판형 · 관련 회원 · 작성자 · 처리 완료, 운영진 전용)'}]},
+    {k:'board',t:'대시보드 공유게시판 추가 (칠판형 · 관련 회원 · 작성자 (운영진 이력 회원 · 버튼 선택) · 처리 완료, 운영진 전용)'}]},
   {id:'2026-11-23',v:'1.11',date:'2026-11-23',items:[
     {k:'extraord',t:'대진 생성 추가 기준 우선순위 지정 (상하위 우위 금지 · 티어리스트 반영 · 최근 페어 분산 순), 게스트 분산 기준 제거 · 번호 회색 표시'},
     {k:'slotdnd',t:'대진표 이름 끌어 놓기 교체 추가 (같은 타임 · 동성끼리, 휴대폰 길게 눌러 시작 · 교체 대상 확대 강조 · 근처 자리 자동 선택 · 딥그린 이름표 흰 글씨)'},
@@ -971,11 +971,15 @@ function boardHtml(where){if(MV||RO)return '';const all=boardNotes();const open=
     <div class="bd-guide"><span class="g-i" aria-hidden="true">i</span>+ 눌러 메모 추가 · 메모 눌러 수정 · ✓ 눌러 처리 완료</div>
     <div class="bd-list">${shown.length?shown.map(item).join(''):`<div class="bd-empty">${boardDone?'메모 없음':'진행 중인 메모 없음'}</div>`}</div>
     <div class="bd-foot">${list.length>5?`<button type="button" data-act="board-all">${boardAll?'접기':`전체 보기 ${list.length}`}</button>`:''}${done.length?`<button type="button" data-act="board-showdone">${boardDone?'완료 숨기기':`완료 보기 ${done.length}`}</button>`:''}</div></section>`}
-function boardForm(n={}){const sel=new Set(n.members||[]);const staff=byName(S.members.filter(m=>isStaff(m)));const last=lsGet('sbpb-board-author','');
+function boardForm(n={}){const sel=new Set(n.members||[]);/* 작성자: 임기와 상관없이 운영진 이력이 있는 회원 */const staff=byName(S.members.filter(m=>m.staff||Object.keys(staffMap(m)).length));const last=lsGet('sbpb-board-author','');
   const ppl=byName(activeMembers());(n.members||[]).forEach(id=>{if(!ppl.some(m=>m.id===id)){const m=memberById(id);if(m)ppl.push(m)}});
   return `<label class="f">내용<textarea class="in" name="text" rows="5" required placeholder="예: 정기모임 후 ○○님 · △△님 페어 희망 전달받음">${h(n.text||'')}</textarea></label>
   <div class="f"><span>관련 회원 (선택)</span><div class="cbchips">${ppl.map(m=>`<label><input type="checkbox" name="bm_${m.id}"${sel.has(m.id)?' checked':''}>${h(m.name)}</label>`).join('')}</div></div>
-  <label class="f">작성자<select class="in" name="author"><option value="">선택 안 함</option>${staff.map(m=>`<option${(n.author||last)===m.name?' selected':''}>${h(m.name)}</option>`).join('')}${n.author&&!staff.some(m=>m.name===n.author)?`<option selected>${h(n.author)}</option>`:''}</select></label>`}
+  <div class="f"><span>작성자 (선택 · 다시 누르면 해제)</span><div class="cbchips rchips">${(()=>{const cur=n.id?(n.author||''):(n.author||last);const names=staff.map(m=>m.name);if(cur&&!names.includes(cur))names.push(cur);
+    return names.map(nm=>`<label><input type="radio" name="author" value="${h(nm)}"${cur===nm?' checked':''}>${h(nm)}</label>`).join('')||'<span class="small muted">운영진 이력 있는 회원 없음</span>'})()}</div></div>`}
+/* 단일 선택 칩: 선택된 칩을 다시 누르면 해제 */
+document.addEventListener('pointerdown',e=>{const l=e.target.closest&&e.target.closest('.rchips label');if(!l)return;const i=l.querySelector('input');i._was=i.checked},true);
+document.addEventListener('click',e=>{const i=e.target.closest&&e.target.closest('.rchips input[type=radio]');if(!i)return;if(i._was){i.checked=false;i._was=false}});
 const boardFromFd=(fd,old={})=>{const {id,...rest}=old;if(fd.author)lsSet('sbpb-board-author',fd.author);return {...rest,board:true,text:(fd.text||'').trim(),members:Object.keys(fd).filter(k=>k.startsWith('bm_')&&fd[k]===true).map(k=>k.slice(3)),author:fd.author||'',done:!!old.done,createdAt:old.createdAt||Date.now()}};
 ACT['board-new']=()=>openModal('공유게시판 메모 추가',boardForm(),async fd=>{if(!(fd.text||'').trim()){toast('내용 입력 필요');throw new Error('empty')}await put('notes',uid(),boardFromFd(fd));toast('메모 추가')});
 ACT['board-edit']=(t,e)=>{if(e&&e.target.closest('.bd-ck'))return;const n=S.notes.find(x=>x.id===t.dataset.id);if(!n)return;
