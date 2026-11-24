@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-24',v:'1.12',date:'2026-11-24',items:[
+    {k:'ballinfo',t:'공 재고 참고 메모 · 공 구매 바로가기 버튼 추가 (사용량 · 구매처 · 연습구 · 보관 장소)'},
     {k:'trfl',t:'행사 대진 결선 리그 추가 (조별 진출 3 · 6팀 시 부전승 없이 풀리그 · 우승 칸 · 연결선 표시)'},
     {k:'trtie',t:'리그 순위 동률 기준 적용 (승수 · 득실 · 맞대결 순)'},
     {k:'trrec',t:'대진 만들기 구성 추천 추가 (팀 수별 후보 · 총 경기 수 · 예상 시간)'},
@@ -582,13 +583,14 @@ async function runMigrations(){
   const F13='mig-court-myeonmok';
   const F14='mig-court-imun';
   const F15='mig-court-fee-num';
+  const F20='mig-ball-info';                         // 2026-11-24: 공 재고 참고 메모 · 공 구매 링크 (인수인계 내용)
   const F19='mig-ev-reg-time';                       // 2026-11-23: 시립대 정기모임 행사 시간 09:00–12:00 일괄 입력 (시간 비어 있을 때만)
   const F18='mig-court-jamsil-info';                  // 2026-11-19: 잠실유수지 테니스장 송파구체육회 이용안내 반영 (요금 · 주민 우선 접수 · 운영시간)
   const F17='mig-court-jamsil-yusuji';                // 2026-11-19: 잠실유수지 테니스장 (송파구) 추가 · 송파구체육회 대관신청
   const F16='mig-staff-years';                       // 2026-11-16: 지금 운영진 3명은 2027년 임기로 기록 (2026년 운영진은 직접 입력)                     // 2026-11-16: 요금을 숫자+단위로 (단위가 분명한 코트만) · 상세 요금은 메모로 · 이문 요금표 반영                        // 2026-11-16: 이문체육문화센터 테니스장 (동대문구) 추가                    // 2026-11-15: 면목구립테니스장 추가 (공단 이용안내 기준)                    // 2026-11-15: 중랑구립테니스장 추가 (예약 링크·순위는 용마와 같은 공단 규정)                 // 2026-11-15: 용마 테니스장 공단 이용안내 반영 (요금·예약 순위·예약 사이트)                      // 2026-11-15: 용마폭포공원 테니스장 (중랑구) 추가                     // 2026-11-14: TS는 네이버 링크 예약 (스매시 아님) · 메모의 '○○에서 예약' 안내 문구 제거                       // 2026-11-14: 계남테니스장 (구로구) 추가                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
   const TS_MEMO='예약 링크는 네이버 지도 · 9호선 둔촌오륜역 1번 출구 도보 약 860m\n대관료 (개장 당시): 평일 야간·주말 주간 35,000원 · 주말 야간 40,000원\n※ 현재 요금·예약 오픈 방식은 네이버 지도 업체 정보로 확인 필요';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
   const has=id=>S.dues.find(d=>d.id===id);
-  if([F,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12,F13,F14,F15,F16,F17,F18,F19].every(has))return /* 새 플래그는 이 목록에도 추가 */;
+  if([F,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12,F13,F14,F15,F16,F17,F18,F19,F20].every(has))return /* 새 플래그는 이 목록에도 추가 */;
   migBusy=true;
   try{if(!has(F)){const targets=S.members.filter(m=>isCur(m)&&!m.sample);
     for(const m of targets)if(m.joined!=='2026-01-01')await put('members',m.id,{...m,joined:'2026-01-01'});
@@ -704,7 +706,9 @@ async function runMigrations(){
         memo:'예약: 송파구체육회 사이트 › 잠실유수지테니스장 대관신청 · 2시간 단위 사용\n다음 달 대관 접수 (10:00~18:00 선착순)\n· 매월 20일: 송파구민 · 송파구 재직자 우선 (재직자는 재직증명서를 spcosa7330@hanmail.net로 송부 후 등록)\n· 매월 21일부터: 서울시민 누구나\n· 20일이 주말 · 공휴일이면 다음 평일 접수\n이용 제한: 평일 야간 · 주말 · 공휴일은 송파구민 · 재직자만 이용 · 1개 ID당 월 총 8타임\n요금 (1시간): 평일 주간 8,000원 · 평일 야간 · 토 · 일 · 공휴일 10,400원 · 행사 · 촬영 · 체육대회 150,000원 / 195,000원\n결제: 온라인 카드결제 · 2시간 안에 미결제 시 취소\n운영: 매일 06:00~22:00\n휴관: 신정 · 설날 · 추석 당일 · 공단 지정일 · 행사 · 대관 · 시설점검 시 임시 휴관\n문의: 사무실 02-402-5526 · 관리실 02-2202-7330\n※ 면 수 · 바닥 확인 필요'});n++}
     await put('dues',F18,{done:true,count:n,at:Date.now()});if(n)toast('잠실유수지 테니스장 정보 업데이트 완료')}
   if(!has(F19)){let n=0;for(const e of S.events){if(e.type!=='정기모임'||!/시립대/.test(e.place||'')||e.startTime)continue;const {id,...rest}=e;await put('events',id,{...rest,startTime:'09:00',endTime:'12:00'});n++}
-    await put('dues',F19,{done:true,count:n,at:Date.now()});if(n)toast(`시립대 정기모임 ${n}건 시간 09:00–12:00 입력 완료`)}}
+    await put('dues',F19,{done:true,count:n,at:Date.now()});if(n)toast(`시립대 정기모임 ${n}건 시간 09:00–12:00 입력 완료`)}
+  if(!has(F20)){if(!(S.balls||[]).some(b=>b.id==='info'))await put('balls','info',{kind:'info',memo:BALL_MEMO,url:'https://link.coupang.com/a/iW0oeGV8sS',at:Date.now()});
+    await put('dues',F20,{done:true,at:Date.now()})}}
   catch(e){}
   migBusy=false;
 }
@@ -2794,18 +2798,23 @@ const BALL_PER=[2,3,4];
 function ballStock(){const st={};BALL_PER.forEach(p=>st[p]=0);let prac=0;
   (S.balls||[]).forEach(b=>{const per=+b.per||0,c=+b.cans||0;if(b.kind==='buy')st[per]=(st[per]||0)+c;else if(b.kind==='use'){st[per]=(st[per]||0)-c;if(b.toPrac)prac+=c*per}else if(b.kind==='prac')prac+=+b.n||0});
   return {st,prac}}
-function ballsHtml(Y){const {st,prac}=ballStock();const rows=(S.balls||[]).slice().sort((x,y)=>(y.date||'').localeCompare(x.date||'')||(y.at||0)-(x.at||0));
+const BALL_MEMO='공 사용량: 하루 약 3~4캔\n공 구매처: 쿠팡 · 36캔 박스 구매 시 약 3달 사용\n연습구: 개봉한 공을 모아 에코백에 보관 · 개인 연습구는 각자 지참\n보관 장소: 시립대 사물함\n참고: 헤드 공은 용코치님이 여러 브랜드를 직접 사용해 보고 선정 · 겨울에는 추위로 공이 잘 튀지 않을 수 있어 여분 확보 권장';
+const ballInfo=()=>(S.balls||[]).find(b=>b.id==='info')||{};
+function ballsHtml(Y){const {st,prac}=ballStock();const bi=ballInfo();const rows=(S.balls||[]).filter(b=>b.kind!=='info').slice().sort((x,y)=>(y.date||'').localeCompare(x.date||'')||(y.at||0)-(x.at||0));
   const yb=rows.filter(b=>b.kind==='buy'&&(b.date||'').startsWith(Y+''));const yu=rows.filter(b=>b.kind==='use'&&(b.date||'').startsWith(Y+''));
   const pers=BALL_PER.filter(p=>st[p]);const totalBalls=BALL_PER.reduce((s,p)=>s+st[p]*p,0);
   const line=b=>b.kind==='buy'?`<b>구매</b> ${b.per}구 ${b.cans}통${b.price?` · ${won(b.price)}`:''}`:b.kind==='use'?`<b>사용</b> ${b.per}구 ${b.cans}통 개봉${b.toPrac?` · 연습구 +${b.cans*b.per}`:''}`:`<b>연습구</b> ${(+b.n>0?'+':'')+b.n}개`;
   const PER_N=5;const shown=ballMore?rows:rows.slice(0,PER_N);
   return `<section class="panel balls"><div class="panel-h"><h2>공 재고</h2>${RO?'':`<div class="row"><button class="btn sm" data-act="ball-add" data-k="buy">구매</button><button class="btn sm" data-act="ball-add" data-k="use">사용</button><button class="btn sm" data-act="ball-add" data-k="prac">연습구 조정</button></div>`}</div>
+    ${bi.memo||bi.url||!RO?`<div class="ball-info"><div class="bi-h"><b>참고</b>${RO?'':'<button type="button" class="btn sm ghost" data-act="ball-info">수정</button>'}</div>${bi.memo?`<p class="bi-t">${h(bi.memo)}</p>`:'<p class="bi-t muted">메모 없음 · 수정 눌러 구매처 · 보관 장소 등 입력</p>'}${bi.url?`<a class="btn sm pri bi-go" href="${h(bi.url)}" target="_blank" rel="noopener">공 구매 바로가기</a>`:''}</div>`:''}
     <div class="ball-sum"><div class="bs"><span class="l">새 공</span><b class="num">${pers.length?pers.map(p=>`${p}구 ${st[p]}통`).join(' · '):'0통'}</b><span class="small muted">총 ${totalBalls}구</span></div>
       <div class="bs"><span class="l">연습구</span><b class="num">${prac}개</b></div>
       <div class="bs"><span class="l">${Y}년</span><b class="num">구매 ${yb.reduce((s,b)=>s+(+b.cans||0),0)}통 · 사용 ${yu.reduce((s,b)=>s+(+b.cans||0),0)}통</b><span class="small muted">구매 금액 ${won(yb.reduce((s,b)=>s+(+b.price||0),0))}</span></div></div>
     ${BALL_PER.some(p=>st[p]<0)?'<p class="small" style="margin:8px 0 0;color:var(--warn)">재고가 음수인 종류가 있음 · 구매 기록 확인 필요</p>':''}
     <div class="list ball-list">${shown.length?shown.map(b=>`<div class="li${RO?'':' click'}" ${RO?'':`data-act="ball-edit" data-id="${b.id}"`}><span class="ball-dot bd-${b.kind}"></span><div class="grow"><div class="ttl">${line(b)}</div><div class="sub">${fmtD(b.date)}${b.note?' · '+h(b.note):''}</div></div></div>`).join(''):'<div class="muted small" style="padding:8px 0">기록 없음 · 구매부터 기록</div>'}</div>
     ${rows.length>PER_N?`<button class="btn sm ghost ev-more" data-act="ball-more">${ballMore?'접기':`기록 ${rows.length-PER_N}건 더 보기`}</button>`:''}</section>`}
+ACT['ball-info']=()=>{const bi=ballInfo();openModal('공 재고 참고',`<label class="f">메모<textarea class="in" name="memo" rows="7" placeholder="예: 공 구매처 · 보관 장소 · 사용량">${h(bi.memo||'')}</textarea></label><label class="f">공 구매 링크<input class="in" name="url" type="url" inputmode="url" value="${h(bi.url||'')}" placeholder="https://"></label>`,
+  async fd=>{const url=(fd.url||'').trim();if(url&&!/^https?:\/\//.test(url)){toast('링크는 https://로 시작');throw new Error('keep')}await put('balls','info',{kind:'info',memo:(fd.memo||'').trim(),url,at:Date.now()});toast('참고 메모 저장');render()})};
 let ballMore=false;ACT['ball-more']=()=>{ballMore=!ballMore;render()};
 function ballForm(k,b={}){const per=`<label class="f">종류<select class="in" name="per">${BALL_PER.map(p=>`<option value="${p}"${(+b.per||3)===p?' selected':''}>${p}구짜리 (1통 ${p}개)</option>`).join('')}</select></label>`;
   const date=`<label class="f">날짜${calField(b.date||ymd(today0()),{name:'date',required:true})}</label>`;const note=`<label class="f">메모 (선택)<input class="in" name="note" value="${h(b.note||'')}" placeholder="${k==='buy'?'예: 던롭 포트 · 온라인 구매':k==='use'?'예: 정기모임 · MT':'예: 낡은 공 버림 · 기증'}"></label>`;
