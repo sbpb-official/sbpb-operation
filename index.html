@@ -1388,11 +1388,32 @@ body.mv #unreg,body.mv #oneoff,body.mv #merged,body.mv .unreg,body.mv .oneoff{di
 .tr-groups.fl-groups{width:100%;grid-template-columns:repeat(var(--n),minmax(0,1fr))}
 .fl-groups .tr-g{padding:8px;font-size:13px}
 .fl-groups .tr-gt{grid-template-columns:auto 1fr;column-gap:6px;row-gap:0;align-items:start;word-break:keep-all}
-.fl-nm{display:flex;flex-direction:column;min-width:0}.fl-rec{grid-column:1/-1;font-size:12px;white-space:nowrap}
+.fl-nm{display:flex;flex-direction:column;min-width:0}.fl-rec{grid-column:1/-1;font-size:12px}
 .fl-groups .tr-gt+.tr-gt{padding-top:6px;border-top:1px solid var(--tk-bd,var(--line))}
 @media (max-width:520px){.tr-groups.fl-groups{grid-template-columns:repeat(var(--n),minmax(0,1fr))}}
 .rec-tag{display:inline-block;margin-left:4px;padding:0 6px;border-radius:999px;font-size:11px;font-weight:700;line-height:18px;background:var(--court);color:var(--on-court);vertical-align:1px}
 .rec-sub{display:block;margin-top:2px}
+
+/* 차전 구성 편집 (대진 만들기) */
+.bs-recs{display:flex;flex-direction:column;gap:8px}
+.bs-rec{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.bs-rec.on{border:2px solid var(--court);padding:7px 11px}.bs-rl{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.bs-list{display:flex;flex-direction:column;gap:8px}
+.bs-st{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.bs-h{display:flex;align-items:center;gap:8px}.bs-h .btn{margin-left:auto}
+.bs-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}.bs-row .f{margin:0}
+.bs-fixed{display:flex;flex-direction:column;justify-content:flex-end;gap:4px;font-size:14px}.bs-fixed>span{font-size:13px;color:var(--muted)}.bs-fixed>b{min-height:40px;display:flex;align-items:center}
+.bs-err{margin:0;color:var(--err-ink,#8A4B00);font-weight:600}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .bs-err{color:var(--err)}}:root[data-theme="dark"] .bs-err{color:var(--err)}
+.bs-add{align-self:flex-start;margin-top:8px}
+/* 차전 대진: 세로 한 줄 · 차전 이름은 왼쪽 칸 */
+.bk-root.st-col{display:flex;flex-direction:column;align-items:center}
+.st-anc-w{position:relative;width:100%;height:0}.st-anc{position:absolute;left:0;top:0;visibility:hidden;font-size:11px}
+.bk-gl.st{font-weight:800;transform:none;padding-top:2px}
+.bk-box.adv{min-width:min(100%,96px)}
+.tr .bk-box.adv.w{border-width:2px}
+.fl-groups .tr-g{min-width:0}
+.fl-groups .tr-gt{grid-template-columns:minmax(0,1fr)}.fl-groups .tr-gt>.num:first-child{font-size:12px}
 
 </style>
 </head>
@@ -1560,7 +1581,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=4c6e2f373a';
+const CUR_APP = 'app.js?v=8377721467';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1588,7 +1609,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=4c6e2f373a';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=8377721467';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
