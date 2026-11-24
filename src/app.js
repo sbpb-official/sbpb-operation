@@ -115,6 +115,8 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-24',v:'1.12',date:'2026-11-24',items:[
+    {k:'dashout',t:'대시보드 로그아웃 버튼 추가 (행사 추가 옆 · 붉은 글씨 · 확인 창)'},
+    {k:'verswipe',t:'설정 업데이트 기록 좌우 스와이프 쪽 넘기기 추가 (처음 · 끝에서 멈춤)'},
     {k:'staykeep',t:'운영실 로그인 유지 기준 변경 (하루 1회 재입력 > 로그아웃 전까지 유지)'},
     {k:'plalign',t:'대진표 참석자 목록 정렬 수정 (회원 · 게스트 성별 · 레벨 표시 시작 위치 통일)'},
     {k:'tiertab',t:'티어리스트 남자 · 여자 탭 성별 컬러 적용 (하늘색 · 분홍색, 편집 버튼과 구분)'},
@@ -354,6 +356,10 @@ function verBox(){const pages=Math.max(1,Math.ceil(NEWS.length/VER_PER));verPage
   const list=NEWS.slice(verPage*VER_PER,verPage*VER_PER+VER_PER);
   return `<div class="vers" id="vers">${list.map(n=>`<div class="ver"><div class="ver-h"><b>v${h(n.v||'')}</b><span>${h(verLabel(n))}</span><span class="ver-n">${n.items.length}개 항목</span></div><ul>${n.items.map(it=>`<li>${h(it.t||it)}</li>`).join('')}</ul></div>`).join('')}</div>
   <div class="ver-pg"><button type="button" class="btn sm" data-act="ver-pg" data-v="-1"${verPage===0?' disabled':''} aria-label="최신 쪽">‹ 최신</button><span class="num">${verPage+1} / ${pages}</span><button type="button" class="btn sm" data-act="ver-pg" data-v="1"${verPage>=pages-1?' disabled':''} aria-label="이전 버전 쪽">이전 ›</button></div>`}
+/* 업데이트 기록 좌우 스와이프로 쪽 넘기기 (처음 · 끝에서는 멈춤) */
+document.addEventListener('touchstart',e=>{const w=e.target.closest&&e.target.closest('#verwrap');if(!w)return;const t0=e.touches[0];w._sw={x:t0.clientX,y:t0.clientY}},{passive:true});
+document.addEventListener('touchend',e=>{const w=e.target.closest&&e.target.closest('#verwrap');if(!w||!w._sw)return;const t1=e.changedTouches[0];const dx=t1.clientX-w._sw.x,dy=t1.clientY-w._sw.y;w._sw=null;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5){const v=dx<0?1:-1;const pages=Math.max(1,Math.ceil(NEWS.length/VER_PER));if(verPage+v<0||verPage+v>pages-1)return;ACT['ver-pg']({dataset:{v}})}},{passive:true});
 ACT['ver-pg']=t=>{verPage+=Number(t.dataset.v);const w=$('#verwrap');if(w){w.innerHTML=verBox();const v=$('#vers');if(v)v.scrollTop=0}};
 ACT['news-open']=()=>{closeModal();verPage=0;location.hash='#settings'};
 const APP_V=()=>NEWS.length?'v'+NEWS[0].v:'';
@@ -937,7 +943,7 @@ function viewHome(){
   let nr=nextRegNow();if(trs&&trs.status==='취소'&&liveEv(td0))nr=td0;
   const nrs=regStat(nr),nrx=nrs&&nrs.status==='취소',dd=diffDays(nr);const nrEv=nrx?liveEv(nr):null;const nrMk=mkDates().find(x=>x.d===nr);
   return `<div class="page-head dash-head"><div class="dh-main"><div class="dh-today"><span>${t.getFullYear()}년 ${t.getMonth()+1}월 ${t.getDate()}일 ${WD[t.getDay()]}요일</span><b class="num" id="clock">${clockText()}</b></div>
-    ${nrEv?`<div class="dh-next rep t-${h(nrEv.type||'기타')}" data-act="ev-open" data-id="${nrEv.id}" role="button" tabindex="0"><span class="dh-l">다음 모임 · ${nrs.reason==='행사 대체'?'행사 대체':'행사'}</span><div class="dh-v"><b>${fmtD(nr)}</b><span>${h(nrEv.title)}</span>${evTime(nrEv)?`<span class="dh-tm">${evTime(nrEv)}</span>`:''}<span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${h(nrEv.place||'')}${nrEv.place?' · ':''}${nrs.reason==='행사 대체'?'정기모임 대신 행사 진행':`정기모임은 ${h(nrs.reason)}${isCourtCx(nrs)&&nrs.mkDate&&!nrs.mkUnused?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`}</span></div>`:`<div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrMk?` · 대체일 (${fmtD(nrMk.rs.id)} 코트 측 취소분)`:''}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div>`}</div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextRegNow()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>
+    ${nrEv?`<div class="dh-next rep t-${h(nrEv.type||'기타')}" data-act="ev-open" data-id="${nrEv.id}" role="button" tabindex="0"><span class="dh-l">다음 모임 · ${nrs.reason==='행사 대체'?'행사 대체':'행사'}</span><div class="dh-v"><b>${fmtD(nr)}</b><span>${h(nrEv.title)}</span>${evTime(nrEv)?`<span class="dh-tm">${evTime(nrEv)}</span>`:''}<span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${h(nrEv.place||'')}${nrEv.place?' · ':''}${nrs.reason==='행사 대체'?'정기모임 대신 행사 진행':`정기모임은 ${h(nrs.reason)}${isCourtCx(nrs)&&nrs.mkDate&&!nrs.mkUnused?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`}</span></div>`:`<div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrMk?` · 대체일 (${fmtD(nrMk.rs.id)} 코트 측 취소분)`:''}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div>`}</div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextRegNow()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button>${WEB&&mode==='db'?'<button class="btn danger" data-act="web-logout">로그아웃</button>':''}</div></div>
   ${kp}${boardHtml('m')}<div class="dash${MV||RO?' solo':''}">${cal}${boardHtml('pc')}</div><div class="side dash-row">
   <section class="panel" id="dash-ev"><div class="panel-h"><h2>다가오는 행사</h2><a href="#events">전체 보기</a></div><div class="list">${upHtml}</div></section>
   ${(()=>{const ts=S.events.filter(e=>e.type==='개인대회'&&e.date);if(!ts.length)return '';const up2=ts.filter(e=>diffDays(e.date)>=0).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);const past=ts.filter(e=>diffDays(e.date)<0&&e.result&&e.result!=='대기').sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
@@ -2960,7 +2966,7 @@ ACT['bk-xlsx']=async t=>{
 
 /* ---------- web app: operator login, operator accounts, data import ---------- */
 ACT['web-login']=()=>{if(WEB)window.SBPB_WEB.login().catch(e=>toast('로그인 실패. 잠시 후 재시도 필요'))};
-ACT['web-logout']=async()=>{if(!WEB)return;lsSet('sbpb-view','member');await window.SBPB_WEB.logout();location.reload()};
+ACT['web-logout']=async()=>{if(!WEB)return;{const ch=await choiceDialog({title:'로그아웃',msg:'이 기기에서 운영실 로그아웃 · 다시 들어올 때 운영진 비밀번호 필요',choices:[{key:'go',label:'로그아웃',cls:'danger'},{key:'no',label:'취소'}]});if(ch!=='go')return}lsSet('sbpb-view','member');await window.SBPB_WEB.logout();location.reload()};
 /* 운영실 ↔ 회원 화면 전환: 마지막에 쓰던 화면을 기기에 기억 */
 ACT['mode-switch']=()=>{if(!WEB)return;lsSet('sbpb-view',MV?'staff':'member');location.hash='#home';location.reload()};
 /* 설정 › 회원 비밀번호 (운영진만) */
