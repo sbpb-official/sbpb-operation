@@ -115,7 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-24',v:'1.12',date:'2026-11-24',items:[
-    {k:'board',t:'대시보드 운영진 공유 메모 추가 (칠판형 · 관련 회원 · 작성자 · 처리 완료, 운영진 전용)'}]},
+    {k:'board',t:'대시보드 공유게시판 추가 (칠판형 · 관련 회원 · 작성자 · 처리 완료, 운영진 전용)'}]},
   {id:'2026-11-23',v:'1.11',date:'2026-11-23',items:[
     {k:'extraord',t:'대진 생성 추가 기준 우선순위 지정 (상하위 우위 금지 · 티어리스트 반영 · 최근 페어 분산 순), 게스트 분산 기준 제거 · 번호 회색 표시'},
     {k:'slotdnd',t:'대진표 이름 끌어 놓기 교체 추가 (같은 타임 · 동성끼리, 휴대폰 길게 눌러 시작 · 교체 대상 확대 강조 · 근처 자리 자동 선택 · 딥그린 이름표 흰 글씨)'},
@@ -959,7 +959,7 @@ document.addEventListener('toggle',e=>{if(e.target.id==='yr-box')lsSet('sbpb-yr-
 /* 이번 달 캘린더 좌우 스와이프로 월 이동 */
 document.addEventListener('touchstart',e=>{const g=e.target.closest&&e.target.closest('#mcal');if(!g)return;const t0=e.touches[0];g._sw={x:t0.clientX,y:t0.clientY}},{passive:true});
 document.addEventListener('touchend',e=>{const g=e.target.closest&&e.target.closest('#mcal');if(!g||!g._sw)return;const t1=e.changedTouches[0];const dx=t1.clientX-g._sw.x,dy=t1.clientY-g._sw.y;g._sw=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5){ACT['mcal']({dataset:{v:dx<0?1:-1}});closeDayPop()}},{passive:true});
-/* ---------- 운영진 공유 메모 (칠판): 현장 피드백 · 트러블 · 페어 희망 등 · 운영진 전용 (notes 컬렉션, board:true) ---------- */
+/* ---------- 공유게시판 (칠판): 현장 피드백 · 트러블 · 페어 희망 등 · 운영진 전용 (notes 컬렉션, board:true) ---------- */
 let boardAll=false,boardDone=false;
 const boardNotes=()=>S.notes.filter(n=>n.board).sort((x,y)=>(y.createdAt||0)-(x.createdAt||0));
 function boardHtml(where){if(MV||RO)return '';const all=boardNotes();const open=all.filter(n=>!n.done),done=all.filter(n=>n.done);
@@ -967,7 +967,7 @@ function boardHtml(where){if(MV||RO)return '';const all=boardNotes();const open=
   const item=n=>`<div class="bd-it${n.done?' done':''}" data-act="board-edit" data-id="${n.id}" role="button" tabindex="0"><div class="bd-tx">${h(n.text||'')}</div>
     <div class="bd-meta">${(n.members||[]).map(id=>`<span class="bd-m">${h(nameOf(id))}</span>`).join('')}<span class="bd-by">${h(n.author||'')}${n.author?' · ':''}${n.createdAt?fmtD(ymd(new Date(n.createdAt))):''}</span></div>
     <button type="button" class="bd-ck" data-act="board-done" data-id="${n.id}" aria-label="${n.done?'처리 완료 취소':'처리 완료'}" aria-pressed="${!!n.done}">${n.done?'완료':'✓'}</button></div>`;
-  return `<section class="board board-${where}" aria-label="운영진 공유 메모"><div class="bd-h"><h2>운영진 공유 메모</h2><button type="button" class="bd-add" data-act="board-new" aria-label="메모 추가">+</button></div>
+  return `<section class="board board-${where}" aria-label="공유게시판"><div class="bd-h"><h2>공유게시판</h2><button type="button" class="bd-add" data-act="board-new" aria-label="메모 추가">+</button></div>
     <div class="bd-guide"><span class="g-i" aria-hidden="true">i</span>+ 눌러 메모 추가 · 메모 눌러 수정 · ✓ 눌러 처리 완료</div>
     <div class="bd-list">${shown.length?shown.map(item).join(''):`<div class="bd-empty">${boardDone?'메모 없음':'진행 중인 메모 없음'}</div>`}</div>
     <div class="bd-foot">${list.length>5?`<button type="button" data-act="board-all">${boardAll?'접기':`전체 보기 ${list.length}`}</button>`:''}${done.length?`<button type="button" data-act="board-showdone">${boardDone?'완료 숨기기':`완료 보기 ${done.length}`}</button>`:''}</div></section>`}
@@ -977,11 +977,11 @@ function boardForm(n={}){const sel=new Set(n.members||[]);const staff=byName(S.m
   <div class="f"><span>관련 회원 (선택)</span><div class="cbchips">${ppl.map(m=>`<label><input type="checkbox" name="bm_${m.id}"${sel.has(m.id)?' checked':''}>${h(m.name)}</label>`).join('')}</div></div>
   <label class="f">작성자<select class="in" name="author"><option value="">선택 안 함</option>${staff.map(m=>`<option${(n.author||last)===m.name?' selected':''}>${h(m.name)}</option>`).join('')}${n.author&&!staff.some(m=>m.name===n.author)?`<option selected>${h(n.author)}</option>`:''}</select></label>`}
 const boardFromFd=(fd,old={})=>{const {id,...rest}=old;if(fd.author)lsSet('sbpb-board-author',fd.author);return {...rest,board:true,text:(fd.text||'').trim(),members:Object.keys(fd).filter(k=>k.startsWith('bm_')&&fd[k]===true).map(k=>k.slice(3)),author:fd.author||'',done:!!old.done,createdAt:old.createdAt||Date.now()}};
-ACT['board-new']=()=>openModal('공유 메모 추가',boardForm(),async fd=>{if(!(fd.text||'').trim()){toast('내용 입력 필요');throw new Error('empty')}await put('notes',uid(),boardFromFd(fd));toast('메모 추가')});
+ACT['board-new']=()=>openModal('공유게시판 메모 추가',boardForm(),async fd=>{if(!(fd.text||'').trim()){toast('내용 입력 필요');throw new Error('empty')}await put('notes',uid(),boardFromFd(fd));toast('메모 추가')});
 ACT['board-edit']=(t,e)=>{if(e&&e.target.closest('.bd-ck'))return;const n=S.notes.find(x=>x.id===t.dataset.id);if(!n)return;
-  openModal('공유 메모 수정',boardForm(n),async fd=>{if(!(fd.text||'').trim()){toast('내용 입력 필요');throw new Error('empty')}await put('notes',n.id,boardFromFd(fd,n));toast('메모 수정')},`<button type="button" class="btn danger" data-act="board-del" data-id="${n.id}">삭제</button>`)};
+  openModal('공유게시판 메모 수정',boardForm(n),async fd=>{if(!(fd.text||'').trim()){toast('내용 입력 필요');throw new Error('empty')}await put('notes',n.id,boardFromFd(fd,n));toast('메모 수정')},`<button type="button" class="btn danger" data-act="board-del" data-id="${n.id}">삭제</button>`)};
 ACT['board-done']=async(t,e)=>{if(e)e.stopPropagation();const n=S.notes.find(x=>x.id===t.dataset.id);if(!n)return;const {id,...rest}=n;await put('notes',n.id,{...rest,done:!n.done});toast(n.done?'처리 완료 취소':'처리 완료')};
-ACT['board-del']=async t=>{if(!await askDel('공유 메모'))return;await del('notes',t.dataset.id);closeModal()};
+ACT['board-del']=async t=>{if(!await askDel('공유게시판 메모'))return;await del('notes',t.dataset.id);closeModal()};
 ACT['board-all']=()=>{boardAll=!boardAll;render()};
 ACT['board-showdone']=()=>{boardDone=!boardDone;render()};
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('bd-it')){e.preventDefault();ACT['board-edit'](e.target)}});
@@ -2903,7 +2903,7 @@ ACT['bk-xlsx']=async t=>{
     '회원':S.members.slice().sort((x,y)=>(x.name||'').localeCompare(y.name||'')).map((m,i)=>({'No.':i+1,'이름':m.name,'성별':m.gender==='M'?'남':'여','생년월일':m.birth||'','나이':m.birth?ageOf(m.birth):'','레벨':m.level??'','테니스 시작':m.since||'','구력':career(m.since),'전화번호':fmtPhone(m.phone),'거주지':areaLabel(m.district),'직장':areaLabel(m.work),'상태':ST_LABEL[ST(m)]||ST(m),'등록 연도':yearsOf(m).join(', '),'운영진':yn(isStaff(m)),'직책':staffRole(m),'운영진 임기':Object.keys(staffMap(m)).sort().map(y=>`${y}${staffMap(m)[y]?' '+staffMap(m)[y]:''}`).join(', '),'가입일':m.joined||'','메모':m.memo||''})),
     '게스트':S.guests.map((g,i)=>({'No.':i+1,'이름':g.name,'닉네임':g.nick||'','성별':g.gender==='M'?'남':'여','레벨':g.level??'모름','초대 회원':mn(g.inviter),'방문 횟수':g.visits||0,'최근 방문':g.lastDate||'','구력':g.career||'','연락 경로':g.contact||'','메모':g.memo||''})),
     '행사':S.events.slice().sort((x,y)=>(x.date||'').localeCompare(y.date||'')).map(e=>({'날짜':e.date||'','종료일':e.endDate||'','종류':e.type,'제목':e.title,'상태':e.status||'','장소':e.place||'','담당':e.owner||'','예상 인원':e.headcount||'','확정 인원':(e.confirmed||[]).map(nameOf).concat((e.confirmedExtra||[]).map(cfxName)).join(', '),'예산':e.budget||'','취소 사유':e.cancelReason||'','취소 메모':e.cancelNote||'','출전':(e.entrants||[]).map(mn).join(', '),'외부 파트너':ptNames(e).join(', '),'부문':e.division||'','종목':e.category||'','결과':e.result||'','응원':(e.cheer||[]).map(mn).join(', '),'개요':e.desc||''})),
-    '메모':S.notes.slice().sort((x,y)=>(x.createdAt||0)-(y.createdAt||0)).map(n=>({'행사':n.board?'(운영진 공유 메모)':S.events.find(e=>e.id===n.eventId)?.title||'(삭제된 행사)','분류':NOTE_KIND[n.color]||'메모','내용':n.text,'작성일':n.createdAt?new Date(n.createdAt).toLocaleDateString('ko-KR'):''})),
+    '메모':S.notes.slice().sort((x,y)=>(x.createdAt||0)-(y.createdAt||0)).map(n=>({'행사':n.board?'(공유게시판)':S.events.find(e=>e.id===n.eventId)?.title||'(삭제된 행사)','분류':NOTE_KIND[n.color]||'메모','내용':n.text,'작성일':n.createdAt?new Date(n.createdAt).toLocaleDateString('ko-KR'):''})),
     '정기모임 기록':S.regstat.slice().sort((x,y)=>x.id.localeCompare(y.id)).map(r=>({'날짜':r.id,'상태':r.status==='삭제'?'미진행':'취소','사유':r.reason||'','메모':r.note||'','대체일':isCourtCx(r)?(r.mkDate||'미정'):'','대체 시간':isCourtCx(r)&&r.mkDate?`${r.mkStart||REG.start}–${r.mkEnd||REG.end}`:'','대체일 상태':isCourtCx(r)?mkState(r):''})),
     '대진표':S.brackets.slice().sort((x,y)=>(x.cfg?.date||'').localeCompare(y.cfg?.date||'')).map(b=>({'날짜':b.cfg?.date||'','제목':b.cfg?.title||'','상태':b.status,'참석 인원':Object.keys(b.players||{}).length,'타임 수':(b.rounds||[]).length,'참석자':Object.values(b.players||{}).map(p=>dn(p.name)+(p.guest?'(G)':'')).join(', ')})),
     '회비':S.dues.filter(d=>d.id!=='cfg'&&d.memberId).sort((x,y)=>(x.year-y.year)||(memberById(x.memberId)?.name||'').localeCompare(memberById(y.memberId)?.name||'')).map(d=>{const o={'연도':d.year,'이름':memberById(d.memberId)?.name||'(삭제된 회원)'};for(let i=1;i<=12;i++){const v=(d.m||{})[i];o[i+'월']=v==='paid'?'O':v==='free'?'면제':''}o['납부 횟수']=Object.values(d.m||{}).filter(v=>v==='paid').length;return o}),
