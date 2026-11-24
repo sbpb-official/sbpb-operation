@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-24',v:'1.12',date:'2026-11-24',items:[
+    {k:'staykeep',t:'운영실 로그인 유지 기준 변경 (하루 1회 재입력 > 로그아웃 전까지 유지)'},
     {k:'plalign',t:'대진표 참석자 목록 정렬 수정 (회원 · 게스트 성별 · 레벨 표시 시작 위치 통일)'},
     {k:'tiertab',t:'티어리스트 남자 · 여자 탭 성별 컬러 적용 (하늘색 · 분홍색, 편집 버튼과 구분)'},
     {k:'roundsbrk',t:'대진표 모임 설정 타임 수 · 쉬는 시간 입력 추가 (종료 시각 자동 계산, 정기모임 기본값 5타임 · 쉬는 시간 없음)'},
@@ -3127,7 +3128,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 let gateKind='staff';
 function showGate(kind,msg){gateKind=kind;const mem=kind==='member';document.body.classList.add('locked');$('#gate').hidden=false;$('#gate').classList.toggle('staff',!mem);$('#gate-badge').hidden=mem;{const im=$('#gate-form img');if(im)im.src=mem?'logo-g-xl.png':'logo-green-xl.png'}
   $('#gate-form h2').textContent=mem?'사방팔방':'사방팔방 운영실';$('#gate-form h2 + p').textContent=mem?'회원 비밀번호 입력':'운영진 비밀번호 입력';
-  const p=$('#gate-hint');if(p)p.textContent=mem?'한 번 입력 후 이 기기에서 유지':'하루 1회 비밀번호 재입력 필요';
+  const p=$('#gate-hint');if(p)p.textContent=mem?'한 번 입력 후 이 기기에서 유지':'한 번 입력 후 로그아웃 전까지 유지';
   $('#gate-alt').textContent=mem?'운영실 입장':'회원 화면으로';$('#gate-pw').autocomplete=mem?'off':'current-password';
   $('#gate-err').textContent=msg||'';$('#gate-pw').value='';setTimeout(()=>$('#gate-pw').focus(),50)}
 async function memberGate(){const m=window.SBPB_WEB.member;let u=null;try{u=await Promise.race([m.ready(),new Promise(r=>setTimeout(()=>r(null),9000))])}catch(e){}
@@ -3139,13 +3140,12 @@ function showWebGate(msg){showGate('staff');
 // sign-in lasts for the day it was made: a new date asks for the password again
 const loginDay=()=>{try{return localStorage.getItem('sbpb-login-day')||''}catch(e){return ''}};
 async function webGate(){let st={u:null,ok:false};try{st=await Promise.race([window.SBPB_WEB.state(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),9000))])}catch(e){showWebGate(e&&e.message==='timeout'?'로그인 확인 지연. 비밀번호 다시 입력 필요':'');return}
-  if(st.ok&&loginDay()!==ymd(new Date())){try{await window.SBPB_WEB.logout()}catch(e){}showWebGate('하루 1회 비밀번호 재입력 필요');return}
+  /* 운영진 로그인: 로그아웃 전까지 유지 (하루 1회 재입력 폐지) */
   if(!st.ok){showWebGate(st.u?'이 계정은 운영진으로 등록되어 있지 않음':'');return}
   document.body.classList.remove('locked');$('#gate').hidden=true;render();if(!started){started=true;boot()}}
 /* 기본 화면: 운영진으로 로그인한 적 있는 기기는 운영실, 그 밖은 회원 화면 */
 if(WEB&&lsGet('sbpb-view',loginDay()?'staff':'member')!=='staff')memberGate();
-else if(WEB){webGate();setInterval(()=>{if(!document.body.classList.contains('locked')&&loginDay()!==ymd(new Date()))window.SBPB_WEB.logout().then(()=>location.reload())},60000);
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!document.body.classList.contains('locked')&&loginDay()!==ymd(new Date()))window.SBPB_WEB.logout().then(()=>location.reload())})}
+else if(WEB){webGate()}
 else if(authed()&&(!PUB.snap||((lsGet('sbpb-k',null)||{}).salt===PUB.snap.salt)))unlock();else lock();
 
 window.addEventListener('resize',()=>bkLabels());
