@@ -1302,3 +1302,19 @@ body.slot-dragging,body.slot-dragging *{cursor:grabbing!important}
 }
 /* 대진 통계 · 히스토리 상자: 위쪽 빈 줄 제거 */
 .stats>.due-yr{margin-top:0;border-top:0}.stats>.due-yr>summary{padding-top:0}
+
+/* 타임 수 스테퍼 */
+.stepper{display:flex;gap:4px;align-items:stretch}
+.stepper .in{text-align:center;min-width:0}
+.stepper .btn{min-width:40px;padding:0}
+/* 조건 검증 미충족 표시 (화면 전용) */
+.p-table td.cell-err{box-shadow:inset 0 0 0 2px var(--warn)}
+.p-table td.cell-err .m{position:relative}
+.err-dot{position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:50%;border:0;background:var(--warn);color:#fff;font-weight:800;font-size:12px;line-height:20px;padding:0;cursor:pointer}
+.nm.err{box-shadow:inset 0 -2px 0 var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.exporting .err-dot{display:none!important}
+.exporting td.cell-err{box-shadow:none!important}
+/* PC 라이트 모드: 명도 상향 (휴대폰은 그대로) */
+@media (min-width:1001px) and (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#ECEDEB;--surface:#F4F5F3;--surface-2:#E5E6E4;--line:#D6D7D4}}
+@media (min-width:1001px){:root[data-theme="light"]{--bg:#ECEDEB;--surface:#F4F5F3;--surface-2:#E5E6E4;--line:#D6D7D4}}
+.sm-err{margin:0 4px 6px;padding:6px 10px;border-radius:8px;background:color-mix(in srgb,var(--warn) 14%,var(--surface));color:var(--ink);font-size:12px;line-height:1.5}
