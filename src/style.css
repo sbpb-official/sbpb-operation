@@ -1292,3 +1292,13 @@ body.slot-dragging,body.slot-dragging *{cursor:grabbing!important}
 .dash-row>section{margin:0}
 @media (max-width:1280px){.dash-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:1000px){.dash-row{grid-template-columns:minmax(0,1fr)}.dash>.board-pc{display:none}}
+
+/* PC 대진표: 왼쪽(모임 설정 · 참석자)과 오른쪽(대진표 · 조건 검증) 위 · 아래 끝 맞춤 */
+@media (min-width:1001px){
+  .draw{align-items:stretch}
+  .draw>div{display:flex;flex-direction:column;min-width:0}
+  .draw>div>:last-child{flex:1 1 auto}
+  .draw>div>.panel+.panel{margin-top:16px}
+}
+/* 대진 통계 · 히스토리 상자: 위쪽 빈 줄 제거 */
+.stats>.due-yr{margin-top:0;border-top:0}.stats>.due-yr>summary{padding-top:0}
