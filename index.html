@@ -1281,7 +1281,6 @@ body.slot-dragging,body.slot-dragging *{cursor:grabbing!important}
 .board{background:var(--brand);color:var(--brand-ink);border-radius:var(--r);padding:16px;box-shadow:inset 0 0 0 4px color-mix(in srgb,var(--brand-ink) 8%,transparent),inset 0 2px 12px rgba(0,0,0,.25)}
 .board-m{display:none;margin-bottom:16px}
 @media (max-width:1000px){.board-m{display:block}.board-pc{display:none}}
-.side>.board-pc{margin-bottom:16px}
 .bd-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .bd-h h2{margin:0;font-size:16px;color:var(--brand-ink)}
 .bd-add{width:40px;height:40px;border-radius:50%;border:1px solid color-mix(in srgb,var(--brand-ink) 40%,transparent);background:transparent;color:var(--brand-ink);font-size:22px;line-height:1;cursor:pointer}
@@ -1304,6 +1303,15 @@ body.slot-dragging,body.slot-dragging *{cursor:grabbing!important}
 .bd-foot:empty{display:none}
 .bd-foot button{all:unset;cursor:pointer;font-size:12px;font-weight:600;color:var(--brand-muted);min-height:32px;display:inline-flex;align-items:center}
 .bd-foot button:hover{color:var(--brand-ink)}
+
+/* PC 대시보드: 캘린더 | 공유게시판(캘린더 높이에 맞춤) · 아래 줄에 나머지 카드 가로 배치 */
+.dash{align-items:stretch}
+.dash.solo{grid-template-columns:minmax(0,1fr)}
+.dash>.board-pc{height:0;min-height:100%;display:flex;flex-direction:column;box-sizing:border-box}
+.dash>.board-pc .bd-list{flex:1;min-height:0;overflow:auto;padding-right:4px}
+.dash-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:16px;align-items:start}
+@media (max-width:1280px){.dash-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1000px){.dash-row{grid-template-columns:minmax(0,1fr)}.dash>.board-pc{display:none}}
 
 </style>
 </head>
@@ -1471,7 +1479,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=49be34306c';
+const CUR_APP = 'app.js?v=ddf48df8c1';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1499,7 +1507,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=49be34306c';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=ddf48df8c1';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();

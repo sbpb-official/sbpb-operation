@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-24',v:'1.12',date:'2026-11-24',items:[
+    {k:'dashpc',t:'PC ver. 대시보드 레이아웃 변경 (캘린더 옆 공유게시판 · 높이 맞춤, 행사 · 대회 · 예약 오픈 · 회원 개요 하단 가로 배치)'},
     {k:'mvhide',t:'회원 화면 노출 범위 조정 (대진표 확정본만 표시 · 행사 담당 · 예산 숨김)'},
     {k:'board',t:'대시보드 공유게시판 추가 (칠판형 · 관련 회원 · 작성자 (운영진 이력 회원 · 버튼 선택) · 처리 완료, 운영진 전용)'}]},
   {id:'2026-11-23',v:'1.11',date:'2026-11-23',items:[
@@ -930,14 +931,14 @@ function viewHome(){
   const nrs=regStat(nr),nrx=nrs&&nrs.status==='취소',dd=diffDays(nr);const nrEv=nrx?liveEv(nr):null;const nrMk=mkDates().find(x=>x.d===nr);
   return `<div class="page-head dash-head"><div class="dh-main"><div class="dh-today"><span>${t.getFullYear()}년 ${t.getMonth()+1}월 ${t.getDate()}일 ${WD[t.getDay()]}요일</span><b class="num" id="clock">${clockText()}</b></div>
     ${nrEv?`<div class="dh-next rep t-${h(nrEv.type||'기타')}" data-act="ev-open" data-id="${nrEv.id}" role="button" tabindex="0"><span class="dh-l">다음 모임 · ${nrs.reason==='행사 대체'?'행사 대체':'행사'}</span><div class="dh-v"><b>${fmtD(nr)}</b><span>${h(nrEv.title)}</span>${evTime(nrEv)?`<span class="dh-tm">${evTime(nrEv)}</span>`:''}<span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${h(nrEv.place||'')}${nrEv.place?' · ':''}${nrs.reason==='행사 대체'?'정기모임 대신 행사 진행':`정기모임은 ${h(nrs.reason)}${isCourtCx(nrs)&&nrs.mkDate&&!nrs.mkUnused?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`}</span></div>`:`<div class="dh-next${nrx?' cx':''}"><span class="dh-l">다음 정기모임</span><div class="dh-v"><b>${fmtD(nr)}</b><span class="num">${REG.start}–${REG.end}</span><span class="dh-dd">${dd===0?'오늘':'D-'+dd}</span></div><span class="dh-s">${REG.place}${nrMk?` · 대체일 (${fmtD(nrMk.rs.id)} 코트 측 취소분)`:''}${nrx?` · <b>${h(nrs.reason)}</b>${isCourtCx(nrs)&&nrs.mkDate?` · 대체일 ${fmtD(nrs.mkDate)}`:''}`:''}</span></div>`}</div><div class="row">${WEB&&mode==='ro'?`<button class="btn" data-act="web-login">운영진 로그인</button>`:''}<button class="btn" data-act="reg-draw" data-d="${nextRegNow()}">이번 주 대진표 만들기</button><button class="btn pri" data-act="ev-new">행사 추가</button></div></div>
-  ${kp}${boardHtml('m')}<div class="dash">${cal}<div class="side">${boardHtml('pc')}
+  ${kp}${boardHtml('m')}<div class="dash${MV||RO?' solo':''}">${cal}${boardHtml('pc')}</div><div class="side dash-row">
   <section class="panel" id="dash-ev"><div class="panel-h"><h2>다가오는 행사</h2><a href="#events">전체 보기</a></div><div class="list">${upHtml}</div></section>
   ${(()=>{const ts=S.events.filter(e=>e.type==='개인대회'&&e.date);if(!ts.length)return '';const up2=ts.filter(e=>diffDays(e.date)>=0).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);const past=ts.filter(e=>diffDays(e.date)<0&&e.result&&e.result!=='대기').sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
     const li=e=>`<div class="li click" data-act="ev-open" data-id="${e.id}"><div class="grow"><div class="ttl">${entLine(e)||'출전 멤버 미입력'}</div><div class="sub">${fmtD(e.date)} · ${h(e.title)}${e.division?' · '+h(e.division):''}${(e.cheer||[]).length?` · 응원 ${(e.cheer||[]).length}명`:''}</div></div>${diffDays(e.date)>=0?`<span class="dday">${ddayLabel(e.date)}</span>`:`<span class="result ${resultCls(e.result)}" style="font-size:12px">${h(e.result)}</span>`}</div>`;
     return `<section class="panel"><div class="panel-h"><h2>멤버 대회 소식</h2><a href="#events" data-act="ev-filter" data-v="all">전체 보기</a></div><div class="list">${up2.map(li).join('')}${past.map(li).join('')}</div></section>`})()}
   <section class="panel" id="dash-open"><div class="panel-h"><h2>예약 오픈 임박</h2><a href="#courts">코트 보기</a></div><div class="list">${opHtml}</div></section>
   ${MV?mvBdays():`<section class="panel" id="dash-mem"><div class="panel-h"><h2>회원 개요</h2><a href="#members">회원 보기</a></div>${mo}</section>`}
-  </div></div>`;
+  </div>`;
 }
 /* 회원 화면 대시보드: 회원 개요 대신 다가오는 생일 (이름 · 생년월일) */
 function mvBdays(){const ub=activeMembers().filter(m=>m.birth).map(m=>({m,d:nextBday(m.birth)})).filter(x=>diffDays(x.d)<=30).sort((a,b)=>a.d.localeCompare(b.d));
