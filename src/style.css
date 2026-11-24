@@ -1337,3 +1337,11 @@ body.slot-dragging,body.slot-dragging *{cursor:grabbing!important}
 .plist .pl-act{display:flex;justify-content:flex-end}
 .plist .pl-act .btn{padding:2px 8px}
 .plist label{min-height:44px;box-sizing:border-box}
+
+/* 대시보드 상단: 날짜 · 버튼 한 줄, 다음 모임 카드는 아래 카드들과 좌우 끝 맞춤 (전체 너비) */
+.dash-head{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"today acts" "next next";gap:12px 16px;align-items:center}
+.dash-head>.dh-main{display:contents}
+.dash-head .dh-today{grid-area:today}
+.dash-head .dh-next{grid-area:next}
+.dash-head>.row{grid-area:acts;justify-content:flex-end}
+@media (max-width:640px){.dash-head{grid-template-columns:minmax(0,1fr);grid-template-areas:"today" "next" "acts"}.dash-head>.row{justify-content:flex-start}}
