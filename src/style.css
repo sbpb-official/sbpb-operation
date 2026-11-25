@@ -1444,3 +1444,8 @@ a.btn.c-go{text-align:center;text-decoration:none;min-height:44px;display:flex;a
 @media (min-width:721px){@supports (grid-template-rows:subgrid){.ccard{display:grid;grid-row:span 12;grid-template-rows:subgrid;row-gap:10px;align-content:start}.ccard>.c-go{align-self:end}}}
 .ccard>.c-go{margin-top:auto}
 .ccard>.opens{align-self:start}
+/* 운영실 MO ver. 섹션 바로가기: 탭 바 아래 고정 · 가로 스크롤 칩 */
+.ind-bar{position:sticky;top:var(--ind-top,0px);z-index:4;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px 16px;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
+.ind-bar::-webkit-scrollbar{display:none}
+.ind-bar button{flex:none;min-height:36px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);font:inherit;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer}
+.ind-bar button.on{background:var(--court);border-color:var(--court);color:var(--on-court)}

@@ -116,6 +116,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-25',v:'1.13',date:'2026-11-25',items:[
+    {k:'indbar',t:'운영실 MO ver. 섹션 바로가기 추가 (대시보드 외 전 탭 · 상단 고정 · 누르면 이동 · 현재 섹션 표시)'},
     {k:'courtimport3',t:'코트 일괄 가져오기 빈 칸만 채우기 옵션 추가 (기존 입력값 유지 · 편의시설 합치기 · 이름 일치 우선)'},
     {k:'courtimport2',t:'코트 일괄 가져오기 메모 정리 옵션 추가 (요금 · 시간 · 연락처 항목 이동 시 메모 갱신)'},
     {k:'courtgrid',t:'코트 카드 항목 위치 통일 (같은 줄 카드끼리 항목 높이 맞춤 · 빈 항목 - 표시 · 연락처 · 이용 시간 · 취소 규정 · 예약 오픈 칸 항상 표시)'},
@@ -392,6 +393,22 @@ function maybeShowCheer(tries=0){const ready=loaded.has('events')&&S.members.len
     return `<div class="cheer-b"><span class="cheer-i" aria-hidden="true">🎾</span><div><b>${h(who)} 님이 오늘 ${day?`대회 ${day}일차 경기를 치러요!`:'대회에 출전해요!'}</b><p class="cheer-t">${h(e.title)}${e.division||e.category?` · ${h([e.division,e.category].filter(Boolean).join(' · '))}`:''}${pt.length?` · 파트너 ${h(pt.join(', '))}`:''}</p><p>모두 힘찬 응원 부탁드려요 💪</p></div></div>`}).join('');
   openModal('오늘의 축하 · 응원',`<div class="cheer-pop">${bd}${tr}</div>`,()=>{},'','sm');
   const f=$('#mform');if(f){f.querySelectorAll('.acts button:not([type=submit])').forEach(b=>b.hidden=true);const sb=f.querySelector('button[type=submit]');if(sb)sb.textContent='확인'}}
+/* 운영실 MO ver. 섹션 인디케이터: 대시보드 외 탭 · 섹션 제목(h2)으로 칩 생성 · 누르면 이동 · 스크롤 위치 표시 */
+const indOn=()=>!MV&&route!=='home'&&window.matchMedia('(max-width:720px)').matches;
+function indTargets(v){return [...v.querySelectorAll('h2')].filter(h=>!h.closest('.modal,.ind-bar')&&h.offsetParent).map(h=>{const box=h.closest('section,.panel,.sec-h,details')||h;const raw=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ')||h.textContent;const label=raw.replace(/\s+/g,' ').replace(/\s*[·\d].*$/,'').trim();return {box,label}}).filter(x=>x.label)}
+function buildInd(v){v=v||$('#view');if(!v)return;const old=v.querySelector('.ind-bar');if(old)old.remove();if(!indOn())return;const ts=indTargets(v);if(ts.length<2)return;
+  const head=v.querySelector('.page-head');const top=(head&&head.querySelector('h1')||{}).textContent||'맨 위';
+  const bar=document.createElement('nav');bar.className='ind-bar';bar.setAttribute('aria-label','섹션 바로가기');
+  bar.innerHTML=`<button type="button" data-ind="-1">${h(top.trim())}</button>`+ts.map((t,i)=>`<button type="button" data-ind="${i}">${h(t.label)}</button>`).join('');
+  (head?head.after(bar):v.prepend(bar));bar._t=ts;const tp=$('.top');document.documentElement.style.setProperty('--ind-top',(tp?tp.getBoundingClientRect().height:0)+'px');indSpy()}
+const indOff=()=>{const tp=$('.top');const bar=$('.ind-bar');return (tp?tp.offsetHeight:0)+(bar?bar.offsetHeight:0)+8};
+document.addEventListener('click',e=>{const b=e.target.closest('.ind-bar [data-ind]');if(!b)return;const bar=b.closest('.ind-bar');const i=+b.dataset.ind;
+  const y=i<0?0:bar._t[i].box.getBoundingClientRect().top+window.scrollY-indOff();window.scrollTo({top:Math.max(0,y),behavior:'smooth'})});
+function indSpy(){const bar=$('.ind-bar');if(!bar||!bar._t)return;const off=indOff()+4;let a=-1;bar._t.forEach((t,i)=>{if(t.box.getBoundingClientRect().top<=off)a=i});
+  if((window.innerHeight+window.scrollY)>=document.documentElement.scrollHeight-4)a=bar._t.length-1;
+  bar.querySelectorAll('button').forEach(x=>{const on=+x.dataset.ind===a;if(on!==x.classList.contains('on')){x.classList.toggle('on',on);if(on)x.scrollIntoView({block:'nearest',inline:'center'})}})}
+window.addEventListener('scroll',()=>{if(indSpy._r)return;indSpy._r=requestAnimationFrame(()=>{indSpy._r=0;indSpy()})},{passive:true});
+window.addEventListener('resize',()=>{clearTimeout(buildInd._t);buildInd._t=setTimeout(()=>{const want=indOn();if(want!==!!$('.ind-bar'))buildInd()},200)});
 function maybeShowNews(){if(RO||!NEWS.length)return;const {n,vs}=newsUnseen();
   if(!n){lsSet(NEWS_KEY,newsMark());return}
   if($('#modal-root').innerHTML){setTimeout(maybeShowNews,4000);return}
@@ -894,6 +911,7 @@ function render(){
   if(keep){const el=document.getElementById(keep.id);if(el){if(keep.val!==undefined)el.value=keep.val;el.focus({preventScroll:true});try{if(keep.s!=null)el.setSelectionRange(keep.s,keep.e)}catch(e){}}}
   if(typeof cz!=='undefined'&&cz!==1)v.style.zoom=String(cz);
   AFTER[route]&&AFTER[route]();
+  buildInd(v);
   bkLabels(v);
   const rb=$('#renew-body');if(rb)rb.innerHTML=renewBody();
 }
