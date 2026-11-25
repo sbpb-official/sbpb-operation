@@ -116,6 +116,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-25',v:'1.13',date:'2026-11-25',items:[
+    {k:'postit2',t:'회원 화면 코트 안내 메모 문구 수정 (추가 요청 · 잘못된 정보 제보 안내)'},
     {k:'courtimport',t:'코트 일괄 가져오기 추가 (설정 › 데이터 가져오기 · 같은 이름 코트 정보 합치기 · 허용 형식만 저장)'},
     {k:'courtkv',t:'코트 카드 요금 · 이용 시간 · 편의시설 · 메모 간격 조정 (4px>12px) · 메모 전체 보기 버튼 제거 (3줄 초과 시 내부 스크롤)'},
     {k:'rentfold',t:'정기대관 코트 관리 연간 현황 · 취소 기록 아카이브 접기 · 펼치기 적용 (기본 접힘 · 기기별 상태 기억)'},
@@ -2791,7 +2792,7 @@ function viewCourts(){
   return `<div class="page-head"><div><h1>코트</h1><p>${MV?'코트별 예약 오픈 일정 · 요금 · 예약 링크':'정기대관 코트 사용 현황 및 추가 코트 예약 관리'}</p></div></div>
   ${rentalSection()}
   <div class="sec-h" id="extra"><div><h2>추가 코트 예약</h2><p class="small muted" style="margin:2px 0 0">예약처별 오픈 규칙·요금·예약 링크</p></div><div class="row"><button class="btn pri" data-act="c-new">코트 추가</button></div></div>
-  ${MV?'<div class="postit">추가하고 싶은 코트가 있다면 운영진에게 알려 주세요.</div>':''}
+  ${MV?'<div class="postit">추가하고 싶은 코트나 잘못된 정보가 있다면 운영진에게 알려 주세요.</div>':''}
   ${S.courts.length?`<section class="panel"><div class="panel-h"><h2>45일 내 예약 오픈</h2><span class="small muted">주민 우선 오픈은 주황색</span></div>${tl||'<div class="muted small">45일 내 오픈 예정 코트 없음</div>'}</section>
   <div class="toolbar" style="margin-top:16px"><select class="in" id="c-area" data-carea="1"><option value="">지역 전체</option>${areas.map(a=>`<option${courtArea===a?' selected':''}>${h(a)}</option>`).join('')}</select>${MV?'':`<span class="small muted">회원 거주지: ${Object.entries(memAreas).sort((a,b)=>b[1]-a[1]).map(([a,n])=>`${h(areaLabel(a))} ${n}`).join(' · ')||'미입력'}</span>`}</div>
   ${cards}`:
