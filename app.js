@@ -116,6 +116,9 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-25',v:'1.13',date:'2026-11-25',items:[
+    {k:'courtfee2',t:'코트 요금 입력 개선 (장소 · 요일 · 시간대 · 단위 구분 · 최저 요금 표시 · 상세 펼치기)'},
+    {k:'courthours',t:'코트 이용 시간 입력 · 표시 추가 (하절기 · 동절기 · 평일 · 주말 구분 · 오늘 기준 표시 · 상세 펼치기)'},
+    {k:'courteq',t:'코트 카드 높이 통일 · 메모 3줄 표시 적용 (공공 · 사설 묶음별 · 메모 전체 보기)'},
     {k:'courtinfo2',t:'코트 카드 정보 순서 · 아이콘 조정 (주소 핀 · 연락처 전화기 아이콘 · 요금 · 편의시설 · 취소 규정 · 메모 순 · 주차 미선택 시 주차 불가 표시)'},
     {k:'courtcancel',t:'코트 취소 규정 입력 추가'},
     {k:'secrent',t:'정기대관 대관료 · 계약 기간 · 담당·연락처 · 메모 운영진 전용 저장 적용 (회원 화면 열람 불가 · 청구 금액 미표시)'},
@@ -2656,13 +2659,45 @@ function ruleFrom(fd,p){const type=fd[p+'type'],v=(fd[p+'val']||'').trim(),time=
   if(!v)return {};/* 일 입력 없으면 오픈 규칙 없음 */
   const parts=v.split(/[,·\s]+/).filter(Boolean);const ds=parts.filter(x=>!/말/.test(x)).map(n=>parseInt(n)).filter(n=>n>=1&&n<=31);const last=parts.some(x=>/말/.test(x));
   const list=[...new Set(ds)].sort((a,b)=>a-b).map(String);if(last)list.push('L');return {type:'monthly',day:(list.length?list:['1']).join(','),time}}
+/* 요금 · 이용 시간: 줄마다 칩으로 구분 · 카드에는 최저 요금 · 오늘 이용 시간 + 상세 펼치기 */
+const FEE_PL=['공통','실내','실외'],FEE_DY=['매일','평일','주말·공휴일'],FEE_TM=['종일','주간','야간'],FEE_U=['1시간','2시간','1회'],HR_SS=['연중','하절기','동절기'];
+let rowSeq=0;
+const segRadio=(name,opts,cur)=>`<div class="segp">${opts.map(o=>`<label><input type="radio" name="${name}" value="${h(o)}"${o===cur?' checked':''}><span>${h(o)}</span></label>`).join('')}</div>`;
+const monSel=(name,v)=>`<select class="in sm-in" name="${name}">${Array.from({length:12},(_,i)=>`<option value="${i+1}"${+v===i+1?' selected':''}>${i+1}월</option>`).join('')}</select>`;
+function feeRowHtml(r={}){const i=++rowSeq;return `<div class="xrow" data-i="${i}"><div class="xrow-h"><b>요금 구분</b><button type="button" class="btn sm ghost" data-act="xrow-del">삭제</button></div>
+  ${segRadio(`fe_${i}_pl`,FEE_PL,r.pl||'공통')}${segRadio(`fe_${i}_dy`,FEE_DY,r.dy||'매일')}${segRadio(`fe_${i}_tm`,FEE_TM,r.tm||'종일')}
+  <div class="xrow-v"><span class="sfx"><input class="in" inputmode="numeric" data-comma="1" data-selall="1" name="fe_${i}_n" value="${r.n?Number(r.n).toLocaleString('ko-KR'):''}" placeholder="8,000"><i>원</i></span>${segRadio(`fe_${i}_u`,FEE_U,r.u||'1시간')}</div>
+  <input class="in" name="fe_${i}_note" value="${h(r.note||'')}" placeholder="비고 (선택) · 예: 조명비 별도 3,000원"></div>`}
+function hrRowHtml(r={}){const i=++rowSeq;return `<div class="xrow" data-i="${i}"><div class="xrow-h"><b>시간 구분</b><button type="button" class="btn sm ghost" data-act="xrow-del">삭제</button></div>
+  ${segRadio(`hr_${i}_ss`,HR_SS,r.ss||'연중')}${segRadio(`hr_${i}_dy`,FEE_DY,r.dy||'매일')}
+  <div class="xrow-v"><input class="in" type="time" name="hr_${i}_s" value="${h(r.s||'')}" aria-label="시작 시간"><span class="muted">–</span><input class="in" type="time" name="hr_${i}_e" value="${h(r.e||'')}" aria-label="종료 시간"></div></div>`}
+ACT['xrow-add']=t=>{const box=$(t.dataset.k==='fee'?'#fee-rows':'#hr-rows');if(!box)return;box.insertAdjacentHTML('beforeend',t.dataset.k==='fee'?feeRowHtml():hrRowHtml());const last=box.lastElementChild;const inp=last&&last.querySelector('input[type=text],input[inputmode],input[type=time]');if(inp)inp.focus()};
+ACT['xrow-del']=t=>{const r=t.closest('.xrow');if(r)r.remove()};
+const rowsFrom=(fd,pre,keys)=>{const ids=[...new Set(Object.keys(fd).filter(k=>k.startsWith(pre+'_')).map(k=>k.split('_')[1]))];return ids.map(i=>{const o={};keys.forEach(k=>o[k]=fd[`${pre}_${i}_${k}`]);return o})};
+const pick=(v,list,d)=>list.includes(v)?v:d;
+const feesFromFd=fd=>rowsFrom(fd,'fe',['pl','dy','tm','n','u','note']).map(r=>({pl:pick(r.pl,FEE_PL,'공통'),dy:pick(r.dy,FEE_DY,'매일'),tm:pick(r.tm,FEE_TM,'종일'),n:numOf(r.n)||0,u:pick(r.u,FEE_U,'1시간'),note:String(r.note||'').trim().slice(0,80)})).filter(r=>r.n>0);
+const hoursFromFd=fd=>rowsFrom(fd,'hr',['ss','dy','s','e']).map(r=>({ss:pick(r.ss,HR_SS,'연중'),dy:pick(r.dy,FEE_DY,'매일'),s:r.s,e:r.e})).filter(r=>/^\d\d:\d\d$/.test(r.s||'')&&/^\d\d:\d\d$/.test(r.e||''));
+/* 예전 요금(금액 + 단위)은 공통 · 매일 · 종일 한 줄로 읽음 */
+const feesOf=c=>Array.isArray(c.fees)&&c.fees.length?c.fees:(c.feeN?[{pl:'공통',dy:'매일',tm:'종일',n:+c.feeN,u:c.feeUnit||'1시간',note:''}]:[]);
+const perHour=f=>f.u==='2시간'?f.n/2:f.u==='1시간'?f.n:null;
+function feeMin(c){const fs=feesOf(c);if(!fs.length)return null;const hr=fs.filter(f=>perHour(f)!=null);if(hr.length){const m=Math.min(...hr.map(perHour));return {txt:`1시간당 ${won(Math.round(m))}`,more:fs.length>1}}const m=Math.min(...fs.map(f=>f.n));return {txt:`1회 ${won(m)}`,more:fs.length>1}}
+const feeLabel=f=>[f.dy==='매일'?'':f.dy,f.tm==='종일'?'':f.tm].filter(Boolean).join(' ')||'전체';
+function feeDetail(c){const fs=feesOf(c);const by={};fs.forEach(f=>(by[f.pl]=by[f.pl]||[]).push(f));return FEE_PL.filter(p=>by[p]).map(p=>`<div class="xd-g">${Object.keys(by).length>1||p!=='공통'?`<b>${h(p)}</b>`:''}${by[p].map(f=>`<div class="xd-r"><span>${h(feeLabel(f))}</span><span class="num">${h(f.u)}당 ${won(f.n)}</span>${f.note?`<span class="muted">${h(f.note)}</span>`:''}</div>`).join('')}</div>`).join('')}
+const seasonOf=(c,d)=>{const s=(c.season||{}).s||3,e=(c.season||{}).e||10;const m=d.getMonth()+1;return (s<=e?(m>=s&&m<=e):(m>=s||m<=e))?'하절기':'동절기'};
+function hoursToday(c){const hs=c.hours||[];if(!hs.length)return null;const d=today0();const ss=seasonOf(c,d);const we=d.getDay()===0||d.getDay()===6;
+  const ok=hs.filter(x=>(x.ss==='연중'||x.ss===ss)&&(x.dy==='매일'||(we?x.dy==='주말·공휴일':x.dy==='평일')));
+  const sc=x=>(x.ss!=='연중'?2:0)+(x.dy!=='매일'?1:0);ok.sort((a,b)=>sc(b)-sc(a));return ok[0]||'none'}
+function hoursDetail(c){const hs=c.hours||[];const sn=c.season||{s:3,e:10};return HR_SS.filter(s=>hs.some(x=>x.ss===s)).map(s=>`<div class="xd-g"><b>${h(s)}${s==='하절기'?` (${sn.s||3}–${sn.e||10}월)`:s==='동절기'?` (${((sn.e||10)%12)+1}–${((sn.s||3)+10)%12+1}월)`:''}</b>${hs.filter(x=>x.ss===s).map(x=>`<div class="xd-r"><span>${h(x.dy)}</span><span class="num">${h(x.s)}–${h(x.e)}</span></div>`).join('')}</div>`).join('')}
 function courtForm(c={}){
   return `<div class="grid2"><label class="f">코트 이름<input class="in" name="name" required value="${h(c.name)}" placeholder="예: OO공원 테니스장"></label><label class="f">위치 (구·시)<input class="in" name="district" list="areas-c" value="${h(c.district)}" placeholder="예: 송파구"></label></div>
   <label class="f">주소 (선택 시 네이버 지도 연결)<input class="in" name="address" value="${h(c.address)}" placeholder="예: 서울 광진구 천호대로 731"></label>
   <label class="f">네이버 지도 링크 (선택 · 비우면 주소로 검색)<input class="in" type="url" name="map" value="${h(c.map)}" placeholder="https://naver.me/..."></label>
   <label class="f">연락처 (선택 · 누르면 전화 연결)<input class="in" name="phone" type="tel" inputmode="tel" value="${h(fmtPhone(c.phone))}" placeholder="02-000-0000"></label>
   <div class="grid2"><label class="f">면 수<span class="sfx"><input class="in" inputmode="numeric" data-selall="1" name="courts" value="${h(courtsN(c.courts)||'')}" placeholder="4"><i>면</i></span></label>
-  <div class="f"><span>요금</span><div class="feerow"><span class="sfx"><input class="in" inputmode="numeric" data-comma="1" name="feeN" value="${c.feeN?Number(c.feeN).toLocaleString('ko-KR'):''}" placeholder="5,000"><i>원</i></span>${optSel('feeUnit',c.feeUnit||'1시간',['1시간','2시간'],'1시간',{label:v=>v+'당',none:false})}</div>${c.fee&&!c.feeN?`<span class="small muted" style="font-weight:500">기존 입력: ${h(c.fee)}</span>`:''}</div></div>
+  </div>
+  <div class="f"><span>요금</span><div class="xrows" id="fee-rows">${(feesOf(c).length?feesOf(c):[{}]).map(feeRowHtml).join('')}</div><button type="button" class="btn sm xadd" data-act="xrow-add" data-k="fee">+ 요금 추가</button>${c.fee&&!feesOf(c).length?`<span class="small muted" style="font-weight:500">기존 입력: ${h(c.fee)}</span>`:''}</div>
+  <div class="f"><span>이용 시간</span><div class="xrows" id="hr-rows">${(c.hours&&c.hours.length?c.hours:[{}]).map(hrRowHtml).join('')}</div><button type="button" class="btn sm xadd" data-act="xrow-add" data-k="hr">+ 이용 시간 추가</button>
+    <div class="season small">하절기 ${monSel('sumS',(c.season||{}).s||3)} – ${monSel('sumE',(c.season||{}).e||10)} · 그 외 동절기</div></div>
   <div class="f"><span>바닥 (중복 선택 가능)</span><div class="iopick">${(()=>{const cur=surfList(c.surface);return [...new Set([...SURFACES,...cur])].map(s=>`<label><input type="checkbox" name="surf_${h(s)}"${cur.includes(s)?' checked':''}><span>${h(s)}</span></label>`).join('')})()}</div></div>
   <div class="f"><span>실내 · 실외 (중복 선택 가능)</span><div class="iopick"><label><input type="checkbox" name="indoor"${c.indoor?' checked':''}><span>실내</span></label><label><input type="checkbox" name="outdoor"${c.outdoor?' checked':''}><span>실외</span></label></div></div>
   <div class="grid2"><label class="f">구분<select class="in" name="kind">${KINDS.map(([k,l])=>`<option value="${k}"${kindOf(c)===k?' selected':''}>${l}</option>`).join('')}</select></label>
@@ -2677,7 +2712,7 @@ function courtForm(c={}){
   <div class="f">예약 대상 기간 / 메모${bigMemo('memo',c.memo,'예: 다음 달 이용분 오픈, 1인 월 2회 제한, 추첨제','코트 메모')}</div>
   <datalist id="areas-c">${SEOUL.concat(NEAR).map(a=>`<option value="${a}">`).join('')}</datalist>`;
 }
-const courtFromFd=(fd,old={})=>({...old,phone:fmtPhone(fd.phone||''),cancel:(fd.cancel||'').trim(),amen:Object.keys(fd).filter(k=>k.startsWith('amen_')&&fd[k]===true).map(k=>k.slice(5)),name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:safeUrl(fd.map),courts:courtsN(fd.courts)?courtsN(fd.courts)+'면':'',surface:Object.keys(fd).filter(k=>k.startsWith('surf_')&&fd[k]===true).map(k=>k.slice(5)).join('·'),indoor:!!fd.indoor,outdoor:!!fd.outdoor,feeN:numOf(fd.feeN)||0,feeUnit:fd.feeUnit||'1시간',fee:numOf(fd.feeN)?'':(old.fee||''),url:safeUrl(fd.url),platform:old.platform||'etc',kind:fd.kind||'public',smash:!!fd.smash,genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:(numOf(fd.feeN)&&old.fee&&!fd.memo.includes(old.fee)?['요금 상세: '+old.fee,fd.memo.trim()].filter(Boolean).join('\n'):fd.memo.trim())});
+const courtFromFd=(fd,old={})=>({...old,phone:fmtPhone(fd.phone||''),cancel:(fd.cancel||'').trim(),amen:Object.keys(fd).filter(k=>k.startsWith('amen_')&&fd[k]===true).map(k=>k.slice(5)),name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:safeUrl(fd.map),courts:courtsN(fd.courts)?courtsN(fd.courts)+'면':'',surface:Object.keys(fd).filter(k=>k.startsWith('surf_')&&fd[k]===true).map(k=>k.slice(5)).join('·'),indoor:!!fd.indoor,outdoor:!!fd.outdoor,fees:feesFromFd(fd),hours:hoursFromFd(fd),season:{s:+fd.sumS||3,e:+fd.sumE||10},feeN:0,feeUnit:'',fee:feesFromFd(fd).length?'':(old.fee||''),url:safeUrl(fd.url),platform:old.platform||'etc',kind:fd.kind||'public',smash:!!fd.smash,genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:(feesFromFd(fd).length&&old.fee&&!fd.memo.includes(old.fee)?['요금 상세: '+old.fee,fd.memo.trim()].filter(Boolean).join('\n'):fd.memo.trim())});
 const courtUrlOk=fd=>{for(const k of ['url','map']){const v=(fd[k]||'').trim();if(v&&!safeUrl(v)){toast('링크는 https://로 시작');throw new Error('keep')}}};
 ACT['c-new']=()=>openModal('코트 추가',courtForm(),fd=>(courtUrlOk(fd),put('courts',uid(),{...courtFromFd(fd),createdAt:Date.now()})));
 ACT['c-edit']=t=>{const c=S.courts.find(x=>x.id===t.dataset.id);if(!c)return;openModal('코트 수정',courtForm(c),fd=>(courtUrlOk(fd),put('courts',c.id,courtFromFd(fd,c))),`<button type="button" class="btn danger" data-act="c-del" data-id="${c.id}">삭제</button>`)};
@@ -2691,7 +2726,7 @@ const PLATFORMS=[
   {k:'etc',url:''}];
 const KINDS=[['public','공공 코트'],['private','사설 코트']];
 const courtsN=v=>{const m=String(v||'').match(/\d+/);return m?+m[0]:0};
-const feeText=c=>c.feeN?`${c.feeUnit||'1시간'}당 ${Number(c.feeN).toLocaleString('ko-KR')}원`:(c.fee||'');
+const feeText=c=>{const m=feeMin(c);return m?m.txt+(m.more?'~':''):(c.fee||'')};
 const SURFACES=['하드','클레이','인조잔디'];
 /* 코트 편의시설: 버튼으로 선택 · 카드에 칩으로 표시 */
 const AMENITIES=['주차','샤워실','탈의실','화장실','야간 조명','매점','휴게실'];
@@ -2724,7 +2759,7 @@ function viewCourts(){
       return `<div class="open-box${rc}${live?' live':''}"><div class="l">${l}${live?' · 예약 중':''}</div><div class="big"><span class="dday">${ddayLabel(ymd(d))}</span><b>${fd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}</b></div><div class="d">${live&&rc&&S2.until?`주민 우선 예약 기간 · 일반 오픈 ${fd(S2.until)} ${pad(S2.until.getHours())}:${pad(S2.until.getMinutes())} 전까지`:live?'오늘 오픈 · 내일부터 다음 오픈 표시':h(ruleText(rule))}</div>${live?`<div class="d">${h(ruleText(rule))}</div>`:''}</div>`};
     return `<article class="ccard" data-cid="${h(c.id)}"><div class="hd"><div><h3>${h(c.name)}</h3><div class="cbadges">${c.district?`<span class="cb cb-area">${h(c.district)}</span>`:''}${surfList(c.surface).map(s=>`<span class="cb ${({'인조잔디':'cb-grass','하드':'cb-hard','클레이':'cb-clay'})[s]||'cb-etc'}">${h(s)}</span>`).join('')}${c.indoor?'<span class="cb cb-io">실내</span>':''}${c.outdoor?'<span class="cb cb-io">실외</span>':''}${c.courts?`<span class="cb-n">${h(c.courts)}</span>`:''}${isSmash(c)?'<span class="cb cb-etc">스매시 앱 예약</span>':''}</div><div class="c-contact">${addrLink(c.address,c.name,c.map)}${telRow(c.phone)}</div></div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
     ${c.genRule&&c.genRule.type?`<div class="opens">${c.resident?ob('주민 우선 오픈',r,c.resRule):''}${ob('일반 오픈',g,c.genRule)}</div>`:''}
-    <dl class="kv"><dt>요금</dt><dd>${feeText(c)?h(feeText(c)):'-'}</dd><dt>편의시설</dt><dd><div class="amen">${(c.amen||[]).map(a=>`<span class="am">${h(a)}</span>`).join('')}${(c.amen||[]).includes('주차')?'':'<span class="am-warn"><i aria-hidden="true">!</i>주차 불가</span>'}</div></dd>${c.cancel?`<dt>취소 규정</dt><dd style="white-space:pre-wrap">${h(c.cancel)}</dd>`:''}${c.memo?`<dt>메모</dt><dd style="white-space:pre-wrap">${h(c.memo)}</dd>`:''}</dl>
+    <dl class="kv"><dt>요금</dt><dd>${(()=>{const m=feeMin(c);if(!m)return c.fee?h(c.fee):'-';return m.more?`<details class="xd"><summary><span>${h(m.txt)}~</span><span class="xd-t">상세</span></summary>${feeDetail(c)}</details>`:h(m.txt)+(feesOf(c)[0].note?` <span class="muted">${h(feesOf(c)[0].note)}</span>`:'')})()}</dd>${(()=>{const t=hoursToday(c);if(!t)return '';const one=(c.hours||[]).length===1;const txt=t==='none'?'오늘 운영 정보 없음':`오늘 ${h(t.s)}–${h(t.e)}`;return `<dt>이용 시간</dt><dd>${one?txt:`<details class="xd"><summary><span>${txt}</span><span class="xd-t">상세</span></summary>${hoursDetail(c)}</details>`}</dd>`})()}<dt>편의시설</dt><dd><div class="amen">${(c.amen||[]).map(a=>`<span class="am">${h(a)}</span>`).join('')}${(c.amen||[]).includes('주차')?'':'<span class="am-warn"><i aria-hidden="true">!</i>주차 불가</span>'}</div></dd>${c.cancel?`<dt>취소 규정</dt><dd style="white-space:pre-wrap">${h(c.cancel)}</dd>`:''}<dt>메모</dt><dd>${c.memo?`<div class="memo-clip">${h(c.memo)}</div><button type="button" class="xd-more" data-act="c-memo" data-id="${h(c.id)}">전체 보기</button>`:'<span class="muted">-</span>'}</dd></dl>
     ${c.resident?`<div class="prio"><div class="l">우선 예약 가능 회원 · ${h(c.area||c.district)}${c.workers?' 거주·직장':' 거주'} 기준 ${pm.length}명</div><div class="chips">${pm.length?pm.map(({m,why})=>`<span class="chip ${why==='거주'?'court':''}">${h(m.name)}${why==='직장'?' (직장)':''}</span>`).join(''):'<span class="small muted">해당 지역 회원 없음</span>'}</div></div>`:''}
     ${courtUrl(c)?`<a class="btn pri" href="${h(courtUrl(c))}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">예약 페이지 열기 ↗</a>`:''}
     </article>`};
@@ -3022,8 +3057,12 @@ function viewSettings(){
   </div>`}
 const VIEWS={home:viewHome,members:viewMembers,draw:viewDraw,events:viewEvents,courts:viewCourts,money:viewMoney,settings:viewSettings};
 const AFTER={};
-AFTER.courts=()=>{if(!courtFocus)return;const id=courtFocus;let el=document.querySelector(`.ccard[data-cid="${CSS.escape(id)}"]`);
+AFTER.courts=()=>{eqCards();if(!courtFocus)return;const id=courtFocus;let el=document.querySelector(`.ccard[data-cid="${CSS.escape(id)}"]`);
   if(!el&&courtArea){courtArea='';render();return}courtFocus=null;if(el)setTimeout(()=>focusEl(el),80)};
+/* 같은 묶음(공공 · 사설) 코트 카드 높이 통일: 접힌 상태 기준 가장 긴 카드에 맞춤 (펼친 카드만 늘어남) */
+function eqCards(){document.querySelectorAll('.plat .cards').forEach(g=>{const cs=[...g.querySelectorAll('.ccard')];cs.forEach(c=>c.style.minHeight='');const mx=Math.max(0,...cs.filter(c=>!c.querySelector('details[open]')).map(c=>c.offsetHeight));cs.forEach(c=>c.style.minHeight=mx+'px')})}
+window.addEventListener('resize',()=>{clearTimeout(eqCards._t);eqCards._t=setTimeout(()=>{if(route==='courts')eqCards()},150)});
+ACT['c-memo']=t=>{const c=S.courts.find(x=>x.id===t.dataset.id);if(!c)return;openModal(`${c.name} 메모`,`<div class="memo-full">${h(c.memo||'')}</div>`,()=>{},'','sm');const f=$('#mform');if(f){f.querySelectorAll('.acts button:not([type=submit])').forEach(b=>b.hidden=true);const sb=f.querySelector('button[type=submit]');if(sb)sb.textContent='닫기'}};
 let posterZoom='fit';
 function fitPoster(){fitIn($('#stage'))}
 function resetScale(p){p.style.zoom='';p.style.transform='';p.style.marginRight='';p.style.marginBottom=''}

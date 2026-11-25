@@ -1423,6 +1423,29 @@ a.ci>span{text-decoration:underline;text-underline-offset:2px}
 a.ci{min-height:32px}
 .kv dt,.kv dd{line-height:20px}.kv dd{word-break:keep-all;overflow-wrap:anywhere}.kv dd .amen{margin:-2px 0}
 .amen .am,.am-warn{min-height:24px;box-sizing:border-box}
+/* 코트 요금 · 이용 시간 입력: 줄 단위 칩 */
+.xrows{display:flex;flex-direction:column;gap:8px}
+.xrow{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.xrow-h{display:flex;align-items:center;justify-content:space-between;min-height:32px}.xrow-h b{font-size:13px;color:var(--muted)}
+.xrow-v{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.xrow-v .sfx{flex:1 1 140px}.xrow-v input[type=time]{flex:1 1 120px;min-width:0}
+.segp{display:flex;flex-wrap:wrap;gap:4px}
+.segp label{cursor:pointer}.segp input{position:absolute;opacity:0;pointer-events:none}
+.segp span{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);font-size:13px;font-weight:600}
+.segp input:checked+span{background:color-mix(in srgb,var(--court) 14%,var(--surface));border-color:var(--court);color:var(--court);font-weight:700}
+.segp input:focus-visible+span{outline:2px solid var(--court);outline-offset:2px}
+.xadd{align-self:flex-start;margin-top:8px}
+.season{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px;color:var(--muted)}.season .sm-in{width:auto;min-height:36px;padding:4px 8px}
+/* 카드: 요금 · 이용 시간 상세 펼치기 */
+.xd summary{display:flex;flex-wrap:wrap;align-items:center;gap:8px;cursor:pointer;list-style:none}.xd summary::-webkit-details-marker{display:none}
+.xd-t{display:inline-flex;align-items:center;gap:2px;font-size:12px;font-weight:700;color:var(--court)}.xd-t::after{content:'▾';font-size:10px}.xd[open] .xd-t::after{content:'▴'}
+.xd-g{display:flex;flex-direction:column;gap:2px;margin-top:8px;padding-left:8px;border-left:2px solid var(--line)}.xd-g b{font-size:12px;color:var(--muted)}
+.xd-r{display:flex;flex-wrap:wrap;gap:4px 8px}.xd-r span:first-child{min-width:72px}
+/* 메모: 3줄까지 같은 높이로 · 전체는 창으로 */
+.memo-clip{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;height:60px}
+.xd-more{border:0;background:none;padding:4px 0;font:inherit;font-size:12px;font-weight:700;color:var(--court);cursor:pointer;min-height:32px}
+.memo-full{white-space:pre-wrap;line-height:1.6;font-size:14px;word-break:keep-all;overflow-wrap:anywhere}
+/* 카드 안 예약 버튼은 카드 맨 아래 */
+.ccard>a.btn.pri:last-of-type{margin-top:auto}
 
 </style>
 </head>
@@ -1590,7 +1613,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=ec43a8c2db';
+const CUR_APP = 'app.js?v=f83a6cac97';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1618,7 +1641,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=ec43a8c2db';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=f83a6cac97';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
