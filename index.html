@@ -1407,11 +1407,22 @@ body.mv #unreg,body.mv #oneoff,body.mv #merged,body.mv .unreg,body.mv .oneoff{di
 .cheer-b b{display:block;font-size:16px;line-height:1.5;word-break:keep-all}
 .cheer-b p{margin:4px 0 0;font-size:14px;line-height:1.5;word-break:keep-all}.cheer-b .cheer-t{font-weight:600;opacity:.8}
 .cheer-i{flex:0 0 auto;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,.6);font-size:22px;line-height:1}
-.c-tel{margin-top:4px;font-size:14px}.c-tel .tel{display:inline-flex;align-items:center;min-height:40px}
 .iopick.wrap{flex-wrap:wrap}
 /* 코트 편의시설 칩: 의미 색(지역 · 바닥) 과 구분되는 중립색 */
 .amen{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
 .amen .am{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:12px;font-weight:600;line-height:1.3;white-space:nowrap}
+/* 코트 카드 연락 정보: 아이콘 + 글자 한 줄씩, 같은 시작선 */
+.c-contact{display:flex;flex-direction:column;align-items:flex-start;margin-top:4px}
+a.ci{display:inline-flex;align-items:center;gap:6px;min-height:36px;margin:0;font-size:14px;color:var(--court);text-decoration:none;font-weight:600}
+a.ci>span{text-decoration:underline;text-underline-offset:2px}
+.ci-i{flex:0 0 16px;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.kv{align-items:start}.kv .amen{margin-top:0}
+/* 주의 표시: 대진표 오류 표시와 같은 주황 원 + 흰 느낌표 */
+.am-warn{display:inline-flex;align-items:center;gap:4px;padding:2px 9px 2px 3px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.3;color:var(--ink);background:color-mix(in srgb,var(--err) 16%,var(--surface));white-space:nowrap}
+.am-warn i{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--err);color:#fff;font-style:normal;font-size:11px;font-weight:800}
+a.ci{min-height:32px}
+.kv dt,.kv dd{line-height:20px}.kv dd{word-break:keep-all;overflow-wrap:anywhere}.kv dd .amen{margin:-2px 0}
+.amen .am,.am-warn{min-height:24px;box-sizing:border-box}
 
 </style>
 </head>
@@ -1579,7 +1590,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=34e55bdecd';
+const CUR_APP = 'app.js?v=ec43a8c2db';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1607,7 +1618,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=34e55bdecd';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=ec43a8c2db';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
