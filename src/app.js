@@ -116,6 +116,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-25',v:'1.13',date:'2026-11-25',items:[
+    {k:'secrent',t:'정기대관 대관료 · 계약 기간 · 담당·연락처 · 메모 운영진 전용 저장 적용 (회원 화면 열람 불가 · 청구 금액 미표시)'},
     {k:'courtamen',t:'코트 편의시설 선택 · 표시 추가 (주차 · 샤워실 · 탈의실 · 화장실 · 야간 조명 · 매점 · 휴게실 · 버튼 선택 · 카드 칩 표시)'},
     {k:'courttel',t:'코트 연락처 입력 · 전화 연결 추가 (추가 코트 · 정기대관 담당·연락처 번호 터치 시 전화 연결)'},
     {k:'cheer',t:'오늘의 축하 · 응원 팝업 추가 (생일 · 개인대회 출전 · 기기별 하루 1회 · 운영실 · 회원 화면)'},
@@ -524,11 +525,16 @@ ACT['area-pick']=t=>{const wrap=t.closest('.areaf');const btn=wrap.querySelector
   btn.hidden=false;cust.hidden=true;inp.value=v;btn.classList.toggle('ph',!v);btn.innerHTML=h(v?areaLabel(v):wrap.dataset.ph)+'<span class="lv-caret" aria-hidden="true">▾</span>';
   wrap.querySelectorAll('.lv-pop [data-act="area-pick"]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.v===v)));btn.focus()};
 /* ---------- store ---------- */
-const COLS=['members','events','notes','courts','brackets','guests','regstat','rentals','dues','ledger','names','attend','presets','balls','evpriv'];
+const COLS=['members','events','notes','courts','brackets','guests','regstat','rentals','dues','ledger','names','attend','presets','balls','evpriv','rentpriv'];
 /* 보안: 행사 예산 · 설명 · 담당자는 운영진 전용 evpriv에 따로 저장 (events는 회원도 읽음) · 화면에서는 합쳐서 사용 */
 const EV_PRIV=['budget','desc','owner'];
-const evMerge=()=>{const pv={};(S.evpriv||[]).forEach(x=>pv[x.id]=x);S.events=(S.events||[]).map(e=>{const x=pv[e.id];if(!x)return e;/* 비공개 문서가 없으면 행사 문서 값 그대로 (옮기기 전 데이터 보존) */const o={...e};EV_PRIV.forEach(k=>{if(x[k]!=null)o[k]=x[k];else delete o[k]});return o})};
-const S={members:[],events:[],notes:[],courts:[],brackets:[],guests:[],regstat:[],rentals:[],dues:[],ledger:[],names:[],attend:[],presets:[],balls:[],evpriv:[]};
+/* 보안: 정기대관 대관료 · 계약 기간 · 담당·연락처 · 메모도 운영진 전용 rentpriv에 따로 저장 (rentals는 회원도 읽음) */
+const RENT_PRIV=['fee','from','to','contact','memo'];
+const PRIV={events:{col:'evpriv',keys:EV_PRIV},rentals:{col:'rentpriv',keys:RENT_PRIV}};
+const PRIV_OF={evpriv:'events',rentpriv:'rentals'};
+const privMerge=base=>{const P=PRIV[base];const pv={};(S[P.col]||[]).forEach(x=>pv[x.id]=x);S[base]=(S[base]||[]).map(e=>{const x=pv[e.id];if(!x)return e;/* 비공개 문서가 없으면 원래 문서 값 그대로 (옮기기 전 데이터 보존) */const o={...e};P.keys.forEach(k=>{if(x[k]!=null)o[k]=x[k];else delete o[k]});return o})};
+const evMerge=()=>privMerge('events');
+const S={members:[],events:[],notes:[],courts:[],brackets:[],guests:[],regstat:[],rentals:[],dues:[],ledger:[],names:[],attend:[],presets:[],balls:[],evpriv:[],rentpriv:[]};
 const CANCEL_REASONS=['우천 취소','코트 측 취소','행사 대체','기타'];
 const regStat=ds=>S.regstat.find(x=>x.id===ds);
 const COURT_CX='코트 측 취소';
@@ -552,14 +558,14 @@ function errMsg(e){const c=e&&e.code;if(WEB){const why=String(c||e&&e.message||'
 async function put(col,id,data){
   if(RO){toast('보기 전용 화면에서는 수정 불가');throw new Error('read-only')}
   const body={...data,updatedAt:Date.now()};delete body.id;
-  if(db&&col==='events'){const pv={};EV_PRIV.forEach(k=>{if(body[k]!=null&&body[k]!==''){pv[k]=body[k]}delete body[k]});
-    try{await db.collection('evpriv').doc(id).set({...pv,updatedAt:body.updatedAt});await db.collection(col).doc(id).set(body)}catch(e){toast(errMsg(e));throw e}return}
+  if(db&&PRIV[col]){const P=PRIV[col];const pv={};P.keys.forEach(k=>{if(body[k]!=null&&body[k]!==''){pv[k]=body[k]}delete body[k]});
+    try{await db.collection(P.col).doc(id).set({...pv,updatedAt:body.updatedAt});await db.collection(col).doc(id).set(body)}catch(e){toast(errMsg(e));throw e}return}
   if(db){try{await db.collection(col).doc(id).set(body)}catch(e){toast(errMsg(e));throw e}}
   else{const i=S[col].findIndex(x=>x.id===id);const v={id,...body};if(i>=0)S[col][i]=v;else S[col].push(v);saveLocal();render()}
 }
 async function del(col,id){
   if(RO){toast('보기 전용 화면에서는 수정 불가');throw new Error('read-only')}
-  if(db){try{await db.collection(col).doc(id).delete();if(col==='events')await db.collection('evpriv').doc(id).delete()}catch(e){toast(errMsg(e));throw e}}
+  if(db){try{await db.collection(col).doc(id).delete();if(PRIV[col])await db.collection(PRIV[col].col).doc(id).delete()}catch(e){toast(errMsg(e));throw e}}
   else{S[col]=S[col].filter(x=>x.id!==id);saveLocal();render()}
 }
 const pendingCount=()=>{const at=(PUB.snap&&PUB.snap.at)||0;return COLS.reduce((n,c)=>n+S[c].filter(x=>(x.updatedAt||0)>at).length,0)};
@@ -587,7 +593,7 @@ async function boot(){
   const fresh=new Set();let migRan=false;
   COLS.forEach(col=>{
     db.collection(col).onSnapshot(snap=>{
-      S[col]=snap.docs.map(d=>({id:d.id,...d.data()}));if(col==='events'||col==='evpriv')evMerge();
+      S[col]=snap.docs.map(d=>({id:d.id,...d.data()}));if(PRIV[col])privMerge(col);else if(PRIV_OF[col])privMerge(PRIV_OF[col]);
       loaded.add(col);
       if(!snap.metadata.fromCache)fresh.add(col);if(fresh.size===COLS.length&&!migRan){migRan=true;clearTimeout(timer);if(slow){slow=false}runMigrations()}
       if(col==='notes')resolveNames(S.notes.map(n=>n.authorId));
@@ -617,6 +623,7 @@ async function runMigrations(){
   const F13='mig-court-myeonmok';
   const F14='mig-court-imun';
   const F15='mig-court-fee-num';
+  const F22='mig-rent-private';                      // 2026-11-25: 보안 · 정기대관 대관료 · 계약 기간 · 담당·연락처 · 메모를 운영진 전용 rentpriv로 이동
   const F21='mig-ev-private';                        // 2026-11-25: 보안 · 행사 예산 · 설명 · 담당자를 운영진 전용 evpriv로 이동
   const F20='mig-ball-info';                         // 2026-11-24: 공 재고 참고 메모 · 공 구매 링크 (인수인계 내용)
   const F19='mig-ev-reg-time';                       // 2026-11-23: 시립대 정기모임 행사 시간 09:00–12:00 일괄 입력 (시간 비어 있을 때만)
@@ -625,7 +632,7 @@ async function runMigrations(){
   const F16='mig-staff-years';                       // 2026-11-16: 지금 운영진 3명은 2027년 임기로 기록 (2026년 운영진은 직접 입력)                     // 2026-11-16: 요금을 숫자+단위로 (단위가 분명한 코트만) · 상세 요금은 메모로 · 이문 요금표 반영                        // 2026-11-16: 이문체육문화센터 테니스장 (동대문구) 추가                    // 2026-11-15: 면목구립테니스장 추가 (공단 이용안내 기준)                    // 2026-11-15: 중랑구립테니스장 추가 (예약 링크·순위는 용마와 같은 공단 규정)                 // 2026-11-15: 용마 테니스장 공단 이용안내 반영 (요금·예약 순위·예약 사이트)                      // 2026-11-15: 용마폭포공원 테니스장 (중랑구) 추가                     // 2026-11-14: TS는 네이버 링크 예약 (스매시 아님) · 메모의 '○○에서 예약' 안내 문구 제거                       // 2026-11-14: 계남테니스장 (구로구) 추가                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
   const TS_MEMO='예약 링크는 네이버 지도 · 9호선 둔촌오륜역 1번 출구 도보 약 860m\n대관료 (개장 당시): 평일 야간·주말 주간 35,000원 · 주말 야간 40,000원\n※ 현재 요금·예약 오픈 방식은 네이버 지도 업체 정보로 확인 필요';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
   const has=id=>S.dues.find(d=>d.id===id);
-  if([F,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12,F13,F14,F15,F16,F17,F18,F19,F20,F21].every(has))return /* 새 플래그는 이 목록에도 추가 */;
+  if([F,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12,F13,F14,F15,F16,F17,F18,F19,F20,F21,F22].every(has))return /* 새 플래그는 이 목록에도 추가 */;
   migBusy=true;
   try{if(!has(F)){const targets=S.members.filter(m=>isCur(m)&&!m.sample);
     for(const m of targets)if(m.joined!=='2026-01-01')await put('members',m.id,{...m,joined:'2026-01-01'});
@@ -745,7 +752,9 @@ async function runMigrations(){
   if(!has(F20)){if(!(S.balls||[]).some(b=>b.id==='info'))await put('balls','info',{kind:'info',memo:BALL_MEMO,url:'https://link.coupang.com/a/iW0oeGV8sS',at:Date.now()});
     await put('dues',F20,{done:true,at:Date.now()})}
   if(!has(F21)){let n=0;for(const e of S.events){if(!EV_PRIV.some(k=>e[k]!=null&&e[k]!==''))continue;const {id,...rest}=e;await put('events',id,rest);n++}
-    await put('dues',F21,{done:true,count:n,at:Date.now()})}}
+    await put('dues',F21,{done:true,count:n,at:Date.now()})}
+  if(!has(F22)){let n=0;for(const r of S.rentals){if(!RENT_PRIV.some(k=>r[k]!=null&&r[k]!==''))continue;const {id,...rest}=r;await put('rentals',id,rest);n++}
+    await put('dues',F22,{done:true,count:n,at:Date.now()})}}
   catch(e){}
   migBusy=false;
 }
@@ -2748,22 +2757,22 @@ function rentalSection(){
   const months=Array.from({length:12},(_,i)=>{const ss=satsIn(rentYear,i);const o={used:0,cx:0,del:0,plan:0,out:0,reasons:{},charge:0,deduct:0,pending:0};ss.forEach(ds=>{const s=satState(ds);o[s.k]++;const b=billOf(ds);if(b!=='none')o[b]++;if(s.k==='cx')o.reasons[s.l]=(o.reasons[s.l]||0)+1});return o});
   const tot=months.reduce((a,o)=>{['used','cx','del','plan'].forEach(k=>a[k]+=o[k]);Object.entries(o.reasons).forEach(([k,v])=>a.reasons[k]=(a.reasons[k]||0)+v);return a},{used:0,cx:0,del:0,plan:0,reasons:{}});
   const maxCx=Math.max(1,...months.map(o=>o.cx));
-  const yearRows=months.map((o,i)=>`<tr><td>${i+1}월</td><td class="num">${o.used}</td>${CANCEL_REASONS.map(k=>`<td class="num${o.reasons[k]?'':' muted'}">${o.reasons[k]||'–'}</td>`).join('')}<td class="num${o.del?'':' muted'}">${o.del||'–'}</td><td class="num">${fee?won(o.charge*fee):'–'}</td><td><div class="cxbar"><i style="width:${o.cx/maxCx*100}%"></i></div></td></tr>`).join('');
+  const yearRows=months.map((o,i)=>`<tr><td>${i+1}월</td><td class="num">${o.used}</td>${CANCEL_REASONS.map(k=>`<td class="num${o.reasons[k]?'':' muted'}">${o.reasons[k]||'–'}</td>`).join('')}<td class="num${o.del?'':' muted'}">${o.del||'–'}</td>${MV?'':`<td class="num">${fee?won(o.charge*fee):'–'}</td>`}<td><div class="cxbar"><i style="width:${o.cx/maxCx*100}%"></i></div></td></tr>`).join('');
   // archive
   const arch=S.regstat.slice().filter(x=>!archFilter||x.reason===archFilter||(archFilter==='미진행'&&x.status==='삭제')).sort((a,b)=>b.id.localeCompare(a.id));
   const reasonsUsed=[...new Set(S.regstat.map(x=>x.status==='삭제'?'미진행':x.reason))];
   return `<section class="panel rent">
-    <div class="sec-h" style="margin-top:0"><div><h2>정기대관 코트 관리</h2><p class="small muted" style="margin:2px 0 0">${h(r.name)} · 매주 토 ${REG.start}–${REG.end} · ${h(r.courts||3)}면${fee?` · 회당 ${won(fee)}`:''}${r.from||r.to?` · 계약 ${r.from?fmtD(r.from):''}~${r.to?fmtD(r.to):''}`:''}</p>${addrLink(r.address,r.name,r.map)}</div>${RO?'':'<button class="btn" data-act="rent-edit">대관 정보 수정</button>'}</div>
-    ${r.memo||r.contact?`<p class="small muted" style="margin:0 0 12px;white-space:pre-wrap">${[r.contact&&('담당·연락처: '+telText(r.contact)),r.memo&&h(r.memo)].filter(Boolean).join('\n')}</p>`:''}
+    <div class="sec-h" style="margin-top:0"><div><h2>정기대관 코트 관리</h2><p class="small muted" style="margin:2px 0 0">${h(r.name)} · 매주 토 ${REG.start}–${REG.end} · ${h(r.courts||3)}면${fee&&!MV?` · 회당 ${won(fee)}`:''}${(r.from||r.to)&&!MV?` · 계약 ${r.from?fmtD(r.from):''}~${r.to?fmtD(r.to):''}`:''}</p>${addrLink(r.address,r.name,r.map)}</div>${RO?'':'<button class="btn" data-act="rent-edit">대관 정보 수정</button>'}</div>
+    ${!MV&&(r.memo||r.contact)?`<p class="small muted" style="margin:0 0 12px;white-space:pre-wrap">${[r.contact&&('담당·연락처: '+telText(r.contact)),r.memo&&h(r.memo)].filter(Boolean).join('\n')}</p>`:''}
     <div class="rent-grid">
       <div class="rent-box"><div class="panel-h" style="margin-bottom:8px"><h3>${y}년 ${m}월 사용 현황</h3><div class="row"><button class="btn sm" data-act="rent-m" data-v="-1" aria-label="이전 달">‹</button><button class="btn sm" data-act="rent-m" data-v="0">이번 달</button><button class="btn sm" data-act="rent-m" data-v="1" aria-label="다음 달">›</button></div></div>
-        <div class="rent-kpi"><div><b class="num">${mc.used}</b><span>사용</span></div><div><b class="num">${mc.cx}</b><span>취소</span></div><div><b class="num">${mc.del}</b><span>미진행</span></div><div><b class="num">${mc.plan}</b><span>예정</span></div><div><b class="num">${fee?won(mc.charge*fee):'–'}</b><span>청구 금액</span></div></div>
+        <div class="rent-kpi"><div><b class="num">${mc.used}</b><span>사용</span></div><div><b class="num">${mc.cx}</b><span>취소</span></div><div><b class="num">${mc.del}</b><span>미진행</span></div><div><b class="num">${mc.plan}</b><span>예정</span></div>${MV?'':`<div><b class="num">${fee?won(mc.charge*fee):'–'}</b><span>청구 금액</span></div>`}</div>
         <div class="tbl-wrap"><table class="tbl rtbl"><tbody>${monthRows}</tbody></table></div></div>
       <div class="rent-box"><div class="panel-h" style="margin-bottom:8px"><h3>${rentYear}년 연간 현황</h3><div class="row"><button class="btn sm" data-act="rent-y" data-v="-1" aria-label="이전 해">‹</button><button class="btn sm" data-act="rent-y" data-v="1" aria-label="다음 해">›</button></div></div>
         <div class="chips" style="margin-bottom:8px"><span class="chip">사용 <b class="num">${tot.used}</b></span>${CANCEL_REASONS.map(k=>`<span class="chip${tot.reasons[k]?' cxchip':''}">${k} <b class="num">${tot.reasons[k]||0}</b></span>`).join('')}<span class="chip">미진행 <b class="num">${tot.del}</b></span>${fee?`<span class="chip court">청구 금액 <b class="num">${won(months.reduce((s,o)=>s+o.charge,0)*fee)}</b></span>`:''}</div>
-        <div class="tbl-wrap"><table class="tbl ytbl"><thead><tr><th>월</th><th>사용</th>${CANCEL_REASONS.map(k=>`<th>${k.replace(' 취소','')}</th>`).join('')}<th>미진행</th><th>금액</th><th>취소</th></tr></thead><tbody>${yearRows}</tbody></table></div></div>
+        <div class="tbl-wrap"><table class="tbl ytbl"><thead><tr><th>월</th><th>사용</th>${CANCEL_REASONS.map(k=>`<th>${k.replace(' 취소','')}</th>`).join('')}<th>미진행</th>${MV?'':'<th>금액</th>'}<th>취소</th></tr></thead><tbody>${yearRows}</tbody></table></div></div>
     </div>
-    <p class="small muted" style="margin:12px 0 0">분기별 대관료 정산은 <a href="#money">정산 탭</a>에서 확인</p>
+    ${MV?'':'<p class="small muted" style="margin:12px 0 0">분기별 대관료 정산은 <a href="#money">정산 탭</a>에서 확인</p>'}
     <div class="rent-box" style="margin-top:14px"><div class="panel-h" style="margin-bottom:8px"><h3>취소 기록 아카이브 <span class="muted small">${S.regstat.length}건</span></h3><div class="row"><button class="btn sm ${archFilter?'ghost':'pri'}" data-act="arch-f" data-v="">전체</button>${reasonsUsed.map(k=>`<button class="btn sm ${archFilter===k?'pri':'ghost'}" data-act="arch-f" data-v="${h(k)}">${h(k)}</button>`).join('')}</div></div>
       ${arch.length?`<div class="list arch">${arch.map(x=>`<div class="li"><span class="st st-${x.status==='삭제'?'del':'cx'}">${h(x.status==='삭제'?'미진행':x.reason)}</span><div class="grow"><div class="ttl">${fmtFull(x.id)}</div><div class="sub">${h(x.note||'메모 없음')} · 기록 ${x.createdAt?new Date(x.createdAt).toLocaleDateString('ko-KR'):''}</div>${mkInfo(x)}</div>${RO?'':`${isCourtCx(x)?`<button class="btn sm" data-act="reg-makeup" data-d="${x.id}">대체일</button>`:''}<button class="btn sm ghost" data-act="reg-restore" data-d="${x.id}">복구</button>`}</div>`).join('')}</div>`:'<div class="muted small">취소 기록 없음. 대시보드 캘린더 또는 월별 사용 현황 표에서 취소 처리 시 기록</div>'}
     </div>
