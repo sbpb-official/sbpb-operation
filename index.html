@@ -1441,7 +1441,7 @@ a.ci{min-height:32px}
 .xd-g{display:flex;flex-direction:column;gap:2px;margin-top:8px;padding-left:8px;border-left:2px solid var(--line)}.xd-g b{font-size:12px;color:var(--muted)}
 .xd-r{display:flex;flex-wrap:wrap;gap:4px 8px}.xd-r span:first-child{min-width:72px}
 /* 메모: 3줄까지 같은 높이로 · 전체는 창으로 */
-.memo-clip{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;height:60px}
+.memo-clip{white-space:pre-wrap;max-height:60px;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
 .xd-more{border:0;background:none;padding:4px 0;font:inherit;font-size:12px;font-weight:700;color:var(--court);cursor:pointer;min-height:32px}
 .memo-full{white-space:pre-wrap;line-height:1.6;font-size:14px;word-break:keep-all;overflow-wrap:anywhere}
 /* 카드 안 예약 버튼은 카드 맨 아래 */
@@ -1451,6 +1451,7 @@ a.ci{min-height:32px}
 .rent-fold>summary::-webkit-details-marker{display:none}.rent-fold>summary h3{margin:0}
 .rent-fold[open]>summary{margin-bottom:8px}.rent-fold[open]>summary .led-tg i{transform:rotate(180deg)}
 .rent-nav{margin-bottom:8px;flex-wrap:wrap}
+.kv{row-gap:12px}.kv dd .amen{margin:0;gap:6px}
 
 </style>
 </head>
@@ -1618,7 +1619,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=2e37406821';
+const CUR_APP = 'app.js?v=6e61c74cd0';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1646,7 +1647,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=2e37406821';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=6e61c74cd0';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
