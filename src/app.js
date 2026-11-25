@@ -116,6 +116,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-25',v:'1.13',date:'2026-11-25',items:[
+    {k:'rentfold',t:'정기대관 코트 관리 연간 현황 · 취소 기록 아카이브 접기 · 펼치기 적용 (기본 접힘 · 기기별 상태 기억)'},
     {k:'courtfee2',t:'코트 요금 입력 개선 (장소 · 요일 · 시간대 · 단위 구분 · 최저 요금 표시 · 상세 펼치기)'},
     {k:'courthours',t:'코트 이용 시간 입력 · 표시 추가 (하절기 · 동절기 · 평일 · 주말 구분 · 오늘 기준 표시 · 상세 펼치기)'},
     {k:'courteq',t:'코트 카드 높이 통일 · 메모 3줄 표시 적용 (공공 · 사설 묶음별 · 메모 전체 보기)'},
@@ -1192,6 +1193,7 @@ function tierSection(){if(MV||RO)return '';const t=tierDoc();const nM=tierCur('M
   </details></section>`}
 ACT['tier-tab']=t=>{tierTab=t.dataset.g;lsSet('sbpb-tier-g',tierTab);render()};
 document.addEventListener('toggle',e=>{if(e.target.id==='tier-box')lsSet('sbpb-tier-box',e.target.open)},true);
+document.addEventListener('toggle',e=>{if(e.target.id==='rent-yr'||e.target.id==='rent-arch')lsSet('sbpb-'+e.target.id,e.target.open)},true);
 ACT['tier-edit']=()=>{tierEdit=true;tierDirty=false;tierDraft={M:tierOrder('M'),F:tierOrder('F')};render()};
 ACT['tier-cancel']=async()=>{if(tierDirty){const ch=await choiceDialog({title:'편집 취소',msg:'저장하지 않은 순위 변경을 버리고 마지막 저장 상태로 되돌림',choices:[{key:'go',label:'변경 버리기',cls:'danger'},{key:'no',label:'계속 편집'}]});if(ch!=='go')return}
   tierEdit=false;tierDraft=null;tierDirty=false;render()};
@@ -2807,14 +2809,14 @@ function rentalSection(){
       <div class="rent-box"><div class="panel-h" style="margin-bottom:8px"><h3>${y}년 ${m}월 사용 현황</h3><div class="row"><button class="btn sm" data-act="rent-m" data-v="-1" aria-label="이전 달">‹</button><button class="btn sm" data-act="rent-m" data-v="0">이번 달</button><button class="btn sm" data-act="rent-m" data-v="1" aria-label="다음 달">›</button></div></div>
         <div class="rent-kpi"><div><b class="num">${mc.used}</b><span>사용</span></div><div><b class="num">${mc.cx}</b><span>취소</span></div><div><b class="num">${mc.del}</b><span>미진행</span></div><div><b class="num">${mc.plan}</b><span>예정</span></div>${MV?'':`<div><b class="num">${fee?won(mc.charge*fee):'–'}</b><span>청구 금액</span></div>`}</div>
         <div class="tbl-wrap"><table class="tbl rtbl"><tbody>${monthRows}</tbody></table></div></div>
-      <div class="rent-box"><div class="panel-h" style="margin-bottom:8px"><h3>${rentYear}년 연간 현황</h3><div class="row"><button class="btn sm" data-act="rent-y" data-v="-1" aria-label="이전 해">‹</button><button class="btn sm" data-act="rent-y" data-v="1" aria-label="다음 해">›</button></div></div>
+      <details class="rent-box rent-fold" id="rent-yr"${lsGet('sbpb-rent-yr',false)?' open':''}><summary><h3>${rentYear}년 연간 현황</h3><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary><div class="row rent-nav"><button class="btn sm" data-act="rent-y" data-v="-1" aria-label="이전 해">‹ 이전 해</button><button class="btn sm" data-act="rent-y" data-v="1" aria-label="다음 해">다음 해 ›</button></div>
         <div class="chips" style="margin-bottom:8px"><span class="chip">사용 <b class="num">${tot.used}</b></span>${CANCEL_REASONS.map(k=>`<span class="chip${tot.reasons[k]?' cxchip':''}">${k} <b class="num">${tot.reasons[k]||0}</b></span>`).join('')}<span class="chip">미진행 <b class="num">${tot.del}</b></span>${fee?`<span class="chip court">청구 금액 <b class="num">${won(months.reduce((s,o)=>s+o.charge,0)*fee)}</b></span>`:''}</div>
-        <div class="tbl-wrap"><table class="tbl ytbl"><thead><tr><th>월</th><th>사용</th>${CANCEL_REASONS.map(k=>`<th>${k.replace(' 취소','')}</th>`).join('')}<th>미진행</th>${MV?'':'<th>금액</th>'}<th>취소</th></tr></thead><tbody>${yearRows}</tbody></table></div></div>
+        <div class="tbl-wrap"><table class="tbl ytbl"><thead><tr><th>월</th><th>사용</th>${CANCEL_REASONS.map(k=>`<th>${k.replace(' 취소','')}</th>`).join('')}<th>미진행</th>${MV?'':'<th>금액</th>'}<th>취소</th></tr></thead><tbody>${yearRows}</tbody></table></div></details>
     </div>
     ${MV?'':'<p class="small muted" style="margin:12px 0 0">분기별 대관료 정산은 <a href="#money">정산 탭</a>에서 확인</p>'}
-    <div class="rent-box" style="margin-top:14px"><div class="panel-h" style="margin-bottom:8px"><h3>취소 기록 아카이브 <span class="muted small">${S.regstat.length}건</span></h3><div class="row"><button class="btn sm ${archFilter?'ghost':'pri'}" data-act="arch-f" data-v="">전체</button>${reasonsUsed.map(k=>`<button class="btn sm ${archFilter===k?'pri':'ghost'}" data-act="arch-f" data-v="${h(k)}">${h(k)}</button>`).join('')}</div></div>
+    <details class="rent-box rent-fold" id="rent-arch" style="margin-top:16px"${lsGet('sbpb-rent-arch',false)?' open':''}><summary><h3>취소 기록 아카이브 <span class="muted small">${S.regstat.length}건</span></h3><span class="led-tg"><span class="tg-o">펼치기</span><span class="tg-c">접기</span> <i>▾</i></span></summary><div class="row rent-nav"><button class="btn sm ${archFilter?'ghost':'pri'}" data-act="arch-f" data-v="">전체</button>${reasonsUsed.map(k=>`<button class="btn sm ${archFilter===k?'pri':'ghost'}" data-act="arch-f" data-v="${h(k)}">${h(k)}</button>`).join('')}</div>
       ${arch.length?`<div class="list arch">${arch.map(x=>`<div class="li"><span class="st st-${x.status==='삭제'?'del':'cx'}">${h(x.status==='삭제'?'미진행':x.reason)}</span><div class="grow"><div class="ttl">${fmtFull(x.id)}</div><div class="sub">${h(x.note||'메모 없음')} · 기록 ${x.createdAt?new Date(x.createdAt).toLocaleDateString('ko-KR'):''}</div>${mkInfo(x)}</div>${RO?'':`${isCourtCx(x)?`<button class="btn sm" data-act="reg-makeup" data-d="${x.id}">대체일</button>`:''}<button class="btn sm ghost" data-act="reg-restore" data-d="${x.id}">복구</button>`}</div>`).join('')}</div>`:'<div class="muted small">취소 기록 없음. 대시보드 캘린더 또는 월별 사용 현황 표에서 취소 처리 시 기록</div>'}
-    </div>
+    </details>
   </section>`;
 }
 ACT['rent-m']=t=>{const v=+t.dataset.v;const tt=today0();if(!v){rentMonth=`${tt.getFullYear()}-${pad(tt.getMonth()+1)}`}else{const [y,m]=rentMonth.split('-').map(Number);const d=new Date(y,m-1+v,1);rentMonth=`${d.getFullYear()}-${pad(d.getMonth()+1)}`}render()};
