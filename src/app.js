@@ -116,6 +116,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-25',v:'1.13',date:'2026-11-25',items:[
+    {k:'courtimport',t:'코트 일괄 가져오기 추가 (설정 › 데이터 가져오기 · 같은 이름 코트 정보 합치기 · 허용 형식만 저장)'},
     {k:'courtkv',t:'코트 카드 요금 · 이용 시간 · 편의시설 · 메모 간격 조정 (4px>12px) · 메모 전체 보기 버튼 제거 (3줄 초과 시 내부 스크롤)'},
     {k:'rentfold',t:'정기대관 코트 관리 연간 현황 · 취소 기록 아카이브 접기 · 펼치기 적용 (기본 접힘 · 기기별 상태 기억)'},
     {k:'courtfee2',t:'코트 요금 입력 개선 (장소 · 요일 · 시간대 · 단위 구분 · 최저 요금 표시 · 상세 펼치기)'},
@@ -823,6 +824,24 @@ function shownOpen(c,kind){const now=new Date();const rule=kind==='res'?c.resRul
   if(kind==='res'&&p){const g=nextOpen(c.genRule,p);if(same||(g&&g>now))return {d:p,live:true,until:g}}
   if(kind==='gen'&&same)return {d:p,live:true};
   return {d:nextOpen(rule,now)}}
+/* 코트 일괄 가져오기 (예: 서울시 공공예약): 이름이 같은 코트는 빈 칸 · 구조화 정보만 채워 합치고, 없으면 새로 추가 · 값은 허용 형식만 저장 (보안) */
+const cNorm=s=>String(s||'').replace(/\s|\(.*?\)|테니스장|테니스|코트/g,'');
+const strL=(v,n)=>String(v==null?'':v).trim().slice(0,n);
+function courtClean(x){const rule=r=>{r=r||{};const t=['monthly','weekly','rolling','manual'].includes(r.type)?r.type:'';const time=/^\d\d:\d\d$/.test(r.time||'')?r.time:'';if(t==='monthly')return {type:t,day:strL(r.day,10),time};if(t==='rolling')return {type:t,days:Math.max(1,parseInt(r.days)||30),time};if(t==='weekly')return {type:t,weekday:Math.min(6,Math.max(0,parseInt(r.weekday)||0)),time};if(t==='manual')return {type:t,date:/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')?r.date:'',time};return {type:''}};
+  const fees=(Array.isArray(x.fees)?x.fees:[]).map(r=>({pl:pick(r.pl,FEE_PL,'공통'),dy:pick(r.dy,FEE_DY,'매일'),tm:pick(r.tm,FEE_TM,'종일'),n:Math.max(0,Math.round(+r.n||0)),u:pick(r.u,FEE_U,'1시간'),note:strL(r.note,80)})).filter(r=>r.n>0).slice(0,20);
+  const hours=(Array.isArray(x.hours)?x.hours:[]).map(r=>({ss:pick(r.ss,HR_SS,'연중'),dy:pick(r.dy,FEE_DY,'매일'),s:r.s,e:r.e})).filter(r=>/^\d\d:\d\d$/.test(r.s||'')&&/^\d\d:\d\d$/.test(r.e||'')).slice(0,12);
+  const ss=x.season||{};const mo=v=>Math.min(12,Math.max(1,Math.round(+v||0)))||null;
+  return {name:strL(x.name,60),district:strL(x.district,20),address:strL(x.address,120),phone:fmtPhone(strL(x.phone,30)),courts:strL(x.courts,10),surface:strL(x.surface,30),indoor:!!x.indoor,outdoor:!!x.outdoor,
+    fees,hours,season:{s:mo(ss.s)||3,e:mo(ss.e)||10},amen:(Array.isArray(x.amen)?x.amen:[]).map(a=>strL(a,12)).filter(Boolean).slice(0,12),cancel:strL(x.cancel,300),memo:strL(x.memo,1200),fee:strL(x.fee,60),
+    url:safeUrl(x.url),platform:['seoul','etc','naver','smash'].includes(x.platform)?x.platform:'etc',kind:x.kind==='private'?'private':'public',smash:!!x.smash,genRule:rule(x.genRule),resident:!!x.resident,resRule:rule(x.resRule),area:strL(x.area,20),workers:!!x.workers,match:strL(x.match,20)}}
+async function courtsImport(list,src){const rows=list.map(courtClean).filter(c=>c.name);const hit=c=>S.courts.find(o=>cNorm(o.name)===cNorm(c.name)||(c.match&&(o.name||'').includes(c.match)));
+  const up=rows.filter(hit),nw=rows.filter(c=>!hit(c));
+  const ch=await choiceDialog({title:'코트 일괄 가져오기',msg:`${src?src+' · ':''}새 코트 ${nw.length}곳 추가 · 기존 코트 ${up.length}곳 정보 채움 (기존 메모 유지)`,choices:[{key:'go',label:'가져오기',sub:up.length?'같은 이름 코트: '+up.map(c=>hit(c).name).join(', '):'',cls:'pri'}]});if(ch!=='go')return;
+  let n=0;toast('가져오는 중…');
+  for(const c of rows){const {match,...v}=c;const o=hit(c);
+    if(o){const m={...o};Object.entries(v).forEach(([k,val])=>{const empty=val===''||val==null||(Array.isArray(val)&&!val.length)||(typeof val==='object'&&!Array.isArray(val)&&!Object.values(val).some(Boolean));if(k==='memo'){if(!o.memo&&val)m.memo=val;return}if(k==='name')return;if(!empty)m[k]=val});if(v.fees.length){m.feeN=0;m.feeUnit=''}const {id,...rest}=m;await put('courts',o.id,rest)}
+    else await put('courts','c-'+uid(),{...v,createdAt:Date.now()});n++}
+  toast(`코트 ${n}곳 가져오기 완료`);render()}
 function ruleText(rule){
   if(!rule||!rule.type)return '미입력';
   const t=rule.time?` ${rule.time}`:'';
@@ -3208,6 +3227,7 @@ ACT['data-import']=()=>{const inp=document.createElement('input');inp.type='file
     if(j&&j.kind==='attendance'&&Array.isArray(j.days)){closeModal();attendImport(j.days);return}
     if(j&&j.kind==='eventbracket'&&Array.isArray(j.rounds)){closeModal();eventBracketImport(j);return}
     if(j&&j.kind==='tourney'&&Array.isArray(j.groups)){closeModal();tourneyImport(j);return}
+    if(j&&j.kind==='courts'&&Array.isArray(j.courts)){closeModal();courtsImport(j.courts,j.source||'');return}
     const data=j&&j.data?j.data:j;const cols=COLS.filter(c=>Array.isArray(data[c]));const n=cols.reduce((s,c)=>s+data[c].length,0);
     if(!n){toast('가져올 데이터 없음');return}
     if(!confirm(`${n}건을 가져옵니다. 같은 항목은 파일 내용으로 덮어씀. 진행할까요?`))return;
