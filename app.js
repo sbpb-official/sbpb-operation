@@ -116,6 +116,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-25',v:'1.13',date:'2026-11-25',items:[
+    {k:'courtimport3',t:'코트 일괄 가져오기 빈 칸만 채우기 옵션 추가 (기존 입력값 유지 · 편의시설 합치기 · 이름 일치 우선)'},
     {k:'courtimport2',t:'코트 일괄 가져오기 메모 정리 옵션 추가 (요금 · 시간 · 연락처 항목 이동 시 메모 갱신)'},
     {k:'courtgrid',t:'코트 카드 항목 위치 통일 (같은 줄 카드끼리 항목 높이 맞춤 · 빈 항목 - 표시 · 연락처 · 이용 시간 · 취소 규정 · 예약 오픈 칸 항상 표시)'},
     {k:'postit2',t:'회원 화면 코트 안내 메모 문구 수정 (추가 요청 · 잘못된 정보 제보 안내)'},
@@ -836,13 +837,14 @@ function courtClean(x){const rule=r=>{r=r||{};const t=['monthly','weekly','rolli
   const ss=x.season||{};const mo=v=>Math.min(12,Math.max(1,Math.round(+v||0)))||null;
   return {name:strL(x.name,60),district:strL(x.district,20),address:strL(x.address,120),phone:fmtPhone(strL(x.phone,30)),courts:strL(x.courts,10),surface:strL(x.surface,30),indoor:!!x.indoor,outdoor:!!x.outdoor,
     fees,hours,season:{s:mo(ss.s)||3,e:mo(ss.e)||10},amen:(Array.isArray(x.amen)?x.amen:[]).map(a=>strL(a,12)).filter(Boolean).slice(0,12),cancel:strL(x.cancel,300),memo:strL(x.memo,1200),fee:strL(x.fee,60),
-    url:safeUrl(x.url),platform:['seoul','etc','naver','smash'].includes(x.platform)?x.platform:'etc',kind:x.kind==='private'?'private':'public',smash:!!x.smash,genRule:rule(x.genRule),resident:!!x.resident,resRule:rule(x.resRule),area:strL(x.area,20),workers:!!x.workers,match:strL(x.match,20),memoReplace:!!x.memoReplace,keepRules:!!x.keepRules}}
-async function courtsImport(list,src){const rows=list.map(courtClean).filter(c=>c.name);const hit=c=>S.courts.find(o=>cNorm(o.name)===cNorm(c.name)||(c.match&&(o.name||'').includes(c.match)));
+    url:safeUrl(x.url),platform:['seoul','etc','naver','smash'].includes(x.platform)?x.platform:'etc',kind:x.kind==='private'?'private':'public',smash:!!x.smash,genRule:rule(x.genRule),resident:!!x.resident,resRule:rule(x.resRule),area:strL(x.area,20),workers:!!x.workers,match:strL(x.match,20),memoReplace:!!x.memoReplace,keepRules:!!x.keepRules,onlyEmpty:!!x.onlyEmpty}}
+async function courtsImport(list,src){const rows=list.map(courtClean).filter(c=>c.name);const hit=c=>S.courts.find(o=>cNorm(o.name)===cNorm(c.name))||(c.match?S.courts.find(o=>(o.name||'').includes(c.match)):null);
   const up=rows.filter(hit),nw=rows.filter(c=>!hit(c));const mr=up.filter(c=>c.memoReplace).length;
   const ch=await choiceDialog({title:'코트 일괄 가져오기',msg:`${src?src+' · ':''}새 코트 ${nw.length}곳 추가 · 기존 코트 ${up.length}곳 정보 채움${mr?` · 메모 정리 ${mr}곳 (요금 · 시간 · 연락처는 항목으로 옮기고 나머지 안내만 메모에 남김)`:' (기존 메모 유지)'}`,choices:[{key:'go',label:'가져오기',sub:up.length?'같은 이름 코트: '+up.map(c=>hit(c).name).join(', '):'',cls:'pri'}]});if(ch!=='go')return;
   let n=0;toast('가져오는 중…');
-  for(const c of rows){const {match,memoReplace,keepRules,...v}=c;const o=hit(c);if(keepRules){delete v.genRule;delete v.resRule;delete v.resident;delete v.area;delete v.workers}
-    if(o){const m={...o};Object.entries(v).forEach(([k,val])=>{const empty=val===''||val==null||val===false||(Array.isArray(val)&&!val.length)||(typeof val==='object'&&!Array.isArray(val)&&!Object.values(val).some(Boolean));if(k==='memo'){if((memoReplace||!o.memo)&&val)m.memo=val;return}if(k==='name')return;if(!empty)m[k]=val});if(v.fees.length){m.feeN=0;m.feeUnit=''}const {id,...rest}=m;await put('courts',o.id,rest)}
+  for(const c of rows){const {match,memoReplace,keepRules,onlyEmpty,...v}=c;const o=hit(c);if(keepRules){delete v.genRule;delete v.resRule;delete v.resident;delete v.area;delete v.workers}
+    if(o){const m={...o};Object.entries(v).forEach(([k,val])=>{const empty=val===''||val==null||val===false||(Array.isArray(val)&&!val.length)||(typeof val==='object'&&!Array.isArray(val)&&!Object.values(val).some(Boolean));if(k==='memo'){if((memoReplace||!o.memo)&&val)m.memo=val;return}if(k==='name')return;if(k==='amen'){m.amen=[...new Set([...(o.amen||[]),...val])];return}
+      if(onlyEmpty){const cur=o[k];const has=Array.isArray(cur)?cur.length:(cur&&typeof cur==='object')?Object.values(cur).some(Boolean):!!cur;if(has||(k==='fees'&&o.feeN)||(k==='fee'&&feesOf(o).length))return}if(!empty)m[k]=val});if(m.fees&&m.fees.length&&m.fees!==o.fees){m.feeN=0;m.feeUnit=''}const {id,...rest}=m;await put('courts',o.id,rest)}
     else await put('courts','c-'+uid(),{...v,createdAt:Date.now()});n++}
   toast(`코트 ${n}곳 가져오기 완료`);render()}
 function ruleText(rule){
