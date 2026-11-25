@@ -114,6 +114,10 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    화면·기능이 바뀌는 배포마다 맨 위에 항목 추가 (id는 겹치지 않게, 날짜순).
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
+  {id:'2026-11-25',v:'1.13',date:'2026-11-25',items:[
+    {k:'mvcourtnote',t:'회원 화면 코트 추가 코트 예약 섹션 안내 메모 추가 (포스트잇 형태)'},
+    {k:'bigo',t:'공 재고 공 구매 바로가기 버튼 텍스트 정렬 조정'},
+  ]},
   {id:'2026-11-24',v:'1.12',date:'2026-11-24',items:[
     {k:'ballinfo',t:'공 재고 참고 메모 · 공 구매 바로가기 버튼 추가 (사용량 · 구매처 · 연습구 · 보관 장소)'},
     {k:'trfl',t:'행사 대진 결선 리그 추가 (조별 진출 3 · 6팀 시 부전승 없이 풀리그 · 우승 칸 · 연결선 표시)'},
@@ -2676,6 +2680,7 @@ function viewCourts(){
   return `<div class="page-head"><div><h1>코트</h1><p>${MV?'코트별 예약 오픈 일정 · 요금 · 예약 링크':'정기대관 코트 사용 현황 및 추가 코트 예약 관리'}</p></div></div>
   ${rentalSection()}
   <div class="sec-h" id="extra"><div><h2>추가 코트 예약</h2><p class="small muted" style="margin:2px 0 0">예약처별 오픈 규칙·요금·예약 링크</p></div><div class="row"><button class="btn pri" data-act="c-new">코트 추가</button></div></div>
+  ${MV?'<div class="postit">추가하고 싶은 코트가 있다면 운영진에게 알려 주세요.</div>':''}
   ${S.courts.length?`<section class="panel"><div class="panel-h"><h2>45일 내 예약 오픈</h2><span class="small muted">주민 우선 오픈은 주황색</span></div>${tl||'<div class="muted small">45일 내 오픈 예정 코트 없음</div>'}</section>
   <div class="toolbar" style="margin-top:16px"><select class="in" id="c-area" data-carea="1"><option value="">지역 전체</option>${areas.map(a=>`<option${courtArea===a?' selected':''}>${h(a)}</option>`).join('')}</select>${MV?'':`<span class="small muted">회원 거주지: ${Object.entries(memAreas).sort((a,b)=>b[1]-a[1]).map(([a,n])=>`${h(areaLabel(a))} ${n}`).join(' · ')||'미입력'}</span>`}</div>
   ${cards}`:
