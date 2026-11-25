@@ -68,6 +68,8 @@ const NOTE_KIND={yellow:'회의',pink:'할 일',sky:'아이디어',green:'결정
 const telDigits=s=>String(s||'').replace(/[^0-9+]/g,'');
 const fmtPhone=s=>{const d=telDigits(s);if(/^02\d{7,8}$/.test(d))return d.replace(/^(02)(\d{3,4})(\d{4})$/,'$1-$2-$3');if(/^0\d{9,10}$/.test(d))return d.replace(/^(0\d{2})(\d{3,4})(\d{4})$/,'$1-$2-$3');return String(s||'').trim()};
 const telLink=s=>s?`<a class="tel" href="tel:${h(telDigits(s))}" data-act="tel">${h(fmtPhone(s))}</a>`:'';
+/* 글 속 전화번호만 전화 연결 링크로 (나머지 글자는 이스케이프) */
+const telText=t=>{const re=/(?:\+82[-\s.]?|0)\d{1,2}[-\s.)]?\d{3,4}[-\s.]?\d{4}/g;let out='',i=0,m;t=String(t||'');while((m=re.exec(t))){out+=h(t.slice(i,m.index))+telLink(m[0]);i=m.index+m[0].length}return out+h(t.slice(i))};
 const normArea=s=>String(s||'').trim().replace(/\s+/g,'');
 /* 거주지 표시: 서울은 "서울시 ○○구", 경기는 "경기도 ○○시" (저장 값은 구·시 그대로) */
 const areaLabel=v=>{v=String(v||'').trim();if(!v||/^(서울|경기)/.test(v))return v;if(SEOUL.includes(v))return '서울시 '+v;if(NEAR.includes(v)||/시$/.test(v))return '경기도 '+v;return v};
@@ -114,6 +116,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-25',v:'1.13',date:'2026-11-25',items:[
+    {k:'courttel',t:'코트 연락처 입력 · 전화 연결 추가 (추가 코트 · 정기대관 담당·연락처 번호 터치 시 전화 연결)'},
     {k:'cheer',t:'오늘의 축하 · 응원 팝업 추가 (생일 · 개인대회 출전 · 기기별 하루 1회 · 운영실 · 회원 화면)'},
     {k:'secrules',t:'보안 규칙 강화 (운영진 목록 운영진만 열람 · 회원 화면 확정 대진표만 열람 · 공개본 읽기 규칙 제거)'},
     {k:'secevpriv',t:'행사 예산 · 설명 · 담당자 운영진 전용 저장 적용 (회원 화면 열람 불가)'},
@@ -2645,6 +2648,7 @@ function courtForm(c={}){
   return `<div class="grid2"><label class="f">코트 이름<input class="in" name="name" required value="${h(c.name)}" placeholder="예: OO공원 테니스장"></label><label class="f">위치 (구·시)<input class="in" name="district" list="areas-c" value="${h(c.district)}" placeholder="예: 송파구"></label></div>
   <label class="f">주소 (선택 시 네이버 지도 연결)<input class="in" name="address" value="${h(c.address)}" placeholder="예: 서울 광진구 천호대로 731"></label>
   <label class="f">네이버 지도 링크 (선택 · 비우면 주소로 검색)<input class="in" type="url" name="map" value="${h(c.map)}" placeholder="https://naver.me/..."></label>
+  <label class="f">연락처 (선택 · 누르면 전화 연결)<input class="in" name="phone" type="tel" inputmode="tel" value="${h(fmtPhone(c.phone))}" placeholder="02-000-0000"></label>
   <div class="grid2"><label class="f">면 수<span class="sfx"><input class="in" inputmode="numeric" data-selall="1" name="courts" value="${h(courtsN(c.courts)||'')}" placeholder="4"><i>면</i></span></label>
   <div class="f"><span>요금</span><div class="feerow"><span class="sfx"><input class="in" inputmode="numeric" data-comma="1" name="feeN" value="${c.feeN?Number(c.feeN).toLocaleString('ko-KR'):''}" placeholder="5,000"><i>원</i></span>${optSel('feeUnit',c.feeUnit||'1시간',['1시간','2시간'],'1시간',{label:v=>v+'당',none:false})}</div>${c.fee&&!c.feeN?`<span class="small muted" style="font-weight:500">기존 입력: ${h(c.fee)}</span>`:''}</div></div>
   <div class="f"><span>바닥 (중복 선택 가능)</span><div class="iopick">${(()=>{const cur=surfList(c.surface);return [...new Set([...SURFACES,...cur])].map(s=>`<label><input type="checkbox" name="surf_${h(s)}"${cur.includes(s)?' checked':''}><span>${h(s)}</span></label>`).join('')})()}</div></div>
@@ -2659,7 +2663,7 @@ function courtForm(c={}){
   <div class="f">예약 대상 기간 / 메모${bigMemo('memo',c.memo,'예: 다음 달 이용분 오픈, 1인 월 2회 제한, 추첨제','코트 메모')}</div>
   <datalist id="areas-c">${SEOUL.concat(NEAR).map(a=>`<option value="${a}">`).join('')}</datalist>`;
 }
-const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:safeUrl(fd.map),courts:courtsN(fd.courts)?courtsN(fd.courts)+'면':'',surface:Object.keys(fd).filter(k=>k.startsWith('surf_')&&fd[k]===true).map(k=>k.slice(5)).join('·'),indoor:!!fd.indoor,outdoor:!!fd.outdoor,feeN:numOf(fd.feeN)||0,feeUnit:fd.feeUnit||'1시간',fee:numOf(fd.feeN)?'':(old.fee||''),url:safeUrl(fd.url),platform:old.platform||'etc',kind:fd.kind||'public',smash:!!fd.smash,genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:(numOf(fd.feeN)&&old.fee&&!fd.memo.includes(old.fee)?['요금 상세: '+old.fee,fd.memo.trim()].filter(Boolean).join('\n'):fd.memo.trim())});
+const courtFromFd=(fd,old={})=>({...old,phone:fmtPhone(fd.phone||''),name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:safeUrl(fd.map),courts:courtsN(fd.courts)?courtsN(fd.courts)+'면':'',surface:Object.keys(fd).filter(k=>k.startsWith('surf_')&&fd[k]===true).map(k=>k.slice(5)).join('·'),indoor:!!fd.indoor,outdoor:!!fd.outdoor,feeN:numOf(fd.feeN)||0,feeUnit:fd.feeUnit||'1시간',fee:numOf(fd.feeN)?'':(old.fee||''),url:safeUrl(fd.url),platform:old.platform||'etc',kind:fd.kind||'public',smash:!!fd.smash,genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:(numOf(fd.feeN)&&old.fee&&!fd.memo.includes(old.fee)?['요금 상세: '+old.fee,fd.memo.trim()].filter(Boolean).join('\n'):fd.memo.trim())});
 const courtUrlOk=fd=>{for(const k of ['url','map']){const v=(fd[k]||'').trim();if(v&&!safeUrl(v)){toast('링크는 https://로 시작');throw new Error('keep')}}};
 ACT['c-new']=()=>openModal('코트 추가',courtForm(),fd=>(courtUrlOk(fd),put('courts',uid(),{...courtFromFd(fd),createdAt:Date.now()})));
 ACT['c-edit']=t=>{const c=S.courts.find(x=>x.id===t.dataset.id);if(!c)return;openModal('코트 수정',courtForm(c),fd=>(courtUrlOk(fd),put('courts',c.id,courtFromFd(fd,c))),`<button type="button" class="btn danger" data-act="c-del" data-id="${c.id}">삭제</button>`)};
@@ -2701,7 +2705,7 @@ function viewCourts(){
       if(!d)return `<div class="open-box${rc}"><div class="l">${l}</div><div class="big">미정</div><div class="d">${h(ruleText(rule))}</div></div>`;
       const S2=rc?rS:gS;const live=S2&&S2.live&&S2.d===d;const dd=diffDays(ymd(d));
       return `<div class="open-box${rc}${live?' live':''}"><div class="l">${l}${live?' · 예약 중':''}</div><div class="big"><span class="dday">${ddayLabel(ymd(d))}</span><b>${fd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}</b></div><div class="d">${live&&rc&&S2.until?`주민 우선 예약 기간 · 일반 오픈 ${fd(S2.until)} ${pad(S2.until.getHours())}:${pad(S2.until.getMinutes())} 전까지`:live?'오늘 오픈 · 내일부터 다음 오픈 표시':h(ruleText(rule))}</div>${live?`<div class="d">${h(ruleText(rule))}</div>`:''}</div>`};
-    return `<article class="ccard" data-cid="${h(c.id)}"><div class="hd"><div><h3>${h(c.name)}</h3><div class="cbadges">${c.district?`<span class="cb cb-area">${h(c.district)}</span>`:''}${surfList(c.surface).map(s=>`<span class="cb ${({'인조잔디':'cb-grass','하드':'cb-hard','클레이':'cb-clay'})[s]||'cb-etc'}">${h(s)}</span>`).join('')}${c.indoor?'<span class="cb cb-io">실내</span>':''}${c.outdoor?'<span class="cb cb-io">실외</span>':''}${c.courts?`<span class="cb-n">${h(c.courts)}</span>`:''}${isSmash(c)?'<span class="cb cb-etc">스매시 앱 예약</span>':''}</div>${addrLink(c.address,c.name,c.map)}</div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
+    return `<article class="ccard" data-cid="${h(c.id)}"><div class="hd"><div><h3>${h(c.name)}</h3><div class="cbadges">${c.district?`<span class="cb cb-area">${h(c.district)}</span>`:''}${surfList(c.surface).map(s=>`<span class="cb ${({'인조잔디':'cb-grass','하드':'cb-hard','클레이':'cb-clay'})[s]||'cb-etc'}">${h(s)}</span>`).join('')}${c.indoor?'<span class="cb cb-io">실내</span>':''}${c.outdoor?'<span class="cb cb-io">실외</span>':''}${c.courts?`<span class="cb-n">${h(c.courts)}</span>`:''}${isSmash(c)?'<span class="cb cb-etc">스매시 앱 예약</span>':''}</div>${addrLink(c.address,c.name,c.map)}${c.phone?`<div class="c-tel">${telLink(c.phone)}</div>`:''}</div><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
     ${c.genRule&&c.genRule.type?`<div class="opens">${c.resident?ob('주민 우선 오픈',r,c.resRule):''}${ob('일반 오픈',g,c.genRule)}</div>`:''}
     <dl class="kv"><dt>요금</dt><dd>${feeText(c)?h(feeText(c)):'-'}</dd>${c.memo?`<dt>메모</dt><dd style="white-space:pre-wrap">${h(c.memo)}</dd>`:''}</dl>
     ${c.resident?`<div class="prio"><div class="l">우선 예약 가능 회원 · ${h(c.area||c.district)}${c.workers?' 거주·직장':' 거주'} 기준 ${pm.length}명</div><div class="chips">${pm.length?pm.map(({m,why})=>`<span class="chip ${why==='거주'?'court':''}">${h(m.name)}${why==='직장'?' (직장)':''}</span>`).join(''):'<span class="small muted">해당 지역 회원 없음</span>'}</div></div>`:''}
@@ -2746,7 +2750,7 @@ function rentalSection(){
   const reasonsUsed=[...new Set(S.regstat.map(x=>x.status==='삭제'?'미진행':x.reason))];
   return `<section class="panel rent">
     <div class="sec-h" style="margin-top:0"><div><h2>정기대관 코트 관리</h2><p class="small muted" style="margin:2px 0 0">${h(r.name)} · 매주 토 ${REG.start}–${REG.end} · ${h(r.courts||3)}면${fee?` · 회당 ${won(fee)}`:''}${r.from||r.to?` · 계약 ${r.from?fmtD(r.from):''}~${r.to?fmtD(r.to):''}`:''}</p>${addrLink(r.address,r.name,r.map)}</div>${RO?'':'<button class="btn" data-act="rent-edit">대관 정보 수정</button>'}</div>
-    ${r.memo||r.contact?`<p class="small muted" style="margin:0 0 12px;white-space:pre-wrap">${h([r.contact&&('담당·연락처: '+r.contact),r.memo].filter(Boolean).join('\n'))}</p>`:''}
+    ${r.memo||r.contact?`<p class="small muted" style="margin:0 0 12px;white-space:pre-wrap">${[r.contact&&('담당·연락처: '+telText(r.contact)),r.memo&&h(r.memo)].filter(Boolean).join('\n')}</p>`:''}
     <div class="rent-grid">
       <div class="rent-box"><div class="panel-h" style="margin-bottom:8px"><h3>${y}년 ${m}월 사용 현황</h3><div class="row"><button class="btn sm" data-act="rent-m" data-v="-1" aria-label="이전 달">‹</button><button class="btn sm" data-act="rent-m" data-v="0">이번 달</button><button class="btn sm" data-act="rent-m" data-v="1" aria-label="다음 달">›</button></div></div>
         <div class="rent-kpi"><div><b class="num">${mc.used}</b><span>사용</span></div><div><b class="num">${mc.cx}</b><span>취소</span></div><div><b class="num">${mc.del}</b><span>미진행</span></div><div><b class="num">${mc.plan}</b><span>예정</span></div><div><b class="num">${fee?won(mc.charge*fee):'–'}</b><span>청구 금액</span></div></div>

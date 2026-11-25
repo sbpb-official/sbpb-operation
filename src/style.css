@@ -1386,3 +1386,4 @@ body.mv #unreg,body.mv #oneoff,body.mv #merged,body.mv .unreg,body.mv .oneoff{di
 .cheer-b b{display:block;font-size:16px;line-height:1.5;word-break:keep-all}
 .cheer-b p{margin:4px 0 0;font-size:14px;line-height:1.5;word-break:keep-all}.cheer-b .cheer-t{font-weight:600;opacity:.8}
 .cheer-i{flex:0 0 auto;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,.6);font-size:22px;line-height:1}
+.c-tel{margin-top:4px;font-size:14px}.c-tel .tel{display:inline-flex;align-items:center;min-height:40px}
