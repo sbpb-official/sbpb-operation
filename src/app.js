@@ -115,6 +115,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-25',v:'1.13',date:'2026-11-25',items:[
+    {k:'phname',t:'행사 대진 참가 입력 예시 이름 변경 (일반 예시 이름 적용)'},
     {k:'mvcourtnote',t:'회원 화면 코트 추가 코트 예약 섹션 안내 메모 추가 (포스트잇 형태)'},
     {k:'bigo',t:'공 재고 공 구매 바로가기 버튼 텍스트 정렬 조정'},
   ]},
