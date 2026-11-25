@@ -114,6 +114,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-25',v:'1.13',date:'2026-11-25',items:[
+    {k:'cheer',t:'오늘의 축하 · 응원 팝업 추가 (생일 · 개인대회 출전 · 기기별 하루 1회 · 운영실 · 회원 화면)'},
     {k:'secrules',t:'보안 규칙 강화 (운영진 목록 운영진만 열람 · 회원 화면 확정 대진표만 열람 · 공개본 읽기 규칙 제거)'},
     {k:'secevpriv',t:'행사 예산 · 설명 · 담당자 운영진 전용 저장 적용 (회원 화면 열람 불가)'},
     {k:'secbday',t:'회원 화면 생일 표시 조정 (월 · 일만 표시 · 출생 연도 비공개)'},
@@ -360,6 +361,20 @@ function newsUnseen(){const raw=lsGet(NEWS_KEY,null);let n=0;const vs=[];
   const full=i<0?NEWS:NEWS.slice(0,i);full.forEach(x=>{n+=x.items.length;vs.push(x.v)});
   if(i>=0&&sn!==undefined&&NEWS[i].id===sid){const extra=NEWS[i].items.length-Number(sn);if(extra>0){n+=extra;vs.push(NEWS[i].v)}}
   return {n,vs}}
+/* 오늘의 축하 · 응원: 오늘 생일 · 개인대회 출전 회원 (기기마다 하루 한 번 · 업데이트 안내 뒤) · 회원 화면 공개 범위 데이터만 사용 */
+const CHEER_KEY='sbpb-cheer-day';
+function cheerData(){const t=today0();const ds=ymd(t);
+  const bd=S.members.filter(m=>m.birth&&ST(m)==='활동'&&bdayIn(m.birth,t.getFullYear())===ds).map(m=>m.name).filter(Boolean);
+  const tr=eventsOn(ds).filter(e=>e.type==='개인대회'&&e.status!=='취소'&&(e.entrants||[]).length);return {ds,bd,tr}}
+function maybeShowCheer(tries=0){const ready=loaded.has('events')&&S.members.length;if(!ready){if(tries<20)setTimeout(()=>maybeShowCheer(tries+1),1500);return}
+  const c=cheerData();if(!c.bd.length&&!c.tr.length||lsGet(CHEER_KEY,'')===c.ds)return;
+  if($('#modal-root').innerHTML){if(tries<200)setTimeout(()=>maybeShowCheer(tries+1),3000);return}
+  lsSet(CHEER_KEY,c.ds);
+  const bd=c.bd.length?`<div class="cheer-b"><span class="cheer-i" aria-hidden="true">🎂</span><div><b>오늘은 ${h(c.bd.join(', '))} 님 생일이에요!</b><p>다 같이 축하해 주세요 🎉</p></div></div>`:'';
+  const tr=c.tr.map(e=>{const day=e.endDate&&e.date!==c.ds?Math.round((parseYmd(c.ds)-parseYmd(e.date))/864e5)+1:0;const who=(e.entrants||[]).map(nameOf).join(', ');const pt=ptNames(e);
+    return `<div class="cheer-b"><span class="cheer-i" aria-hidden="true">🎾</span><div><b>${h(who)} 님이 오늘 ${day?`대회 ${day}일차 경기를 치러요!`:'대회에 출전해요!'}</b><p class="cheer-t">${h(e.title)}${e.division||e.category?` · ${h([e.division,e.category].filter(Boolean).join(' · '))}`:''}${pt.length?` · 파트너 ${h(pt.join(', '))}`:''}</p><p>모두 힘찬 응원 부탁드려요 💪</p></div></div>`}).join('');
+  openModal('오늘의 축하 · 응원',`<div class="cheer-pop">${bd}${tr}</div>`,()=>{},'','sm');
+  const f=$('#mform');if(f){f.querySelectorAll('.acts button:not([type=submit])').forEach(b=>b.hidden=true);const sb=f.querySelector('button[type=submit]');if(sb)sb.textContent='확인'}}
 function maybeShowNews(){if(RO||!NEWS.length)return;const {n,vs}=newsUnseen();
   if(!n){lsSet(NEWS_KEY,newsMark());return}
   if($('#modal-root').innerHTML){setTimeout(maybeShowNews,4000);return}
@@ -563,7 +578,7 @@ async function boot(){
   if(u){try{canWrite=await u.can('data.write')}catch(e){}try{myId=await u.id()}catch(e){}}
   c.use('downloads').then(x=>{dl=x});
   if(!d||canWrite===false){clearTimeout(timer);await enterRO();if(WEB&&window.SBPB_WEB.user())toast('운영진 권한 없는 계정. 운영진 계정에 이메일 등록 필요');return}
-  db=d;mode='db';setConn();setTimeout(maybeShowNews,1800);
+  db=d;mode='db';setConn();setTimeout(maybeShowNews,1800);setTimeout(maybeShowCheer,2600);
   c.use('artifact').then(x=>{art=x;setConn();render()});
   const fresh=new Set();let migRan=false;
   COLS.forEach(col=>{
@@ -742,6 +757,7 @@ async function bootMember(){
   const m=window.SBPB_WEB.member;COLS.filter(c=>!MV_COLS.includes(c)).forEach(c=>{S[c]=S[c]||[];loaded.add(c)});
   const fail=err=>{if(err&&(err.code==='permission-denied'||err.code==='unauthenticated')){if(!m.user()){showGate('member','회원 비밀번호 변경됨. 새 비밀번호 입력 필요');return}if(!mvDenied){mvDenied=true;render()}}};
   MV_COLS.forEach(col=>m.db.collection(col).onSnapshot(snap=>{S[col]=snap.docs.map(d=>({id:d.id,...d.data()}));/* 회원 화면: 확정된 대진표만 */if(col==='brackets')S.brackets=S.brackets.filter(b=>b.status==='확정');loaded.add(col);render()},err=>{loaded.add(col);fail(err)}));
+  setTimeout(maybeShowCheer,2600);
   m.roster(r=>{S.members=((r&&r.members)||[]).map(x=>({...x,birth:x.bd?'2000-'+x.bd:'',noYear:true}));S.guests=(r&&r.guests)||[];render()},fail);
   setConn();render();
 }
