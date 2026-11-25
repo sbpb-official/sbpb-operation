@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="html2canvas-1.4.1.min.js"></script>
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <style id="css">
 /* Layout: quiet neutral header with logo top-left; working surfaces are soft greys (no pure white/black); club deep green and ball yellow-green only as point colors. */
@@ -1412,7 +1412,7 @@ body.mv #unreg,body.mv #oneoff,body.mv #merged,body.mv .unreg,body.mv .oneoff{di
 // plus window.SBPB_WEB for login, operator accounts and the encrypted public snapshot.
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updatePassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, deleteDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, deleteDoc, getDoc, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // Firebase web config: public identifiers, safe to ship in the page (access is enforced by firestore.rules)
 const firebaseConfig = {
@@ -1541,7 +1541,8 @@ window.SBPB_WEB = {
     user: () => mAuth.currentUser,
     async login(pw) { try { await signInWithEmailAndPassword(mAuth, MEMBER, pw); return ''; } catch (e) { return authErr(e); } },
     logout: () => signOut(mAuth),
-    db: { collection: col => ({ onSnapshot: (next, err) => onSnapshot(collection(mFs, col), { includeMetadataChanges: true }, s => next({ docs: s.docs, metadata: s.metadata }), err) }) },
+    // security: members may read only confirmed brackets (firestore.rules checks status), so the query must ask for exactly those
+    db: { collection: col => ({ onSnapshot: (next, err) => onSnapshot(col === 'brackets' ? query(collection(mFs, col), where('status', '==', '확정')) : collection(mFs, col), { includeMetadataChanges: true }, s => next({ docs: s.docs, metadata: s.metadata }), err) }) },
     roster: (next, err) => onSnapshot(doc(mFs, 'pub', 'roster'), s => next(s.exists() ? s.data() : null), err),
     // operators only: current member password is kept in an operator-only document
     async info() { const s = await getDoc(doc(fs, 'secure', 'member')); return s.exists() ? s.data() : null; },
@@ -1563,12 +1564,11 @@ window.SBPB_WEB = {
   },
   saveRoster: data => setDoc(doc(fs, 'pub', 'roster'), data),
   getAdmins: adminList,
-  saveAdmins: emails => setDoc(doc(fs, 'config', 'admins'), { emails, at: Date.now() }),
-  savePub: pub => setDoc(doc(fs, 'public', 'snapshot'), pub)
+  saveAdmins: emails => setDoc(doc(fs, 'config', 'admins'), { emails, at: Date.now() })
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=874ec2bf79';
+const CUR_APP = 'app.js?v=36cdcffc74';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1596,7 +1596,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=874ec2bf79';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=36cdcffc74';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();

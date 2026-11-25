@@ -3,3 +3,11 @@
 dbdump/
 dist/
 __pycache__/
+# secrets: never commit
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*service-account*.json
+*firebase-adminsdk*.json

@@ -26,23 +26,23 @@ service cloud.firestore {
     function isMember() {
       return request.auth != null && request.auth.token.email == 'member@sbpb-official.github.io';
     }
-    // 회원 화면에서 읽을 수 있는 데이터 (회원 정보 원본 · 메모 · 회비 · 정산 · 출석 · 게스트 · secure 제외)
+    // 회원 화면에서 읽을 수 있는 데이터 (회원 정보 원본 · 메모 · 회비 · 정산 · 출석 · 게스트 · 행사 비공개 항목(evpriv) · secure 제외)
+    // brackets는 아래 별도 규칙: 확정된 대진표만
     function memberReadable(col) {
-      return col in ['courts', 'events', 'regstat', 'brackets', 'rentals', 'presets', 'names', 'pub'];
+      return col in ['courts', 'events', 'regstat', 'rentals', 'presets', 'names', 'pub'];
     }
 
-    // 비밀번호로 암호화된 공개본: 누구나 읽기, 운영진만 쓰기
-    match /public/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    // 운영진 목록: 로그인한 사람만 읽기(권한 확인용), 운영진만 수정
+    // 운영진 목록: 운영진만 읽기 · 수정 (운영진 아닌 로그인 계정에는 이메일 목록 비공개)
     match /config/{docId} {
-      allow read: if signedIn();
+      allow read, write: if isAdmin();
+    }
+    // 대진표: 회원은 확정본만 읽기 (초안 비공개)
+    match /brackets/{docId} {
+      allow read: if isAdmin() || (isMember() && resource.data.status == '확정');
       allow write: if isAdmin();
     }
     // 그 밖의 모든 데이터(회원·대진표·회비·정산 등): 운영진만 쓰기 · 회원은 공개 범위만 읽기
-    // pub/roster: 이름 · 성별 · 생년월일 · 상태만 담은 공개 명단 (운영진 앱이 자동 갱신)
+    // pub/roster: 이름 · 성별 · 생일(월 · 일) · 상태만 담은 공개 명단 (운영진 앱이 자동 갱신)
     // secure/member: 회원 비밀번호 (운영진만)
     match /{col}/{docId} {
       allow read: if isAdmin() || (isMember() && memberReadable(col));

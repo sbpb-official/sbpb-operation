@@ -1,5 +1,5 @@
 /* ---------- page shell + public snapshot block ---------- */
-const PAGE_HEAD="<title>SBPB 운영실<\/title>\n<meta name=\"claude:viewport-fit-sides\" content=\"cover\">\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap\">\n<script src=\"https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js\"><\/script>\n";
+const PAGE_HEAD="<title>SBPB 운영실<\/title>\n<meta name=\"claude:viewport-fit-sides\" content=\"cover\">\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap\">\n<script src=\"html2canvas-1.4.1.min.js\"><\/script>\n";
 const SHELL="\n<header class=\"top\">\n  <div class=\"top-in\">\n    <a class=\"brand\" href=\"#home\" aria-label=\"SBPB 운영실 대시보드\"><img src=\"logo-t-dark.png\" alt=\"SBPB Tennis Club\" width=\"87\" height=\"58\"><div class=\"sub\"><b>운영실<\/b>사방팔방<\/div><\/a>\n    <nav class=\"tabs\" id=\"tabs\">\n      <a href=\"#home\">대시보드<\/a>\n      <a href=\"#members\">회원<\/a>\n      <a href=\"#draw\">대진표<\/a>\n      <a href=\"#events\">이벤트<\/a>\n      <a href=\"#courts\">코트<\/a>\n      <a href=\"#money\">정산<\/a>\n      <a href=\"#settings\">설정<\/a>\n    <\/nav>\n    <div class=\"conn\" id=\"conn\"><i><\/i><span>연결 중<\/span><\/div>\n    <button type=\"button\" class=\"mode-btn\" id=\"mode-btn\" data-act=\"mode-switch\" hidden>운영실<\/button>\n  <\/div>\n<\/header>\n<main id=\"view\"><\/main>\n<div id=\"gate\" class=\"gate\" hidden><form class=\"gate-card\" id=\"gate-form\"><img src=\"logo-g-xl.png\" alt=\"SBPB Tennis Club\" width=\"260\" height=\"173\"><div><span class=\"gate-badge\" id=\"gate-badge\" hidden>운영진 전용<\/span><h2>사방팔방 운영실<\/h2><p>운영진 비밀번호 입력<\/p><\/div><div class=\"pwrow\"><input class=\"in\" type=\"password\" id=\"gate-pw\" autocomplete=\"current-password\" placeholder=\"비밀번호\" aria-label=\"비밀번호\"><button type=\"button\" class=\"btn\" id=\"gate-eye\" aria-label=\"비밀번호 보기\">보기<\/button><\/div><p class=\"gate-hint\" id=\"gate-hint\">2시간 미사용 시 재입력 필요<\/p><button class=\"btn pri\" type=\"submit\" style=\"padding:10px\">입장하기<\/button><div class=\"err\" id=\"gate-err\" role=\"alert\"><\/div><\/form><button type=\"button\" class=\"btn ghost gate-alt\" id=\"gate-alt\">회원 화면으로<\/button><\/div>\n<div id=\"modal-root\"><\/div>\n<button type=\"button\" class=\"top-fab\" id=\"top-fab\" data-act=\"to-top\" aria-label=\"맨 위로\" tabindex=\"-1\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6 15l6-6 6 6\"/><\/svg><\/button>\n<button type=\"button\" class=\"theme-fab\" id=\"theme-fab\" data-act=\"theme\" aria-label=\"화면 모드 전환\"><svg class=\"i-sun\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4.2\"/><path d=\"M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6\"/><\/svg><svg class=\"i-moon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z\"/><\/svg><\/button>\n\n";
 const SKEL='<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>';
 document.body.insertAdjacentHTML('afterbegin',SHELL);
@@ -16,7 +16,6 @@ function showFatal(msg){try{const v=document.getElementById('view');const box=`<
 window.addEventListener('error',e=>{if(!e.filename||!/\/app\.js/.test(e.filename))return;showFatal((e.message||'오류')+' @app.js:'+e.lineno)});   // standalone web app (Firebase) — window.SBPB_WEB is set by index.html
 let PUB={};try{PUB=window.SBPB_PUB||JSON.parse(document.getElementById('sbpb-pub').textContent||'{}')}catch(e){PUB={}}
 // publish the encrypted public snapshot: web → Firestore doc, artifact → republish the page
-async function savePub(pub){if(WEB){await window.SBPB_WEB.savePub(pub);PUB=pub;setConn();render();return}return art.publish(buildPage(pub))}
 function buildPage(pub){
   return SKEL+'\n'+PAGE_HEAD+'<style id="css">'+document.getElementById('css').textContent+'</style>\n<script type="application/json" id="sbpb-pub">'+JSON.stringify(pub).replace(/</g,'\\u003c')+'<\/script>\n<script id="app">'+document.getElementById('app').textContent+'<\/script>\n</body></html>';
 }
@@ -115,6 +114,12 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-25',v:'1.13',date:'2026-11-25',items:[
+    {k:'secrules',t:'보안 규칙 강화 (운영진 목록 운영진만 열람 · 회원 화면 확정 대진표만 열람 · 공개본 읽기 규칙 제거)'},
+    {k:'secevpriv',t:'행사 예산 · 설명 · 담당자 운영진 전용 저장 적용 (회원 화면 열람 불가)'},
+    {k:'secbday',t:'회원 화면 생일 표시 조정 (월 · 일만 표시 · 출생 연도 비공개)'},
+    {k:'securl',t:'코트 예약 · 지도 · 공 구매 링크 검증 적용 (http · https 주소만 허용)'},
+    {k:'secpub',t:'예전 공개본 갱신 기능 · 비밀번호 해시 제거'},
+    {k:'seclib',t:'이미지 저장 라이브러리 사이트 내부 제공 적용 (외부 CDN 미사용)'},
     {k:'phname',t:'행사 대진 참가 입력 예시 이름 변경 (일반 예시 이름 적용)'},
     {k:'mvcourtnote',t:'회원 화면 코트 추가 코트 예약 섹션 안내 메모 추가 (포스트잇 형태)'},
     {k:'bigo',t:'공 재고 공 구매 바로가기 버튼 텍스트 정렬 조정'},
@@ -500,8 +505,11 @@ ACT['area-pick']=t=>{const wrap=t.closest('.areaf');const btn=wrap.querySelector
   btn.hidden=false;cust.hidden=true;inp.value=v;btn.classList.toggle('ph',!v);btn.innerHTML=h(v?areaLabel(v):wrap.dataset.ph)+'<span class="lv-caret" aria-hidden="true">▾</span>';
   wrap.querySelectorAll('.lv-pop [data-act="area-pick"]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.v===v)));btn.focus()};
 /* ---------- store ---------- */
-const COLS=['members','events','notes','courts','brackets','guests','regstat','rentals','dues','ledger','names','attend','presets','balls'];
-const S={members:[],events:[],notes:[],courts:[],brackets:[],guests:[],regstat:[],rentals:[],dues:[],ledger:[],names:[],attend:[],presets:[],balls:[]};
+const COLS=['members','events','notes','courts','brackets','guests','regstat','rentals','dues','ledger','names','attend','presets','balls','evpriv'];
+/* 보안: 행사 예산 · 설명 · 담당자는 운영진 전용 evpriv에 따로 저장 (events는 회원도 읽음) · 화면에서는 합쳐서 사용 */
+const EV_PRIV=['budget','desc','owner'];
+const evMerge=()=>{const pv={};(S.evpriv||[]).forEach(x=>pv[x.id]=x);S.events=(S.events||[]).map(e=>{const x=pv[e.id];if(!x)return e;/* 비공개 문서가 없으면 행사 문서 값 그대로 (옮기기 전 데이터 보존) */const o={...e};EV_PRIV.forEach(k=>{if(x[k]!=null)o[k]=x[k];else delete o[k]});return o})};
+const S={members:[],events:[],notes:[],courts:[],brackets:[],guests:[],regstat:[],rentals:[],dues:[],ledger:[],names:[],attend:[],presets:[],balls:[],evpriv:[]};
 const CANCEL_REASONS=['우천 취소','코트 측 취소','행사 대체','기타'];
 const regStat=ds=>S.regstat.find(x=>x.id===ds);
 const COURT_CX='코트 측 취소';
@@ -525,12 +533,14 @@ function errMsg(e){const c=e&&e.code;if(WEB){const why=String(c||e&&e.message||'
 async function put(col,id,data){
   if(RO){toast('보기 전용 화면에서는 수정 불가');throw new Error('read-only')}
   const body={...data,updatedAt:Date.now()};delete body.id;
+  if(db&&col==='events'){const pv={};EV_PRIV.forEach(k=>{if(body[k]!=null&&body[k]!==''){pv[k]=body[k]}delete body[k]});
+    try{await db.collection('evpriv').doc(id).set({...pv,updatedAt:body.updatedAt});await db.collection(col).doc(id).set(body)}catch(e){toast(errMsg(e));throw e}return}
   if(db){try{await db.collection(col).doc(id).set(body)}catch(e){toast(errMsg(e));throw e}}
   else{const i=S[col].findIndex(x=>x.id===id);const v={id,...body};if(i>=0)S[col][i]=v;else S[col].push(v);saveLocal();render()}
 }
 async function del(col,id){
   if(RO){toast('보기 전용 화면에서는 수정 불가');throw new Error('read-only')}
-  if(db){try{await db.collection(col).doc(id).delete()}catch(e){toast(errMsg(e));throw e}}
+  if(db){try{await db.collection(col).doc(id).delete();if(col==='events')await db.collection('evpriv').doc(id).delete()}catch(e){toast(errMsg(e));throw e}}
   else{S[col]=S[col].filter(x=>x.id!==id);saveLocal();render()}
 }
 const pendingCount=()=>{const at=(PUB.snap&&PUB.snap.at)||0;return COLS.reduce((n,c)=>n+S[c].filter(x=>(x.updatedAt||0)>at).length,0)};
@@ -558,7 +568,7 @@ async function boot(){
   const fresh=new Set();let migRan=false;
   COLS.forEach(col=>{
     db.collection(col).onSnapshot(snap=>{
-      S[col]=snap.docs.map(d=>({id:d.id,...d.data()}));
+      S[col]=snap.docs.map(d=>({id:d.id,...d.data()}));if(col==='events'||col==='evpriv')evMerge();
       loaded.add(col);
       if(!snap.metadata.fromCache)fresh.add(col);if(fresh.size===COLS.length&&!migRan){migRan=true;clearTimeout(timer);if(slow){slow=false}runMigrations()}
       if(col==='notes')resolveNames(S.notes.map(n=>n.authorId));
@@ -588,6 +598,7 @@ async function runMigrations(){
   const F13='mig-court-myeonmok';
   const F14='mig-court-imun';
   const F15='mig-court-fee-num';
+  const F21='mig-ev-private';                        // 2026-11-25: 보안 · 행사 예산 · 설명 · 담당자를 운영진 전용 evpriv로 이동
   const F20='mig-ball-info';                         // 2026-11-24: 공 재고 참고 메모 · 공 구매 링크 (인수인계 내용)
   const F19='mig-ev-reg-time';                       // 2026-11-23: 시립대 정기모임 행사 시간 09:00–12:00 일괄 입력 (시간 비어 있을 때만)
   const F18='mig-court-jamsil-info';                  // 2026-11-19: 잠실유수지 테니스장 송파구체육회 이용안내 반영 (요금 · 주민 우선 접수 · 운영시간)
@@ -595,7 +606,7 @@ async function runMigrations(){
   const F16='mig-staff-years';                       // 2026-11-16: 지금 운영진 3명은 2027년 임기로 기록 (2026년 운영진은 직접 입력)                     // 2026-11-16: 요금을 숫자+단위로 (단위가 분명한 코트만) · 상세 요금은 메모로 · 이문 요금표 반영                        // 2026-11-16: 이문체육문화센터 테니스장 (동대문구) 추가                    // 2026-11-15: 면목구립테니스장 추가 (공단 이용안내 기준)                    // 2026-11-15: 중랑구립테니스장 추가 (예약 링크·순위는 용마와 같은 공단 규정)                 // 2026-11-15: 용마 테니스장 공단 이용안내 반영 (요금·예약 순위·예약 사이트)                      // 2026-11-15: 용마폭포공원 테니스장 (중랑구) 추가                     // 2026-11-14: TS는 네이버 링크 예약 (스매시 아님) · 메모의 '○○에서 예약' 안내 문구 제거                       // 2026-11-14: 계남테니스장 (구로구) 추가                      // 2026-11-14: TS 예약·지도 링크 보정(이름이 다른 TS 코트 포함), 요금·메모의 '고비용'·'엠무브 사이트' 안내 문구 제거                 // 2026-11-14: 보라매 도로명주소 (비어 있을 때만)                // 2026-11-14: 보라매 예약 오픈 규칙(14일 전 09시), 엠무브 주소·지도 링크, TS 지도 링크                         // 2026-11-14: 주소 칸 추가에 맞춰 기존 코트·정기대관 주소 채움 (비어 있을 때만)
   const TS_MEMO='예약 링크는 네이버 지도 · 9호선 둔촌오륜역 1번 출구 도보 약 860m\n대관료 (개장 당시): 평일 야간·주말 주간 35,000원 · 주말 야간 40,000원\n※ 현재 요금·예약 오픈 방식은 네이버 지도 업체 정보로 확인 필요';                           // 2026-11-14: TS SPORT TENNIS CLUB (하남) 코트 정보 추가
   const has=id=>S.dues.find(d=>d.id===id);
-  if([F,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12,F13,F14,F15,F16,F17,F18,F19,F20].every(has))return /* 새 플래그는 이 목록에도 추가 */;
+  if([F,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12,F13,F14,F15,F16,F17,F18,F19,F20,F21].every(has))return /* 새 플래그는 이 목록에도 추가 */;
   migBusy=true;
   try{if(!has(F)){const targets=S.members.filter(m=>isCur(m)&&!m.sample);
     for(const m of targets)if(m.joined!=='2026-01-01')await put('members',m.id,{...m,joined:'2026-01-01'});
@@ -713,7 +724,9 @@ async function runMigrations(){
   if(!has(F19)){let n=0;for(const e of S.events){if(e.type!=='정기모임'||!/시립대/.test(e.place||'')||e.startTime)continue;const {id,...rest}=e;await put('events',id,{...rest,startTime:'09:00',endTime:'12:00'});n++}
     await put('dues',F19,{done:true,count:n,at:Date.now()});if(n)toast(`시립대 정기모임 ${n}건 시간 09:00–12:00 입력 완료`)}
   if(!has(F20)){if(!(S.balls||[]).some(b=>b.id==='info'))await put('balls','info',{kind:'info',memo:BALL_MEMO,url:'https://link.coupang.com/a/iW0oeGV8sS',at:Date.now()});
-    await put('dues',F20,{done:true,at:Date.now()})}}
+    await put('dues',F20,{done:true,at:Date.now()})}
+  if(!has(F21)){let n=0;for(const e of S.events){if(!EV_PRIV.some(k=>e[k]!=null&&e[k]!==''))continue;const {id,...rest}=e;await put('events',id,rest);n++}
+    await put('dues',F21,{done:true,count:n,at:Date.now()})}}
   catch(e){}
   migBusy=false;
 }
@@ -721,7 +734,7 @@ async function getSnapKey(){if(snapKey)return snapKey;const s=lsGet('sbpb-k',nul
 /* 회원 화면용 공개 명단: 이름 · 성별 · 생년월일 · 상태만 (전화번호 · 거주지 · 직장 · 메모 제외) */
 let rosterT=null,rosterLast='';
 function syncRoster(){if(!WEB||RO||!db||!window.SBPB_WEB.saveRoster)return;clearTimeout(rosterT);rosterT=setTimeout(()=>{
-  const r={members:S.members.filter(m=>!m.sample).map(m=>({id:m.id,name:m.name||'',gender:m.gender||'',birth:m.birth||'',status:ST(m)})),guests:S.guests.map(g=>({id:g.id,name:g.name||'',gender:g.gender||''}))};
+  const r={members:S.members.filter(m=>!m.sample).map(m=>({id:m.id,name:m.name||'',gender:m.gender||'',bd:/^\d{4}-\d{2}-\d{2}$/.test(m.birth||'')?m.birth.slice(5):'',status:ST(m)}))/* 보안: 회원 공개 명단은 생일 월 · 일만 (출생 연도 제외) */,guests:S.guests.map(g=>({id:g.id,name:g.name||'',gender:g.gender||''}))};
   const j=JSON.stringify(r);if(j===rosterLast)return;rosterLast=j;window.SBPB_WEB.saveRoster({...r,at:Date.now()}).catch(()=>{rosterLast=''})},3000)}
 /* 회원 화면 시작: 회원 계정으로 공개 범위 데이터만 실시간 읽기 */
 async function bootMember(){
@@ -729,7 +742,7 @@ async function bootMember(){
   const m=window.SBPB_WEB.member;COLS.filter(c=>!MV_COLS.includes(c)).forEach(c=>{S[c]=S[c]||[];loaded.add(c)});
   const fail=err=>{if(err&&(err.code==='permission-denied'||err.code==='unauthenticated')){if(!m.user()){showGate('member','회원 비밀번호 변경됨. 새 비밀번호 입력 필요');return}if(!mvDenied){mvDenied=true;render()}}};
   MV_COLS.forEach(col=>m.db.collection(col).onSnapshot(snap=>{S[col]=snap.docs.map(d=>({id:d.id,...d.data()}));/* 회원 화면: 확정된 대진표만 */if(col==='brackets')S.brackets=S.brackets.filter(b=>b.status==='확정');loaded.add(col);render()},err=>{loaded.add(col);fail(err)}));
-  m.roster(r=>{S.members=(r&&r.members)||[];S.guests=(r&&r.guests)||[];render()},fail);
+  m.roster(r=>{S.members=((r&&r.members)||[]).map(x=>({...x,birth:x.bd?'2000-'+x.bd:'',noYear:true}));S.guests=(r&&r.guests)||[];render()},fail);
   setConn();render();
 }
 async function enterRO(){
@@ -852,7 +865,7 @@ document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('#daypop
 /* ---------- actions ---------- */
 const WRITE_ACTS=new Set(['admin-open','data-import','bank-cfg','rent-pay','cp-open','cp-pick','due-set','due-cfg','led-new','led-edit','led-del','led-row','reg-makeup','mk-clear','reg-mk-at','m-to-guest','g-to-member','renew-open','rn-yes','rn-undo','rn-guest','rn-out','rn-back','reg-cancel','reg-del','reg-restore','ev-cancel','ev-restore','rent-edit','m-new','m-edit','m-del','mt-edit','mt-del','m-sample','m-clear-sample','ev-new','ev-edit','ev-del','note-add','note-del','note-edit','cheer','c-new','c-edit','c-del','gen','br-save','br-confirm','br-unconfirm','br-load','bv-del','guest-new','guest-edit','guest-del','slot','reg-defaults','reg-draw','pick-all','pick-none','court-n','pub-open']);
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('dp-it')&&e.target.dataset.act){e.preventDefault();e.target.click()}});
-document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.id==='conn'&&e.target.dataset.act){e.preventDefault();ACT['pub-open']()}});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.id==='conn'&&e.target.dataset.act){e.preventDefault();(ACT[e.target.dataset.act]||(()=>{}))(e.target)}});
 document.addEventListener('click',e=>{
   const t=e.target.closest('[data-act]');if(!t)return;
   if(t.dataset.act==='ov-close'&&e.target!==t)return;
@@ -924,7 +937,7 @@ function viewHome(){
   if(calSel){
     const evs=eventsOn(calSel);const ops2=openings(400).filter(o=>ymd(o.date)===calSel);
     const regLi=parseYmd(calSel).getDay()===REG.weekday?`<div class="li t-정기모임"><span class="dot tdot"></span><div class="grow"><div class="ttl">정기모임</div><div class="sub">${REG.start}–${REG.end} · ${REG.place}</div></div>${diffDays(calSel)>=0?`<button class="btn sm" data-act="reg-draw" data-d="${calSel}">대진표 만들기</button>`:''}</div>`:'';
-    const bdLi=(bdMap[calSel]||[]).map(x=>`<div class="li${MV?'':' click'}"${MV?'':` data-act="m-edit" data-id="${x.id}"`}><span class="dot" style="background:var(--t-bd)"></span><div class="grow"><div class="ttl">${h(x.name)} 생일</div><div class="sub">${parseYmd(calSel).getFullYear()-parseYmd(x.birth).getFullYear()}번째 생일 · ${x.birth.slice(0,4)}년생</div></div></div>`).join('');
+    const bdLi=(bdMap[calSel]||[]).map(x=>`<div class="li${MV?'':' click'}"${MV?'':` data-act="m-edit" data-id="${x.id}"`}><span class="dot" style="background:var(--t-bd)"></span><div class="grow"><div class="ttl">${h(x.name)} 생일</div><div class="sub">${x.noYear?`${+x.birth.slice(5,7)}월 ${+x.birth.slice(8,10)}일`:`${parseYmd(calSel).getFullYear()-parseYmd(x.birth).getFullYear()}번째 생일 · ${x.birth.slice(0,4)}년생`}</div></div></div>`).join('');
     dayInfo=`<div class="dayinfo"><div class="row" style="justify-content:space-between"><h3>${fmtFull(calSel)}</h3><button class="btn sm" data-act="ev-new" data-d="${calSel}">이 날 행사 추가</button></div>
     <div class="list">${regLi}${S.brackets.filter(b=>b.cfg&&b.cfg.date===calSel).map(b=>`<div class="li click" data-act="bv-open" data-id="${b.id}"><span class="dot" style="background:var(--ball)"></span><div class="grow"><div class="ttl">대진표 · ${h(b.cfg.title)}</div><div class="sub">${h(b.status)} · ${Object.keys(b.players||{}).length}명 · 눌러서 보기</div></div></div>`).join('')}${bdLi}${evs.map(ev=>`<div class="li click t-${h(ev.type)}" data-act="ev-open" data-id="${ev.id}"><span class="dot tdot"></span><div class="grow"><div class="ttl">${h(ev.title)}</div><div class="sub">${h(ev.type)} · ${h(ev.place||'장소 미정')}</div></div></div>`).join('')}
     ${ops2.map(o=>`<div class="li"><span class="dot" style="background:var(--ball)"></span><div class="grow"><div class="ttl">${h(o.court.name)} ${o.kind==='res'?'주민 우선':'일반'} 예약 오픈</div><div class="sub">${pad(o.date.getHours())}:${pad(o.date.getMinutes())}</div></div></div>`).join('')}
@@ -971,7 +984,7 @@ function viewHome(){
 }
 /* 회원 화면 대시보드: 회원 개요 대신 다가오는 생일 (이름 · 생년월일) */
 function mvBdays(){const ub=activeMembers().filter(m=>m.birth).map(m=>({m,d:nextBday(m.birth)})).filter(x=>diffDays(x.d)<=30).sort((a,b)=>a.d.localeCompare(b.d));
-  return `<section class="panel" id="dash-bd"><div class="panel-h"><h2>다가오는 생일</h2><span class="small muted">30일 이내</span></div><div class="list">${ub.length?ub.map(x=>`<div class="li"><span class="dot" style="background:var(--t-bd)"></span><div class="grow"><div class="ttl">${h(x.m.name)}</div><div class="sub">${x.m.birth.replace(/-/g,'.')}</div></div><span class="small muted">${ddayLabel(x.d)}</span></div>`).join(''):'<div class="li muted">30일 이내 생일 없음</div>'}</div></section>`}
+  return `<section class="panel" id="dash-bd"><div class="panel-h"><h2>다가오는 생일</h2><span class="small muted">30일 이내</span></div><div class="list">${ub.length?ub.map(x=>`<div class="li"><span class="dot" style="background:var(--t-bd)"></span><div class="grow"><div class="ttl">${h(x.m.name)}</div><div class="sub">${x.m.noYear?`${+x.m.birth.slice(5,7)}월 ${+x.m.birth.slice(8,10)}일`:x.m.birth.replace(/-/g,'.')}</div></div><span class="small muted">${ddayLabel(x.d)}</span></div>`).join(''):'<div class="li muted">30일 이내 생일 없음</div>'}</div></section>`}
 /* 기능 안내 바: [대상] 눌러 [동작] 형식 · 모든 화면 공통 */
 const guide=(t,extra='')=>`<div class="guide"><span class="g-i" aria-hidden="true">i</span><span class="g-t">${t}</span>${extra}</div>`;
 let calMon=null;/* [연, 월(0~11)] · 기본 이번 달 */
@@ -1031,7 +1044,7 @@ function dayItems(ds){
   {const mk=mkOn(ds);if(mk)out.push({c:'var(--t-reg)',t:'정기모임 (대체일)',s:`${mk.mkStart||REG.start}–${mk.mkEnd||REG.end} · ${fmtD(mk.id)} 코트 측 취소분`,act:!RO&&future?'reg-draw':null,d:ds,btns:RO?[]:[['reg-mk-at','변경']]})}
   S.brackets.filter(b=>b.cfg&&b.cfg.date===ds).forEach(b=>out.push({c:'var(--court)',t:`대진표 · ${b.status}`,s:`${Object.keys(b.players||{}).length}명 참석`,act:'bv-open',id:b.id}));
   eventsOn(ds).forEach(ev=>{const cx=ev.status==='취소';out.push({c:cx?'var(--muted)':'var(--tc)',cls:'t-'+ev.type,dim:cx,t:ev.title,s:cx?`${ev.cancelReason||'취소'}${ev.cancelNote?' · '+ev.cancelNote:''}`:(ev.type==='개인대회'?'개인 대회':ev.type)+(evTime(ev)?' · '+evTime(ev):''),act:'ev-open',id:ev.id,btns:RO?[]:cx?[['ev-restore','복구']]:[['ev-cancel','취소'],['dp-del','삭제','del']]})});
-  S.members.filter(m=>m.birth&&ST(m)==='활동'&&bdayIn(m.birth,dt.getFullYear())===ds).forEach(m=>out.push({c:'var(--t-bd)',t:`${m.name} 생일`,s:`만 ${dt.getFullYear()-parseYmd(m.birth).getFullYear()}세`,act:RO?null:'m-edit',id:m.id}));
+  S.members.filter(m=>m.birth&&ST(m)==='활동'&&bdayIn(m.birth,dt.getFullYear())===ds).forEach(m=>out.push({c:'var(--t-bd)',t:`${m.name} 생일`,s:m.noYear?`${+m.birth.slice(5,7)}월 ${+m.birth.slice(8,10)}일`:`만 ${dt.getFullYear()-parseYmd(m.birth).getFullYear()}세`,act:RO?null:'m-edit',id:m.id}));
   openings(400).filter(o=>ymd(o.date)===ds).forEach(o=>out.push({c:'var(--ball)',t:`${o.court.name} 예약 오픈`,s:`${pad(o.date.getHours())}:${pad(o.date.getMinutes())} · ${o.kind==='res'?'주민 우선':'일반'}`,act:'court-go',id:o.court.id}));
   return out;
 }
@@ -2630,9 +2643,10 @@ function courtForm(c={}){
   <div class="f">예약 대상 기간 / 메모${bigMemo('memo',c.memo,'예: 다음 달 이용분 오픈, 1인 월 2회 제한, 추첨제','코트 메모')}</div>
   <datalist id="areas-c">${SEOUL.concat(NEAR).map(a=>`<option value="${a}">`).join('')}</datalist>`;
 }
-const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:(fd.map||'').trim(),courts:courtsN(fd.courts)?courtsN(fd.courts)+'면':'',surface:Object.keys(fd).filter(k=>k.startsWith('surf_')&&fd[k]===true).map(k=>k.slice(5)).join('·'),indoor:!!fd.indoor,outdoor:!!fd.outdoor,feeN:numOf(fd.feeN)||0,feeUnit:fd.feeUnit||'1시간',fee:numOf(fd.feeN)?'':(old.fee||''),url:fd.url.trim(),platform:old.platform||'etc',kind:fd.kind||'public',smash:!!fd.smash,genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:(numOf(fd.feeN)&&old.fee&&!fd.memo.includes(old.fee)?['요금 상세: '+old.fee,fd.memo.trim()].filter(Boolean).join('\n'):fd.memo.trim())});
-ACT['c-new']=()=>openModal('코트 추가',courtForm(),fd=>put('courts',uid(),{...courtFromFd(fd),createdAt:Date.now()}));
-ACT['c-edit']=t=>{const c=S.courts.find(x=>x.id===t.dataset.id);if(!c)return;openModal('코트 수정',courtForm(c),fd=>put('courts',c.id,courtFromFd(fd,c)),`<button type="button" class="btn danger" data-act="c-del" data-id="${c.id}">삭제</button>`)};
+const courtFromFd=(fd,old={})=>({...old,name:fd.name.trim(),district:fd.district.trim(),address:(fd.address||'').trim(),map:safeUrl(fd.map),courts:courtsN(fd.courts)?courtsN(fd.courts)+'면':'',surface:Object.keys(fd).filter(k=>k.startsWith('surf_')&&fd[k]===true).map(k=>k.slice(5)).join('·'),indoor:!!fd.indoor,outdoor:!!fd.outdoor,feeN:numOf(fd.feeN)||0,feeUnit:fd.feeUnit||'1시간',fee:numOf(fd.feeN)?'':(old.fee||''),url:safeUrl(fd.url),platform:old.platform||'etc',kind:fd.kind||'public',smash:!!fd.smash,genRule:ruleFrom(fd,'g_'),resident:!!fd.resident,resRule:ruleFrom(fd,'r_'),area:fd.area.trim(),workers:!!fd.workers,memo:(numOf(fd.feeN)&&old.fee&&!fd.memo.includes(old.fee)?['요금 상세: '+old.fee,fd.memo.trim()].filter(Boolean).join('\n'):fd.memo.trim())});
+const courtUrlOk=fd=>{for(const k of ['url','map']){const v=(fd[k]||'').trim();if(v&&!safeUrl(v)){toast('링크는 https://로 시작');throw new Error('keep')}}};
+ACT['c-new']=()=>openModal('코트 추가',courtForm(),fd=>(courtUrlOk(fd),put('courts',uid(),{...courtFromFd(fd),createdAt:Date.now()})));
+ACT['c-edit']=t=>{const c=S.courts.find(x=>x.id===t.dataset.id);if(!c)return;openModal('코트 수정',courtForm(c),fd=>(courtUrlOk(fd),put('courts',c.id,courtFromFd(fd,c))),`<button type="button" class="btn danger" data-act="c-del" data-id="${c.id}">삭제</button>`)};
 ACT['c-del']=async t=>{{const c=S.courts.find(x=>x.id===t.dataset.id);if(!await askDel(c?c.name:'코트'))return}del('courts',t.dataset.id);closeModal()};
 // 예약처: 카드에 예약 링크가 없을 때 연결할 기본 사이트 (예전 데이터 호환)
 const PLATFORMS=[
@@ -2650,9 +2664,11 @@ const isSmash=c=>c.smash!==undefined?!!c.smash:(c.platform==='smash'&&!c.url&&!/
 const kindOf=c=>c.kind||(c.platform==='smash'||c.platform==='naver'?'private':'public');
 const platOf=c=>PLATFORMS.find(p=>p.k===c.platform)||PLATFORMS[PLATFORMS.length-1];
 const mapUrl=q=>'https://map.naver.com/p/search/'+encodeURIComponent(q);
-const addrLink=(addr,name,map)=>`<a class="addr" href="${h(map||mapUrl(addr||name||''))}" target="_blank" rel="noopener">${addr?h(addr):'지도에서 위치 보기'} <span aria-hidden="true">↗</span></a>`;
+/* 보안: 링크는 http(s)만 허용 (javascript: 등 차단) · 저장 · 출력 모두 */
+const safeUrl=u=>{const v=String(u||'').trim();return /^https?:\/\/[^\s"'<>]+$/i.test(v)?v:''};
+const addrLink=(addr,name,map)=>`<a class="addr" href="${h(safeUrl(map)||mapUrl(addr||name||''))}" target="_blank" rel="noopener">${addr?h(addr):'지도에서 위치 보기'} <span aria-hidden="true">↗</span></a>`;
 const MMOVE='https://mmove.co.kr/bbs/page.php?hid=m02_01';
-const courtUrl=c=>c.url||(/엠무브|mmove/i.test(c.name||'')?MMOVE:platOf(c).url);
+const courtUrl=c=>safeUrl(c.url)||(/엠무브|mmove/i.test(c.name||'')?MMOVE:platOf(c).url);
 let courtArea='';
 function viewCourts(){
   const ops=openings(45);
@@ -2812,7 +2828,7 @@ function ballsHtml(Y){const {st,prac}=ballStock();const bi=ballInfo();const rows
   const line=b=>b.kind==='buy'?`<b>구매</b> ${b.per}구 ${b.cans}통${b.price?` · ${won(b.price)}`:''}`:b.kind==='use'?`<b>사용</b> ${b.per}구 ${b.cans}통 개봉${b.toPrac?` · 연습구 +${b.cans*b.per}`:''}`:`<b>연습구</b> ${(+b.n>0?'+':'')+b.n}개`;
   const PER_N=5;const shown=ballMore?rows:rows.slice(0,PER_N);
   return `<section class="panel balls"><div class="panel-h"><h2>공 재고</h2>${RO?'':`<div class="row"><button class="btn sm" data-act="ball-add" data-k="buy">구매</button><button class="btn sm" data-act="ball-add" data-k="use">사용</button><button class="btn sm" data-act="ball-add" data-k="prac">연습구 조정</button></div>`}</div>
-    ${bi.memo||bi.url||!RO?`<div class="ball-info"><div class="bi-h"><b>참고</b>${RO?'':'<button type="button" class="btn sm ghost" data-act="ball-info">수정</button>'}</div>${bi.memo?`<p class="bi-t">${h(bi.memo)}</p>`:'<p class="bi-t muted">메모 없음 · 수정 눌러 구매처 · 보관 장소 등 입력</p>'}${bi.url?`<a class="btn sm pri bi-go" href="${h(bi.url)}" target="_blank" rel="noopener">공 구매 바로가기</a>`:''}</div>`:''}
+    ${bi.memo||bi.url||!RO?`<div class="ball-info"><div class="bi-h"><b>참고</b>${RO?'':'<button type="button" class="btn sm ghost" data-act="ball-info">수정</button>'}</div>${bi.memo?`<p class="bi-t">${h(bi.memo)}</p>`:'<p class="bi-t muted">메모 없음 · 수정 눌러 구매처 · 보관 장소 등 입력</p>'}${safeUrl(bi.url)?`<a class="btn sm pri bi-go" href="${h(safeUrl(bi.url))}" target="_blank" rel="noopener">공 구매 바로가기</a>`:''}</div>`:''}
     <div class="ball-sum"><div class="bs"><span class="l">새 공</span><b class="num">${pers.length?pers.map(p=>`${p}구 ${st[p]}통`).join(' · '):'0통'}</b><span class="small muted">총 ${totalBalls}구</span></div>
       <div class="bs"><span class="l">연습구</span><b class="num">${prac}개</b></div>
       <div class="bs"><span class="l">${Y}년</span><b class="num">구매 ${yb.reduce((s,b)=>s+(+b.cans||0),0)}통 · 사용 ${yu.reduce((s,b)=>s+(+b.cans||0),0)}통</b><span class="small muted">구매 금액 ${won(yb.reduce((s,b)=>s+(+b.price||0),0))}</span></div></div>
@@ -2820,7 +2836,7 @@ function ballsHtml(Y){const {st,prac}=ballStock();const bi=ballInfo();const rows
     <div class="list ball-list">${shown.length?shown.map(b=>`<div class="li${RO?'':' click'}" ${RO?'':`data-act="ball-edit" data-id="${b.id}"`}><span class="ball-dot bd-${b.kind}"></span><div class="grow"><div class="ttl">${line(b)}</div><div class="sub">${fmtD(b.date)}${b.note?' · '+h(b.note):''}</div></div></div>`).join(''):'<div class="muted small" style="padding:8px 0">기록 없음 · 구매부터 기록</div>'}</div>
     ${rows.length>PER_N?`<button class="btn sm ghost ev-more" data-act="ball-more">${ballMore?'접기':`기록 ${rows.length-PER_N}건 더 보기`}</button>`:''}</section>`}
 ACT['ball-info']=()=>{const bi=ballInfo();openModal('공 재고 참고',`<label class="f">메모<textarea class="in" name="memo" rows="7" placeholder="예: 공 구매처 · 보관 장소 · 사용량">${h(bi.memo||'')}</textarea></label><label class="f">공 구매 링크<input class="in" name="url" type="url" inputmode="url" value="${h(bi.url||'')}" placeholder="https://"></label>`,
-  async fd=>{const url=(fd.url||'').trim();if(url&&!/^https?:\/\//.test(url)){toast('링크는 https://로 시작');throw new Error('keep')}await put('balls','info',{kind:'info',memo:(fd.memo||'').trim(),url,at:Date.now()});toast('참고 메모 저장');render()})};
+  async fd=>{const url=(fd.url||'').trim();if(url&&!safeUrl(url)){toast('링크는 https://로 시작');throw new Error('keep')}await put('balls','info',{kind:'info',memo:(fd.memo||'').trim(),url,at:Date.now()});toast('참고 메모 저장');render()})};
 let ballMore=false;ACT['ball-more']=()=>{ballMore=!ballMore;render()};
 function ballForm(k,b={}){const per=`<label class="f">종류<select class="in" name="per">${BALL_PER.map(p=>`<option value="${p}"${(+b.per||3)===p?' selected':''}>${p}구짜리 (1통 ${p}개)</option>`).join('')}</select></label>`;
   const date=`<label class="f">날짜${calField(b.date||ymd(today0()),{name:'date',required:true})}</label>`;const note=`<label class="f">메모 (선택)<input class="in" name="note" value="${h(b.note||'')}" placeholder="${k==='buy'?'예: 던롭 포트 · 온라인 구매':k==='use'?'예: 정기모임 · MT':'예: 낡은 공 버림 · 기증'}"></label>`;
@@ -3119,55 +3135,8 @@ ACT['data-import']=()=>{const inp=document.createElement('input');inp.type='file
     if(!confirm(`${n}건을 가져옵니다. 같은 항목은 파일 내용으로 덮어씀. 진행할까요?`))return;
     closeModal();let done=0;toast(`가져오는 중… 0/${n}`);
     for(const c of cols)for(const d of data[c]){if(!d||!d.id)continue;const {id,...rest}=d;try{await put(c,String(id),rest)}catch(e){}done++;if(done%20===0)toast(`가져오는 중… ${done}/${n}`)}
-    if(art){toast(`가져오기 완료 ${done}건. 공개본 갱신 필요`);setTimeout(()=>ACT['pub-open'](),1200)}else toast(`가져오기 완료 ${done}건`)};
+    if(0){}else toast(`가져오기 완료 ${done}건`)};
   inp.click()};
-
-/* ---------- public snapshot: automatic refresh ----------
-   Operators' changes reach signed-out visitors only through the encrypted snapshot.
-   It is refreshed automatically when the operator leaves the app (tab hidden) or after
-   3 idle minutes with unpublished changes, using the key derived at password entry. */
-let autoPubBusy=false,lastAct=Date.now();
-['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,()=>{lastAct=Date.now()},{passive:true,capture:true}));
-async function autoPublish(why){
-  if(mode!=='db'||!art||autoPubBusy||!PUB.snap||!pendingCount())return;
-  if(loaded.size<COLS.length)return;
-  const s=lsGet('sbpb-k',null);if(!s||s.salt!==PUB.snap.salt)return;
-  autoPubBusy=true;
-  try{const key=await importKey(s.k);const data={};COLS.forEach(c=>data[c]=S[c]);const enc=await encryptJSON(data,key);
-    await savePub({v:1,pw:PW_HASH,snap:{salt:s.salt,iv:enc.iv,ct:enc.ct,at:Date.now()}})}
-  catch(e){if(e&&(e.code==='not_writer'||e.code==='not_granted'))art=null}
-  autoPubBusy=false;
-}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')autoPublish('hidden')});
-setInterval(()=>{const busy=$('#modal-root').innerHTML||$('#wheel')||$('#daypop')||$('#slotmenu')||(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));if(!busy&&Date.now()-lastAct>180000)autoPublish('idle')},30000);
-
-/* ---------- public snapshot: publish / password change ---------- */
-ACT['pub-open']=()=>{
-  if(mode!=='db')return;
-  if(!art){toast('이 화면에서는 공개본 갱신 불가');return}
-  const at=PUB.snap&&PUB.snap.at;
-  openModal('보기 전용 공개본 갱신',`<p class="small" style="margin:0;line-height:1.65">운영진이 아닌 회원은 비밀번호 입력 후 <b>공개본</b> 열람. 공개본은 비밀번호로 암호화되어 페이지에 저장. 갱신 시 열려 있는 모든 화면이 새 버전으로 다시 열림</p>
-  <div class="need">${at?`마지막 갱신 ${new Date(at).toLocaleString('ko-KR')} · 이후 변경 <b>${pendingCount()}건</b>`:'공개본 없음. 첫 갱신 이후 로그인 없이 열람 가능'}</div>
-  <label class="f">현재 비밀번호<input class="in" type="password" name="cur" required autocomplete="current-password"></label>
-  <label class="check"><input type="checkbox" name="chg" id="pw-chg"> 비밀번호 변경 (운영진 교체·인수인계 시)</label>
-  <div id="pw-new" class="grid2" hidden><label class="f">새 비밀번호 (6자 이상)<input class="in" type="password" name="np1" autocomplete="new-password"></label><label class="f">새 비밀번호 확인<input class="in" type="password" name="np2" autocomplete="new-password"></label></div>`,doPublish);
-  const b=$('#mform button[type=submit]');if(b)b.textContent='공개본 갱신';
-};
-document.addEventListener('change',e=>{if(e.target.id==='pw-chg'){const n=$('#pw-new');if(n)n.hidden=!e.target.checked}});
-async function doPublish(fd){
-  if(sha256(fd.cur)!==PW_HASH){toast('현재 비밀번호 불일치');throw 0}
-  let pw=fd.cur,hash=PW_HASH,salt=PUB.snap&&PUB.snap.salt;
-  if(fd.chg){if(!fd.np1||fd.np1.length<6){toast('새 비밀번호는 6자 이상 필요');throw 0}if(fd.np1!==fd.np2){toast('새 비밀번호 불일치');throw 0}pw=fd.np1;hash=sha256(pw);salt=null}
-  if(!salt)salt=u8b64(crypto.getRandomValues(new Uint8Array(16)));
-  const b=$('#mform button[type=submit]');if(b){b.disabled=true;b.textContent='암호화 중…'}
-  const key=await deriveKey(pw,salt);
-  const data={};COLS.forEach(c=>data[c]=S[c]);
-  const enc=await encryptJSON(data,key);
-  const pub={v:1,pw:hash,snap:{salt,iv:enc.iv,ct:enc.ct,at:Date.now()}};
-  lsSet('sbpb-k',{salt,k:await exportKey(key)});touchAuth();
-  try{await savePub(pub);toast(WEB?'공개본 갱신 완료':'공개본 갱신 완료. 새 버전으로 다시 열림');if(WEB&&fd.chg)setTimeout(()=>location.reload(),900)}
-  catch(e){if(b){b.disabled=false;b.textContent='공개본 갱신'}const c=e&&e.code;toast(c==='not_writer'||c==='not_granted'||c==='not_declared'?'공개본 갱신은 편집 권한(Editor) 보유 운영진만 가능':c==='conflict'?'다른 운영진이 먼저 갱신. 새 버전으로 다시 열림':c==='too_large'?'데이터 용량 초과로 갱신 실패':'공개본 갱신 실패. 잠시 후 재시도 필요');throw e}
-}
 
 /* ---------- password gate ---------- */
 function sha256(str){
@@ -3184,7 +3153,7 @@ function sha256(str){
   }
   return H.map(v=>(v>>>0).toString(16).padStart(8,'0')).join('');
 }
-const PW_HASH=PUB.pw||'dd22dd5735108da693b2670257ccbdeda6686e87923a7d18bcf452b95a91d71c';
+const PW_HASH=PUB.pw||'';/* 보안: 비밀번호 해시는 코드에 두지 않음 */
 const IDLE_MS=2*60*60*1000;
 let memSeen=0,started=false,lastTouch=0;
 function lastSeen(){try{const v=localStorage.getItem('sbpb-auth-seen');return v?Number(v):memSeen}catch(e){return memSeen}}

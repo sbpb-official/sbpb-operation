@@ -3,7 +3,7 @@
 // plus window.SBPB_WEB for login, operator accounts and the encrypted public snapshot.
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updatePassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, deleteDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, deleteDoc, getDoc, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // Firebase web config: public identifiers, safe to ship in the page (access is enforced by firestore.rules)
 const firebaseConfig = {
@@ -132,7 +132,8 @@ window.SBPB_WEB = {
     user: () => mAuth.currentUser,
     async login(pw) { try { await signInWithEmailAndPassword(mAuth, MEMBER, pw); return ''; } catch (e) { return authErr(e); } },
     logout: () => signOut(mAuth),
-    db: { collection: col => ({ onSnapshot: (next, err) => onSnapshot(collection(mFs, col), { includeMetadataChanges: true }, s => next({ docs: s.docs, metadata: s.metadata }), err) }) },
+    // security: members may read only confirmed brackets (firestore.rules checks status), so the query must ask for exactly those
+    db: { collection: col => ({ onSnapshot: (next, err) => onSnapshot(col === 'brackets' ? query(collection(mFs, col), where('status', '==', '확정')) : collection(mFs, col), { includeMetadataChanges: true }, s => next({ docs: s.docs, metadata: s.metadata }), err) }) },
     roster: (next, err) => onSnapshot(doc(mFs, 'pub', 'roster'), s => next(s.exists() ? s.data() : null), err),
     // operators only: current member password is kept in an operator-only document
     async info() { const s = await getDoc(doc(fs, 'secure', 'member')); return s.exists() ? s.data() : null; },
@@ -154,8 +155,7 @@ window.SBPB_WEB = {
   },
   saveRoster: data => setDoc(doc(fs, 'pub', 'roster'), data),
   getAdmins: adminList,
-  saveAdmins: emails => setDoc(doc(fs, 'config', 'admins'), { emails, at: Date.now() }),
-  savePub: pub => setDoc(doc(fs, 'public', 'snapshot'), pub)
+  saveAdmins: emails => setDoc(doc(fs, 'config', 'admins'), { emails, at: Date.now() })
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
