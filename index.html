@@ -1452,6 +1452,19 @@ a.ci{min-height:32px}
 .rent-fold[open]>summary{margin-bottom:8px}.rent-fold[open]>summary .led-tg i{transform:rotate(180deg)}
 .rent-nav{margin-bottom:8px;flex-wrap:wrap}
 .kv{row-gap:12px}.kv dd .amen{margin:0;gap:6px}
+/* 코트 카드: 12줄 고정 구성 · 같은 줄 카드끼리 항목 높이 맞춤 (subgrid) */
+.ccard .hd{align-items:flex-start}.ccard .hd h3{margin:0;min-width:0;word-break:keep-all}
+.ccard .cbadges{margin-top:0;align-self:start}
+.c-row{display:flex;align-items:center;min-height:32px}
+.ci.ci-none{display:inline-flex;align-items:center;gap:6px;min-height:32px;font-size:14px;color:var(--muted)}
+.open-box.none{border-left-color:var(--line)}.open-box.none .l{color:var(--muted)}
+.kvr{display:grid;grid-template-columns:76px minmax(0,1fr);column-gap:10px;font-size:13px;line-height:20px;align-items:start}
+.kvr .k{color:var(--muted)}.kvr .v{min-width:0;word-break:keep-all;overflow-wrap:anywhere}.kvr .amen{margin:-2px 0}
+.memo-clip.cx{max-height:40px}
+a.btn.c-go{text-align:center;text-decoration:none;min-height:44px;display:flex;align-items:center;justify-content:center}.c-go.none,.prio-none{min-height:0}
+@media (min-width:721px){@supports (grid-template-rows:subgrid){.ccard{display:grid;grid-row:span 12;grid-template-rows:subgrid;row-gap:10px;align-content:start}.ccard>.c-go{align-self:end}}}
+.ccard>.c-go{margin-top:auto}
+.ccard>.opens{align-self:start}
 
 </style>
 </head>
@@ -1619,7 +1632,7 @@ window.SBPB_WEB = {
 };
 
 // auto-update: the home-screen app can keep an old page alive; check for a newer build and reload when idle
-const CUR_APP = 'app.js?v=10cc88b332';
+const CUR_APP = 'app.js?v=2c525cfb6a';
 function busy() {
   const ae = document.activeElement;
   return !!((document.getElementById('modal-root') || {}).innerHTML || document.getElementById('wheel') || document.getElementById('daypop') || document.getElementById('cellpop') ||
@@ -1647,7 +1660,7 @@ setTimeout(checkUpdate, 15000);
 (async () => {
   window.SBPB_PUB = {};   // operators read live data after Google sign-in; no public copy
   const m = document.getElementById('boot-msg'); if (m) m.remove();
-  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=10cc88b332';
+  const sc = document.createElement('script'); sc.id = 'app'; sc.src = 'app.js?v=2c525cfb6a';
   sc.onerror = () => { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:24px;font:14px system-ui">앱을 불러오지 못했습니다. 새로고침해 주세요.</p>'); };
   document.body.appendChild(sc);
 })();
