@@ -115,6 +115,10 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    화면·기능이 바뀌는 배포마다 맨 위에 항목 추가 (id는 겹치지 않게, 날짜순).
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
+  {id:'2026-11-27',v:'1.14',date:'2026-11-27',items:[
+    {k:'courtfav',t:'코트 즐겨찾기 추가 (이름 옆 별표 · D-7 이내 예약 오픈 다음 순서 노출)'},
+    {k:'courtopens',t:'코트 카드 예약 오픈 칸 배치 조정 (주민 우선 있는 코트 한 줄 2칸 · 없는 코트 한 줄 전체)'},
+  ]},
   {id:'2026-11-25',v:'1.13',date:'2026-11-25',items:[
     {k:'indbar',t:'운영실 MO ver. 섹션 바로가기 추가 (대시보드 외 전 탭 · 상단 고정 · 누르면 이동 · 현재 섹션 표시)'},
     {k:'courtimport3',t:'코트 일괄 가져오기 빈 칸만 채우기 옵션 추가 (기존 입력값 유지 · 편의시설 합치기 · 이름 일치 우선)'},
@@ -2790,7 +2794,7 @@ let courtArea='';
 function viewCourts(){
   const ops=openings(45);
   const areas=[...new Set(S.courts.map(c=>c.district).filter(Boolean))].sort();
-  const list=S.courts.filter(c=>!courtArea||c.district===courtArea).map(c=>({c,n:[c.resident?shownOpen(c,'res').d:null,shownOpen(c,'gen').d].filter(Boolean).sort((a,b)=>a-b)[0]})).sort((a,b)=>{const k=o=>o.n?+o.n:(o.c.genRule&&o.c.genRule.type==='rolling'?9e15:Infinity);return (isSmash(a.c)-isSmash(b.c))||k(a)-k(b)||(a.c.name||'').localeCompare(b.c.name||'','ko')});
+  const list=S.courts.filter(c=>!courtArea||c.district===courtArea).map(c=>({c,n:[c.resident?shownOpen(c,'res').d:null,shownOpen(c,'gen').d].filter(Boolean).sort((a,b)=>a-b)[0]})).sort((a,b)=>{const k=o=>o.n?+o.n:(o.c.genRule&&o.c.genRule.type==='rolling'?9e15:Infinity);/* 정렬: D-7 이내 예약 오픈 → 즐겨찾기 → 나머지 (각 묶음 안은 오픈일 순) */const soon=o=>o.n&&(o.n-Date.now())<=7*864e5;const grp=o=>soon(o)?0:o.c.fav?1:2;return grp(a)-grp(b)||(isSmash(a.c)-isSmash(b.c))||k(a)-k(b)||(a.c.name||'').localeCompare(b.c.name||'','ko')});
   const tl=ops.length?`<div class="timeline">${ops.slice(0,12).map(o=>`<div class="tl ${o.kind}"><div class="dday">${ddayLabel(ymd(o.date))}</div><div style="font-weight:600">${h(o.court.name)}</div><div class="small muted">${o.date.getMonth()+1}/${o.date.getDate()} (${WD[o.date.getDay()]}) ${pad(o.date.getHours())}:${pad(o.date.getMinutes())}</div><div style="margin-top:4px">${o.kind==='res'?`<span class="chip warn">주민 우선${MV?'':` · ${priorityMembers(o.court).length}명 가능`}</span>`:'<span class="chip court">일반 오픈</span>'}</div></div>`).join('')}</div>`:'';
   const card=({c})=>{
     const gS=shownOpen(c,'gen'),rS=c.resident?shownOpen(c,'res'):{d:null};const g=gS.d,r=rS.d;
@@ -2803,11 +2807,11 @@ function viewCourts(){
       const S2=rc?rS:gS;const live=S2&&S2.live&&S2.d===d;const dd=diffDays(ymd(d));
       return `<div class="open-box${rc}${live?' live':''}"><div class="l">${l}${live?' · 예약 중':''}</div><div class="big"><span class="dday">${ddayLabel(ymd(d))}</span><b>${fd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}</b></div><div class="d">${live&&rc&&S2.until?`주민 우선 예약 기간 · 일반 오픈 ${fd(S2.until)} ${pad(S2.until.getHours())}:${pad(S2.until.getMinutes())} 전까지`:live?'오늘 오픈 · 내일부터 다음 오픈 표시':h(ruleText(rule))}</div>${live?`<div class="d">${h(ruleText(rule))}</div>`:''}</div>`};
     return `<article class="ccard" data-cid="${h(c.id)}">
-    <div class="hd"><h3>${h(c.name)}</h3><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
+    <div class="hd"><h3>${RO?(c.fav?'<span class="c-fav on" aria-label="즐겨찾기">★</span>':''):`<button type="button" class="c-fav${c.fav?' on':''}" data-act="c-fav" data-id="${h(c.id)}" aria-pressed="${!!c.fav}" aria-label="즐겨찾기">${c.fav?'★':'☆'}</button>`}${h(c.name)}</h3><div class="row">${c.resident?'<span class="chip warn">주민 우선</span>':''}<button class="btn sm ghost" data-act="c-edit" data-id="${c.id}">수정</button></div></div>
     <div class="cbadges">${c.district?`<span class="cb cb-area">${h(c.district)}</span>`:''}${surfList(c.surface).map(s=>`<span class="cb ${({'인조잔디':'cb-grass','하드':'cb-hard','클레이':'cb-clay'})[s]||'cb-etc'}">${h(s)}</span>`).join('')}${c.indoor?'<span class="cb cb-io">실내</span>':''}${c.outdoor?'<span class="cb cb-io">실외</span>':''}${c.courts?`<span class="cb-n">${h(c.courts)}</span>`:''}${isSmash(c)?'<span class="cb cb-etc">스매시 앱 예약</span>':''}</div>
     <div class="c-row">${addrLink(c.address,c.name,c.map)}</div>
     <div class="c-row">${c.phone?telRow(c.phone):'<span class="ci ci-none"><svg class="ci-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h3l2 5-2.5 1.5a11 11 0 0 0 6 6L15 14l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg><span>-</span></span>'}</div>
-    <div class="opens">${c.genRule&&c.genRule.type?`${c.resident?ob('주민 우선 오픈',r,c.resRule):''}${ob('일반 오픈',g,c.genRule)}`:'<div class="open-box none"><div class="l">예약 오픈</div><div class="d">오픈 일정 미입력</div></div>'}</div>
+    <div class="opens${c.genRule&&c.genRule.type&&c.resident?' two':''}">${c.genRule&&c.genRule.type?`${c.resident?ob('주민 우선 오픈',r,c.resRule):''}${ob('일반 오픈',g,c.genRule)}`:'<div class="open-box none"><div class="l">예약 오픈</div><div class="d">오픈 일정 미입력</div></div>'}</div>
     <div class="kvr"><span class="k">요금</span><div class="v">${(()=>{const m=feeMin(c);if(!m)return c.fee?h(c.fee):'-';return m.more?`<details class="xd"><summary><span>${h(m.txt)}~</span><span class="xd-t">상세</span></summary>${feeDetail(c)}</details>`:h(m.txt)+(feesOf(c)[0].note?` <span class="muted">${h(feesOf(c)[0].note)}</span>`:'')})()}</div></div>
     <div class="kvr"><span class="k">이용 시간</span><div class="v">${(()=>{const t=hoursToday(c);if(!t)return '-';const one=(c.hours||[]).length===1;const txt=t==='none'?'오늘 운영 정보 없음':`오늘 ${h(t.s)}–${h(t.e)}`;return one?txt:`<details class="xd"><summary><span>${txt}</span><span class="xd-t">상세</span></summary>${hoursDetail(c)}</details>`})()}</div></div>
     <div class="kvr"><span class="k">편의시설</span><div class="v"><div class="amen">${(c.amen||[]).map(a=>`<span class="am">${h(a)}</span>`).join('')}${(c.amen||[]).includes('주차')?'':'<span class="am-warn"><i aria-hidden="true">!</i>주차 불가</span>'}</div></div></div>
@@ -3115,6 +3119,7 @@ AFTER.courts=()=>{eqCards();if(!courtFocus)return;const id=courtFocus;let el=doc
 /* 같은 묶음(공공 · 사설) 코트 카드 높이 통일: 접힌 상태 기준 가장 긴 카드에 맞춤 (펼친 카드만 늘어남) */
 function eqCards(){if(window.CSS&&CSS.supports('grid-template-rows','subgrid')&&innerWidth>720)return;/* PC 여러 열: subgrid가 줄마다 높이 맞춤 */document.querySelectorAll('.plat .cards').forEach(g=>{const cs=[...g.querySelectorAll('.ccard')];cs.forEach(c=>c.style.minHeight='');const mx=Math.max(0,...cs.filter(c=>!c.querySelector('details[open]')).map(c=>c.offsetHeight));cs.forEach(c=>c.style.minHeight=mx+'px')})}
 window.addEventListener('resize',()=>{clearTimeout(eqCards._t);eqCards._t=setTimeout(()=>{if(route==='courts')eqCards()},150)});
+ACT['c-fav']=async t=>{const c=S.courts.find(x=>x.id===t.dataset.id);if(!c)return;const {id,...rest}=c;await put('courts',id,{...rest,fav:!c.fav});toast(c.fav?'즐겨찾기 해제':'즐겨찾기 추가')};
 let posterZoom='fit';
 function fitPoster(){fitIn($('#stage'))}
 function resetScale(p){p.style.zoom='';p.style.transform='';p.style.marginRight='';p.style.marginBottom=''}

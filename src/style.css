@@ -1449,3 +1449,10 @@ a.btn.c-go{text-align:center;text-decoration:none;min-height:44px;display:flex;a
 .ind-bar::-webkit-scrollbar{display:none}
 .ind-bar button{flex:none;min-height:36px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);font:inherit;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer}
 .ind-bar button.on{background:var(--court);border-color:var(--court);color:var(--on-court)}
+.ccard>.opens{width:100%}
+.opens.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.opens.two .open-box{padding:10px}.opens.two .big{flex-direction:column;align-items:flex-start;gap:2px;font-size:15px}.opens.two .big .dday{font-size:22px}.opens.two .d{font-size:12px;word-break:keep-all}
+/* 코트 즐겨찾기 별표 */
+.c-fav{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;margin:-4px 4px -4px -6px;padding:0;border:0;background:none;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;vertical-align:middle}
+.c-fav.on{color:#B7850B}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .c-fav.on{color:#F2C14E}}:root[data-theme="dark"] .c-fav.on{color:#F2C14E}
