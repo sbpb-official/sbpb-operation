@@ -1461,3 +1461,4 @@ a.btn.c-go{text-align:center;text-decoration:none;min-height:44px;display:flex;a
 .pl-time.on{border-color:var(--warn);color:var(--ink);background:color-mix(in srgb,var(--warn) 14%,var(--surface))}
 .av-quick{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 .nm.away{opacity:.75}.nm.away em{font-style:normal;font-size:10px;font-weight:700;margin-left:4px;padding:1px 5px;border-radius:999px;background:#F6E0C4;color:#6B3F00}
+.exporting .nm{padding-left:0!important;padding-right:0!important}

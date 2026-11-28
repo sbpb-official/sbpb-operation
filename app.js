@@ -116,6 +116,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-28',v:'1.15',date:'2026-11-28',items:[
+    {k:'posterimg',t:'대진표 이미지 저장 방식 개선 (아이폰 글자 겹침 · 띄어쓰기 누락 오류 수정)'},
     {k:'availtag',t:'대진표 늦참 · 조퇴 태그 컬러 조정 (라이트 · 다크 모드 동일 · 글자 대비 개선)'},
     {k:'avail',t:'대진표 참석 시간 설정 추가 (참석자 선택 · 늦참 · 조퇴 · 시간 밖 타임 미배정 · 경기 수 참석 타임 비례 · 휴식 칸 표시)'},
   ]},
@@ -1758,7 +1759,7 @@ function slotIn(d,r,slot){const R=d.rounds[r];if(slot[0]==='r')return R.rest[+sl
 function nmS(d,r,slot){const k=slotIn(d,r,slot);if(!k)return `<span class="nm-s empty">${d.allowBlank?'–':'빈자리'}</span>`;const p=d.players[k]||{name:'?'};return `<span class="nm-s">${h(dn(p.name))}${p.guest?'<span class="gbadge" title="게스트">G</span>':''}</span>`}
 function normB(b){const bc={...b.cfg};if(!bc.courtList){const n=Math.max(...b.rounds.map(R=>R.matches.length));bc.courtList=Array.from({length:n},(_,i)=>({name:`코트 ${i+1}`,pref:''}))}return {...b,cfg:bc}}
 // bench: 4명 이상이면 두 줄. 짝수는 반반, 홀수는 윗줄이 한 명 적게
-function benchHtml(names){const n=names.length;if(!n)return '–';if(n<4)return names.join(', ');const top=Math.floor(n/2);return `<span class="bl">${names.slice(0,top).join(', ')}</span><span class="bl">${names.slice(top).join(', ')}</span>`}
+function benchHtml(names){const n=names.length;const J='<span class="sep">, </span>';if(!n)return '<span>–</span>';if(n<4)return names.join(J);const top=Math.floor(n/2);return `<span class="bl">${names.slice(0,top).join(J)}</span><span class="bl">${names.slice(top).join(J)}</span>`}
 function posterHtml(d=draft,inter=true){
   const c=d.cfg;const courts=c.courtList||defCourts();const PEV=evOfB(d);const PTL=PEV?teamTally(PEV):null;const N=(r,slot)=>inter?nm(r,slot):nmS(d,r,slot);
   const lastT=(d.rounds[d.rounds.length-1]||{}).time;const end=lastT?lastT.split('–')[1]:endOf(c,d.rounds.length);const PM=inter&&d===draft?posterMarks(d):null;POSTER_MARKS=PM;
@@ -2078,11 +2079,43 @@ ACT['br-unconfirm']=async()=>{draft.status='초안';try{await saveBracket()}catc
 ACT['br-load']=t=>{const b=S.brackets.find(x=>x.id===t.dataset.id);if(!b)return;closeModal();if(route!=='draw')location.hash='#draw';const bc={...b.cfg};if(!bc.courtList){const n=Math.max(...b.rounds.map(R=>R.matches.length));bc.courtList=Array.from({length:n},(_,i)=>({name:`코트 ${i+1}`,pref:''}))}
   draft={id:b.id,cfg:bc,players:b.players,rounds:JSON.parse(JSON.stringify(b.rounds)),status:b.status,allowBlank:!!b.allowBlank};
   Object.assign(cfg,{title:bc.title,date:bc.date,place:bc.place,start:bc.start,end:bc.end||cfg.end,mins:bc.mins,rounds:roundsOf(bc),brk:brkOf(bc),courtList:JSON.parse(JSON.stringify(bc.courtList))});saveCfg();saveDraft();sel=null;render();window.scrollTo(0,0)};
+/* 대진표 이미지: 브라우저가 배치한 위치(요소 상자)는 그대로 쓰고 글자는 canvas로 직접 그림
+   (html2canvas는 아이폰 사파리에서 글자 폭을 잘못 재 겹침 · 띄어쓰기 누락 발생) */
+async function domToCanvas(root,scale){
+  try{await document.fonts.ready}catch(e){}
+  const R0=root.getBoundingClientRect();const W=Math.ceil(R0.width),H=Math.ceil(R0.height);
+  const cv=document.createElement('canvas');cv.width=W*scale;cv.height=H*scale;const ctx=cv.getContext('2d');ctx.scale(scale,scale);
+  const px=v=>parseFloat(v)||0;const vis=c=>c&&c!=='transparent'&&!/rgba\([^)]*,\s*0\)$/.test(c);
+  const rr=(x,y,w,h,r)=>{r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()};
+  const imgs={};const loadImg=src=>imgs[src]||(imgs[src]=new Promise(res=>{const im=new Image();im.onload=()=>res(im);im.onerror=()=>res(null);im.src=src}));
+  const walk=async(el,alpha)=>{const cs=getComputedStyle(el);if(cs.display==='none'||cs.visibility==='hidden')return;const op=alpha*(px(cs.opacity)||(cs.opacity==='0'?0:1));
+    const b=el.getBoundingClientRect();if(!b.width&&!b.height&&el.children.length===0)return;const x=b.left-R0.left,y=b.top-R0.top;
+    ctx.globalAlpha=op;
+    if(vis(cs.backgroundColor)){ctx.fillStyle=cs.backgroundColor;rr(x,y,b.width,b.height,px(cs.borderTopLeftRadius));ctx.fill()}
+    [['Top',x,y,x+b.width,y],['Bottom',x,y+b.height,x+b.width,y+b.height],['Left',x,y,x,y+b.height],['Right',x+b.width,y,x+b.width,y+b.height]].forEach(([sd,x1,y1,x2,y2])=>{const w=px(cs['border'+sd+'Width']);if(!w||cs['border'+sd+'Style']==='none'||!vis(cs['border'+sd+'Color']))return;
+      if(px(cs.borderTopLeftRadius)>2&&sd==='Top'&&cs.borderTopWidth===cs.borderLeftWidth){ctx.strokeStyle=cs.borderTopColor;ctx.lineWidth=w;if(cs.borderTopStyle==='dashed')ctx.setLineDash([4,3]);rr(x+w/2,y+w/2,b.width-w,b.height-w,px(cs.borderTopLeftRadius));ctx.stroke();ctx.setLineDash([]);return}
+      if(px(cs.borderTopLeftRadius)>2&&cs.borderTopWidth===cs.borderLeftWidth)return;
+      ctx.strokeStyle=cs['border'+sd+'Color'];ctx.lineWidth=w;ctx.beginPath();const o=sd==='Top'||sd==='Left'?w/2:-w/2;if(sd==='Top'||sd==='Bottom'){ctx.moveTo(x1,y1+o);ctx.lineTo(x2,y2+o)}else{ctx.moveTo(x1+o,y1);ctx.lineTo(x2+o,y2)}ctx.stroke()});
+    if(el.tagName==='IMG'){const im=await loadImg(el.src);if(im)ctx.drawImage(im,x,y,b.width,b.height);return}
+    ctx.font=`${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;ctx.fillStyle=cs.color;ctx.textBaseline='middle';
+    const kids=[...el.childNodes];const L=x+px(cs.paddingLeft)+px(cs.borderLeftWidth),Rr=x+b.width-px(cs.paddingRight)-px(cs.borderRightWidth);
+    const elKids=kids.filter(n=>n.nodeType===1);
+    kids.forEach((n,i)=>{if(n.nodeType!==3)return;const t=n.textContent.replace(/\s+/g,' ');if(!t.trim())return;const tw=ctx.measureText(t.trim()).width;
+      const prev=kids.slice(0,i).reverse().find(k=>k.nodeType===1&&k.getBoundingClientRect().width);const next=kids.slice(i+1).find(k=>k.nodeType===1&&k.getBoundingClientRect().width);
+      let tx;if(prev)tx=prev.getBoundingClientRect().right-R0.left+(/^\s/.test(t)?ctx.measureText(' ').width:0);
+      else if(next)tx=next.getBoundingClientRect().left-R0.left-tw-(/\s$/.test(t)?ctx.measureText(' ').width:0);
+      else if(cs.display==='inline')tx=/\s$/.test(t)?L:(L+Rr-tw)/2;/* 인라인 상자 = 글자 폭 · 측정 차이는 가운데 정렬로 흡수 (뒤 공백 있는 구분자는 왼쪽) */
+      else tx=cs.textAlign==='center'?(L+Rr-tw)/2:cs.textAlign==='right'||cs.textAlign==='end'?Rr-tw:L;
+      const lh=b.height;const ty=y+px(cs.paddingTop)+(lh-px(cs.paddingTop)-px(cs.paddingBottom))/2;ctx.fillStyle=cs.color;ctx.fillText(t.trim(),tx,ty)});
+    for(const k of elKids)await walk(k,op);
+  };
+  ctx.fillStyle=getComputedStyle(root).backgroundColor||'#FBFBF9';ctx.fillRect(0,0,W,H);
+  await walk(root,1);ctx.globalAlpha=1;return cv}
 async function exportPoster(el,d){
   if(typeof html2canvas!=='function'){toast('이미지 도구 불러오기 실패. 새로고침 후 재시도 필요');return}
   resetScale(el);el.classList.add('exporting');
   try{await document.fonts.ready}catch(e){}
-  let canvas;try{canvas=await html2canvas(el,{scale:2,backgroundColor:'#FBFBF9',useCORS:true})}catch(e){el.classList.remove('exporting');toast('이미지 생성 실패. 재시도 필요');return}
+  let canvas;try{canvas=el.classList.contains('poster')?await domToCanvas(el,2):await html2canvas(el,{scale:2,backgroundColor:'#FBFBF9',useCORS:true})}catch(e){el.classList.remove('exporting');toast('이미지 생성 실패. 재시도 필요');return}
   el.classList.remove('exporting');
   const dt=parseYmd(d.cfg.date);const fname=`SBPB_대진표_${dt?`${dt.getMonth()+1}월${dt.getDate()}일`:''}.png`;
   canvas.toBlob(async blob=>{
