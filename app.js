@@ -116,7 +116,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-28',v:'1.15',date:'2026-11-28',items:[
-    {k:'posterimg',t:'대진표 이미지 저장 방식 개선 (아이폰 글자 겹침 · 띄어쓰기 누락 오류 수정)'},
+    {k:'posterimg',t:'대진표 이미지 저장 방식 개선 (아이폰 글자 겹침 · 띄어쓰기 누락 · 칸 넘침 오류 수정)'},
     {k:'availtag',t:'대진표 늦참 · 조퇴 태그 컬러 조정 (라이트 · 다크 모드 동일 · 글자 대비 개선)'},
     {k:'avail',t:'대진표 참석 시간 설정 추가 (참석자 선택 · 늦참 · 조퇴 · 시간 밖 타임 미배정 · 경기 수 참석 타임 비례 · 휴식 칸 표시)'},
   ]},
@@ -2100,13 +2100,26 @@ async function domToCanvas(root,scale){
     ctx.font=`${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;ctx.fillStyle=cs.color;ctx.textBaseline='middle';
     const kids=[...el.childNodes];const L=x+px(cs.paddingLeft)+px(cs.borderLeftWidth),Rr=x+b.width-px(cs.paddingRight)-px(cs.borderRightWidth);
     const elKids=kids.filter(n=>n.nodeType===1);
-    kids.forEach((n,i)=>{if(n.nodeType!==3)return;const t=n.textContent.replace(/\s+/g,' ');if(!t.trim())return;const tw=ctx.measureText(t.trim()).width;
+    const Tp=y+px(cs.paddingTop)+px(cs.borderTopWidth),Bt=y+b.height-px(cs.paddingBottom)-px(cs.borderBottomWidth);const lh=cs.lineHeight==='normal'?px(cs.fontSize)*1.3:px(cs.lineHeight);
+    /* 글자를 브라우저가 잡은 자리(slot) 안에 맞춰 그림: 넓으면 가로로 줄이고, 브라우저가 줄바꿈했으면 같은 줄 수로 나눔 (아이폰 canvas 폰트 차이 흡수) */
+    const fit=(txt,x0,x1,yc,align)=>{const w=ctx.measureText(txt).width,sw=Math.max(1,x1-x0);const sx=w>sw?sw/w:1;const dx=align==='left'||sx<1?x0:align==='right'?x1-w:(x0+x1-w)/2;
+      ctx.save();ctx.translate(dx,yc);ctx.scale(sx,1);ctx.fillText(txt,0,0);ctx.restore()};
+    kids.forEach((n,i)=>{if(n.nodeType!==3)return;const raw=n.textContent.replace(/\s+/g,' ');const t=raw.trim();if(!t)return;
       const prev=kids.slice(0,i).reverse().find(k=>k.nodeType===1&&k.getBoundingClientRect().width);const next=kids.slice(i+1).find(k=>k.nodeType===1&&k.getBoundingClientRect().width);
-      let tx;if(prev)tx=prev.getBoundingClientRect().right-R0.left+(/^\s/.test(t)?ctx.measureText(' ').width:0);
-      else if(next)tx=next.getBoundingClientRect().left-R0.left-tw-(/\s$/.test(t)?ctx.measureText(' ').width:0);
-      else if(cs.display==='inline')tx=/\s$/.test(t)?L:(L+Rr-tw)/2;/* 인라인 상자 = 글자 폭 · 측정 차이는 가운데 정렬로 흡수 (뒤 공백 있는 구분자는 왼쪽) */
-      else tx=cs.textAlign==='center'?(L+Rr-tw)/2:cs.textAlign==='right'||cs.textAlign==='end'?Rr-tw:L;
-      const lh=b.height;const ty=y+px(cs.paddingTop)+(lh-px(cs.paddingTop)-px(cs.paddingBottom))/2;ctx.fillStyle=cs.color;ctx.fillText(t.trim(),tx,ty)});
+      const sp=ctx.measureText(' ').width;
+      if(prev||next||cs.display==='inline'){/* 인라인 글자: 앞뒤 요소 사이 또는 상자 전체가 글자 자리 */
+        let a=prev?prev.getBoundingClientRect().right-R0.left:L,z=next?next.getBoundingClientRect().left-R0.left:Rr;
+        if(!prev&&next&&cs.display!=='inline'){const w=ctx.measureText(t).width;a=z-w-(/\s$/.test(raw)?sp:0)}
+        if(prev&&!next&&cs.display!=='inline'){const w=ctx.measureText(t).width;z=a+w+(/^\s/.test(raw)?sp:0)}
+        if(/^\s/.test(raw))a+=Math.min(sp,(z-a)/3);if(/\s$/.test(raw)&&(z-a)>ctx.measureText(t).width)z-=Math.min(sp,(z-a)/3);
+        fit(t,a,z,(Tp+Bt)/2,/\s$/.test(raw)?'left':'center');return}
+      const al=cs.textAlign==='center'?'center':cs.textAlign==='right'||cs.textAlign==='end'?'right':'left';
+      const nl=Math.max(1,Math.round((Bt-Tp)/lh));
+      if(nl===1){fit(t,L,Rr,(Tp+Bt)/2,al);return}
+      /* 여러 줄: 공백 · – 뒤에서 나눠 줄마다 폭이 비슷하게 */
+      const tok=t.split(/(?<=[\s–\-~,])/);const lines=[];let cur='';const tgt=ctx.measureText(t).width/nl;
+      tok.forEach(k=>{if(cur&&ctx.measureText(cur+k).width>tgt*1.15&&lines.length<nl-1){lines.push(cur.trim());cur=k}else cur+=k});lines.push(cur.trim());
+      const top=(Tp+Bt)/2-lines.length*lh/2;lines.forEach((ln,li)=>fit(ln,L,Rr,top+lh*(li+.5),al))});
     for(const k of elKids)await walk(k,op);
   };
   ctx.fillStyle=getComputedStyle(root).backgroundColor||'#FBFBF9';ctx.fillRect(0,0,W,H);
