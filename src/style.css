@@ -1460,4 +1460,4 @@ a.btn.c-go{text-align:center;text-decoration:none;min-height:44px;display:flex;a
 .pl-time{min-height:32px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);font:inherit;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer}
 .pl-time.on{border-color:var(--warn);color:var(--ink);background:color-mix(in srgb,var(--warn) 14%,var(--surface))}
 .av-quick{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
-.nm.away{opacity:.7}.nm.away em{font-style:normal;font-size:10px;font-weight:700;margin-left:4px;padding:1px 5px;border-radius:999px;background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--ink)}
+.nm.away{opacity:.75}.nm.away em{font-style:normal;font-size:10px;font-weight:700;margin-left:4px;padding:1px 5px;border-radius:999px;background:#F6E0C4;color:#6B3F00}
