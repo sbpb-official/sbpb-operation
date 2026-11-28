@@ -1456,3 +1456,8 @@ a.btn.c-go{text-align:center;text-decoration:none;min-height:44px;display:flex;a
 .c-fav{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;margin:-4px 4px -4px -6px;padding:0;border:0;background:none;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;vertical-align:middle}
 .c-fav.on{color:#B7850B}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .c-fav.on{color:#F2C14E}}:root[data-theme="dark"] .c-fav.on{color:#F2C14E}
+/* 참석 시간 (늦참 · 조퇴) */
+.pl-time{min-height:32px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);font:inherit;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer}
+.pl-time.on{border-color:var(--warn);color:var(--ink);background:color-mix(in srgb,var(--warn) 14%,var(--surface))}
+.av-quick{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.nm.away{opacity:.7}.nm.away em{font-style:normal;font-size:10px;font-weight:700;margin-left:4px;padding:1px 5px;border-radius:999px;background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--ink)}

@@ -115,6 +115,9 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    화면·기능이 바뀌는 배포마다 맨 위에 항목 추가 (id는 겹치지 않게, 날짜순).
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
+  {id:'2026-11-28',v:'1.15',date:'2026-11-28',items:[
+    {k:'avail',t:'대진표 참석 시간 설정 추가 (참석자 선택 · 늦참 · 조퇴 · 시간 밖 타임 미배정 · 경기 수 참석 타임 비례 · 휴식 칸 표시)'},
+  ]},
   {id:'2026-11-27',v:'1.14',date:'2026-11-27',items:[
     {k:'courtfav',t:'코트 즐겨찾기 추가 (이름 옆 별표 · D-7 이내 예약 오픈 다음 순서 노출)'},
     {k:'courtopens',t:'코트 카드 예약 오픈 칸 배치 조정 (주민 우선 있는 코트 한 줄 2칸 · 없는 코트 한 줄 전체)'},
@@ -1390,6 +1393,10 @@ const toMin=t=>{const [a,b]=(t||'00:00').split(':').map(Number);return a*60+b};
 const fromMin=t=>`${pad(Math.floor(t/60)%24)}:${pad(t%60)}`;
 /* 타임 수 · 쉬는 시간: 타임 수(rounds)를 직접 입력, 종료 시각은 계산 (예전 기록은 종료 시각으로 계산) */
 const brkOf=c=>Number(c&&c.brk)||0;
+/* 참석 시간: cfg.avail = {key:{from,to}} (0부터 타임 번호 · 포함) */
+function avOf(c,R){const out={};Object.entries((c&&c.avail)||{}).forEach(([k,a])=>{if(!a)return;const f=Math.max(0,Math.min(R-1,+a.from||0)),t=Math.max(f,Math.min(R-1,a.to==null?R-1:+a.to));if(f>0||t<R-1)out[k]={from:f,to:t}});return out}
+const avIn=(a,r)=>!a||(r>=a.from&&r<=a.to);
+const avCount=(a,R)=>a?Math.max(1,Math.min(R-1,a.to)-a.from+1):R;
 function roundsOf(c){if(c&&c.rounds)return Math.max(1,Math.min(20,Number(c.rounds)||1));const n=Math.floor((toMin(c.end||'12:00')-toMin(c.start))/(Number(c.mins)||30));return Math.max(1,Math.min(20,n||1))}
 const endOf=(c,n=roundsOf(c))=>fromMin(toMin(c.start)+n*(Number(c.mins)||30)+(n-1)*brkOf(c));
 const rTime=(c,r)=>{const st=toMin(c.start),m=Number(c.mins)||30,s=st+r*(m+brkOf(c));return `${fromMin(s)}–${fromMin(s+m)}`};
@@ -1503,10 +1510,14 @@ function drawCheck(d,P){const nm=k=>(P[k]&&P[k].name)||'';const lv=k=>P[k]?P[k].
       const tag=`${ri+1}타임 ${ci+1}코트`;if(Math.abs((lv(m.a[0])+lv(m.a[1]))/2-(lv(m.b[0])+lv(m.b[1]))/2)>0.5+1e-9)avgBad.push(tag);
       if(dominates(m.a.map(lv),m.b.map(lv)))dom.push(tag)});
     if(ri>0)(R.rest||[]).forEach(k=>{if((rounds[ri-1].rest||[]).includes(k))consec.push(`${nm(k)} ${ri}–${ri+1}타임`)})});
-  const gv=keys.map(k=>games[k]);const spread=gv.length?Math.max(...gv)-Math.min(...gv):0;
+  const RN=rounds.length||1;const lim=keys.some(k=>P[k]&&P[k].av);
+  /* 참석 시간 제한이 있으면: 사람마다 (참석 타임 × 평균 비율) 기대 경기 수와 비교 · 1경기 넘게 차이 나면 미충족 */
+  const avc=k=>avCount(P[k]&&P[k].av,RN);const rate=keys.reduce((a,k)=>a+games[k],0)/Math.max(1,keys.reduce((a,k)=>a+avc(k),0));const dev=k=>games[k]-rate*avc(k);
+  const gv=keys.map(k=>games[k]);const devBad=lim?keys.filter(k=>Math.abs(dev(k))>1+1e-9):[];
+  const spread=lim?(devBad.length?2:0):(gv.length?Math.max(...gv)-Math.min(...gv):0);
   const both=keys.some(k=>P[k].gender==='F')&&keys.some(k=>P[k].gender!=='F');const noMix=both?keys.filter(k=>!mix[k]).map(nm):[];
   const over=Object.entries(pairs).filter(([,v])=>v>2).map(([q,v])=>q.split('|').map(nm).join('·')+` ${v}회`);
-  const res=[[spread>1?spread-1:0,spread>1?`최대 ${Math.max(...gv)}경기 · 최소 ${Math.min(...gv)}경기`:''],[avgBad.length,avgBad.join(', ')],[consec.length,consec.join(', ')],[noMix.length,noMix.length?'혼복 미참여: '+noMix.join(', '):''],[over.length,over.join(', ')],[dom.length,dom.join(', ')]];
+  const res=[[lim?devBad.length:(spread>1?spread-1:0),lim?(devBad.length?'참석 시간 기준 편차: '+devBad.map(k=>`${nm(k)} ${games[k]}경기 (기대 ${(rate*avc(k)).toFixed(1)})`).join(', '):''):(spread>1?`최대 ${Math.max(...gv)}경기 · 최소 ${Math.min(...gv)}경기`:'')],[avgBad.length,avgBad.join(', ')],[consec.length,consec.join(', ')],[noMix.length,noMix.length?'혼복 미참여: '+noMix.join(', '):''],[over.length,over.join(', ')],[dom.length,dom.join(', ')]];
   return {key:res.map(r=>r[0]),items:res}}
 /* 조건 검증 미충족 위치: 경기 칸 · 이름 (화면 전용, 이미지 다운로드에는 미반영) */
 function posterMarks(d){const P={};Object.entries(d.players||{}).forEach(([k,p])=>P[k]={...p,level:p.guest?(Number(p.level)||3):tierLv(k,Number(p.level)||3)});
@@ -1520,7 +1531,9 @@ function posterMarks(d){const P={};Object.entries(d.players||{}).forEach(([k,p])
       if(dominates(m.a.map(lv),m.b.map(lv)))add(M.cell,`${r}|${ci}`,'상하위 우위: 한 팀이 상위 · 하위 모두 앞섬');
       ['a','b'].forEach(s=>{const q=pk(m[s][0],m[s][1]);pairs[q]=(pairs[q]||0)+1;if(pairs[q]>2)[0,1].forEach(i=>add(M.name,`${r}|m${ci}${s}${i}`,`같은 페어 ${pairs[q]}회째: ${nm(m[s][0])}·${nm(m[s][1])}`))})});
     if(r>0)(R.rest||[]).forEach((k,i)=>{if(k&&(d.rounds[r-1].rest||[]).includes(k))add(M.name,`${r}|r${i}`,`연속 휴식: ${r}–${r+1}타임`)})});
-  const keys=Object.keys(P);const gv=keys.map(k=>games[k]);if(gv.length&&Math.max(...gv)-Math.min(...gv)>1){const mx=Math.max(...gv),mn=Math.min(...gv);keys.forEach(k=>{if((games[k]===mx||games[k]===mn)&&first[k])add(M.name,first[k],`경기 수 차이: ${nm(k)} ${games[k]}경기 (최대 ${mx} · 최소 ${mn})`)})}
+  const keys=Object.keys(P);const RN=(d.rounds||[]).length||1;const lim=keys.some(k=>P[k].av);const avc=k=>avCount(P[k].av,RN);
+  if(lim){const rate=keys.reduce((a,k)=>a+games[k],0)/Math.max(1,keys.reduce((a,k)=>a+avc(k),0));keys.forEach(k=>{const e=rate*avc(k);if(Math.abs(games[k]-e)>1+1e-9&&first[k])add(M.name,first[k],`경기 수 차이: ${nm(k)} ${games[k]}경기 (참석 ${avc(k)}타임 기준 기대 ${e.toFixed(1)})`)})}
+  else{const gv=keys.map(k=>games[k]);if(gv.length&&Math.max(...gv)-Math.min(...gv)>1){const mx=Math.max(...gv),mn=Math.min(...gv);keys.forEach(k=>{if((games[k]===mx||games[k]===mn)&&first[k])add(M.name,first[k],`경기 수 차이: ${nm(k)} ${games[k]}경기 (최대 ${mx} · 최소 ${mn})`)})}}
   const both=keys.some(k=>P[k].gender==='F')&&keys.some(k=>P[k].gender!=='F');if(both)keys.forEach(k=>{if(!mix[k]&&first[k])add(M.name,first[k],`혼복 미참여: ${nm(k)}`)});
   return M}
 let POSTER_MARKS=null;
@@ -1534,6 +1547,8 @@ function generate(){
   if(pool.length<4){toast('참석자 4명 이상 선택 필요');return}
   const P={};pool.forEach(p=>P[p.key]={name:p.name,gender:p.gender,level:p.guest?p.level:tierLv(p.key,p.level),guest:p.guest});
   const courts=cfg.courtList,C=courts.length,R=roundsOf(cfg);
+  /* 참석 시간 제한 (늦참 · 조퇴): 시간 밖 타임은 배정 안 함 · 경기 수는 참석 타임에 비례 */
+  const AV=avOf(cfg,R);pool.forEach(p=>{if(AV[p.key])P[p.key].av=AV[p.key]});const av=(k,r)=>avIn(AV[k],r);const avN=k=>avCount(AV[k],R);
   const once=TRIES=>{
   const st={};pool.forEach(p=>st[p.key]={games:0,bench:0,last:null});
   const mixN={};pool.forEach(p=>mixN[p.key]=0);
@@ -1544,8 +1559,9 @@ function generate(){
   const EVT=cfg.eventId&&S.events.find(e=>e.id===cfg.eventId);const TM=EVT&&(EVT.teams||[]).length>=2?teamMap(EVT):null;const hist=t=>Math.min(1,(RW[pk(t[0],t[1])]||0)/3)*0.9;
   const rounds=[];
   for(let r=0;r<R;r++){
-    const nC=Math.min(C,Math.floor(pool.length/4)),N=nC*4;
-    const order=shuffle(pool.slice()).sort((a,b)=>(st[a.key].games-st[b.key].games)||(st[b.key].bench-st[a.key].bench));
+    const poolR=pool.filter(p=>av(p.key,r)),away=pool.filter(p=>!av(p.key,r)).map(p=>p.key);
+    const nC=Math.min(C,Math.floor(poolR.length/4)),N=nC*4;
+    const order=shuffle(poolR.slice()).sort((a,b)=>(st[a.key].games/avN(a.key)-st[b.key].games/avN(b.key))||(st[b.key].bench-st[a.key].bench));
     let play=order.slice(0,N),rest=order.slice(N);
     if(TM){const t0=order.filter(p=>TM[p.key]===0),t1=order.filter(p=>TM[p.key]===1);if(t0.length>=N/2&&t1.length>=N/2){play=t0.slice(0,N/2).concat(t1.slice(0,N/2));rest=order.filter(p=>!play.includes(p))}}
     // keep women count even so every court is 남복/여복/혼복
@@ -1609,7 +1625,7 @@ function generate(){
     const placed=assignCourts(best,types,courts);
     best.forEach((m,i)=>{partner[pk(...m.a)]=(partner[pk(...m.a)]||0)+1;partner[pk(...m.b)]=(partner[pk(...m.b)]||0)+1;for(const x of m.a)for(const y of m.b)opp[pk(x,y)]=(opp[pk(x,y)]||0)+1;[...m.a,...m.b].forEach(k=>{st[k].games++;st[k].bench=0;st[k].last=types[i];if(types[i]==='혼복')mixN[k]++})});
     rest.forEach(p=>st[p.key].bench++);
-    rounds.push({matches:placed,rest:rest.map(p=>p.key)});
+    rounds.push({matches:placed,rest:rest.map(p=>p.key),...(away.length?{away}:{})});
   }
   return rounds};
   /* 대진표 전체를 여러 번 만들어 조건 검증이 가장 좋은 것 선택 (우선순위 순 비교 · 최대 약 1초) */
@@ -1748,7 +1764,7 @@ function posterHtml(d=draft,inter=true){
   return `<div class="poster${d.allowBlank?' blank-ok':''}"${inter?' id="poster"':''}>
    <div class="p-head"><img class="p-logo" src="logo-g-lg.png" alt="SBPB Tennis Club"><div><div class="p-title">${h(c.title||'SBPB 정기모임')}</div><div class="p-meta">${fmtFull(c.date)} · ${h(c.meet||(c.start===REG.gameStart?REG.start:c.start))}–${end}${c.place?' · '+h(c.place):''}</div></div><span class="p-status${d.status==='확정'?'':' draft'}">${d.status==='확정'?'확정':'초안'}</span></div>${PEV&&(PEV.teams||[]).length?`<div class="p-teams">${PEV.teams.map((t,i)=>{const x=PTL&&PTL.rows[i];return `<span><i class="tdot" style="background:${tcol(PEV,i)}"></i><b>${h(t.name)}</b>${x&&PTL.played?` <b class="num">${x.w}승</b> <span class="p-gd">득실 ${x.gf-x.ga>0?'+':''}${x.gf-x.ga}</span>`:''}</span>`}).join('')}</div>`:''}
    <table class="p-table"><thead><tr><th style="width:84px">타임</th>${courts.map(x=>`<th>${h(x.name)}</th>`).join('')}<th style="width:180px">벤치</th></tr></thead><tbody>
-   ${d.rounds.map((R,r)=>`<tr><td class="t"><b>${r+1}</b><span>${R.time?h(R.time):rTime(c,r)}</span></td>${courts.map((_,ci)=>{const m=R.matches[ci];if(!m)return '<td class="c-none">코트 미사용</td>';const ty=mtype(d.players,m);const ce=PM&&PM.cell[`${r}|${ci}`];return `<td class="c-${ty}${ce?' cell-err':''}"><div class="m">${ce?`<button type="button" class="err-dot" data-act="err-tip" data-tip="${h(ce.join(' · '))}" aria-label="${h(ce.join(' · '))}">!</button>`:''}<span class="tag ${ty}">${ty}</span>${['a','b'].map(s=>`<div class="tm">${tdot(PEV,(m[s]||[])[0])}${(m[s]||[]).length===1?N(r,`m${ci}${s}0`):`${N(r,`m${ci}${s}0`)}<span class="amp">&amp;</span>${N(r,`m${ci}${s}1`)}`}</div>`).join(m.sc&&m.sc[0]!==''&&m.sc[1]!==''&&m.sc[0]!=null?`<div class="vs sc"><b${+m.sc[0]>+m.sc[1]?' class="w"':''}>${m.sc[0]}</b> : <b${+m.sc[1]>+m.sc[0]?' class="w"':''}>${m.sc[1]}</b></div>`:'<div class="vs">VS</div>')}</div></td>`}).join('')}<td class="bench">${benchHtml(R.rest.map((k,i)=>N(r,'r'+i)))}</td></tr>`).join('')}
+   ${d.rounds.map((R,r)=>`<tr><td class="t"><b>${r+1}</b><span>${R.time?h(R.time):rTime(c,r)}</span></td>${courts.map((_,ci)=>{const m=R.matches[ci];if(!m)return '<td class="c-none">코트 미사용</td>';const ty=mtype(d.players,m);const ce=PM&&PM.cell[`${r}|${ci}`];return `<td class="c-${ty}${ce?' cell-err':''}"><div class="m">${ce?`<button type="button" class="err-dot" data-act="err-tip" data-tip="${h(ce.join(' · '))}" aria-label="${h(ce.join(' · '))}">!</button>`:''}<span class="tag ${ty}">${ty}</span>${['a','b'].map(s=>`<div class="tm">${tdot(PEV,(m[s]||[])[0])}${(m[s]||[]).length===1?N(r,`m${ci}${s}0`):`${N(r,`m${ci}${s}0`)}<span class="amp">&amp;</span>${N(r,`m${ci}${s}1`)}`}</div>`).join(m.sc&&m.sc[0]!==''&&m.sc[1]!==''&&m.sc[0]!=null?`<div class="vs sc"><b${+m.sc[0]>+m.sc[1]?' class="w"':''}>${m.sc[0]}</b> : <b${+m.sc[1]>+m.sc[0]?' class="w"':''}>${m.sc[1]}</b></div>`:'<div class="vs">VS</div>')}</div></td>`}).join('')}<td class="bench">${benchHtml(R.rest.map((k,i)=>N(r,'r'+i)).concat((R.away||[]).map(k=>{const p=d.players[k]||{};const late=p.av&&r<p.av.from;return `<span class="nm away">${h(dn(p.name||''))}<em>${late?'늦참':'조퇴'}</em></span>`})))}</td></tr>`).join('')}
    </tbody></table>
    <div class="p-foot"><div class="p-sign">사방팔방 SBPB</div></div>
   </div>`;
@@ -1911,6 +1927,16 @@ function openBracketView(id){
 ACT['bv-open']=t=>{closeDayPop();openBracketView(t.dataset.id)};
 ACT['bv-del']=async t=>{const id=t.dataset.id;{const b=S.brackets.find(x=>x.id===id);if(!await askDel((b&&b.date?b.date.slice(5).replace('-','.')+' ':'')+'대진표'))return}closeModal();await del('brackets',id);if(draft&&draft.id===id){draft.id=null;saveDraft()}toast('대진표 삭제 완료');render()};
 ACT['bv-img']=async t=>{const b=S.brackets.find(x=>x.id===t.dataset.id);if(!b)return;const inline=t.dataset.inline;const st=inline?$('#stage'):$('#bv-stage');const el=st&&st.querySelector('.poster');if(!el)return;await exportPoster(el,normB(b));fitIn(st)};
+/* 참석 시간 표시 · 설정 (늦참 · 조퇴) */
+const rStart=r=>String(rTime(cfg,r)||'').split(/[–~-]/)[0].trim();const rEnd=r=>String(rTime(cfg,r)||'').split(/[–~-]/).pop().trim();
+const avTxt=(a,R)=>a.from>0&&a.to<R-1?`${rStart(a.from)}~${rEnd(a.to)}`:a.from>0?`${rStart(a.from)}~`:`~${rEnd(a.to)}`;
+ACT['avail']=(t,e)=>{if(e){e.preventDefault();e.stopPropagation()}const k=t.dataset.k;const R=roundsOf(cfg);const p=rosterAll().find(x=>x.key===k);const a=avOf(cfg,R)[k]||{from:0,to:R-1};
+  const opt=(sel,fn)=>Array.from({length:R},(_,r)=>`<option value="${r}"${r===sel?' selected':''}>${r+1}타임 ${h(fn(r))}</option>`).join('');
+  openModal(`참석 시간 · ${p?p.name:''}`,`<div class="av-quick"><button type="button" class="btn sm" data-act="av-q" data-q="late">1타임 늦게</button><button type="button" class="btn sm" data-act="av-q" data-q="early">마지막 타임 빠짐</button><button type="button" class="btn sm ghost" data-act="av-q" data-q="all">전체 참석</button></div>
+    <div class="grid2"><label class="f">도착 (이 타임부터)<select class="in" name="from">${opt(a.from,rStart)}</select></label><label class="f">퇴장 (이 타임까지)<select class="in" name="to">${opt(a.to,rEnd)}</select></label></div>
+    <p class="small muted" style="margin:8px 0 0">시간 밖 타임은 배정 안 함 · 경기 수는 참석 타임에 비례 · 대진표 휴식 칸에 늦참 · 조퇴 표시</p>`,
+    fd=>{const f=+fd.from,to=+fd.to;if(to<f){toast('퇴장 타임이 도착 타임보다 앞');throw new Error('keep')}cfg.avail={...(cfg.avail||{})};if(f===0&&to===R-1)delete cfg.avail[k];else cfg.avail[k]={from:f,to};saveCfg();render()},'','sm')};
+ACT['av-q']=t=>{const f=$('#mform');if(!f)return;const R=roundsOf(cfg);const q=t.dataset.q;f.querySelector('[name=from]').value=q==='late'?'1':'0';f.querySelector('[name=to]').value=String(q==='early'?R-2:R-1)};
 function viewDraw(){
   if(RO)return viewDrawRO();
   const all=rosterAll();
@@ -1919,7 +1945,7 @@ function viewDraw(){
   const pc=all.filter(p=>picked.has(p.key));
   const pm=pc.filter(p=>p.gender==='M').length,pf=pc.length-pm,pg=pc.filter(p=>p.guest).length;
   const C=cfg.courtList.length,R=roundsOf(cfg),need=C*4;
-  const row=p=>`<label><input type="checkbox" data-pick="${h(p.key)}"${picked.has(p.key)?' checked':''}><span class="grow">${h(p.name)}${p.nick?` <span class="muted small">(${h(nk(p.nick))})</span>`:''}${p.guest&&p.inviter?` <span class="muted small">· ${h(memberById(p.inviter)?.name||'')} 초대</span>`:''}</span><span class="g-${p.gender} small pl-g">${p.gender==='M'?'남':'여'}</span><span class="pl-lv">${p.lvUnknown?stars(null):stars(p.level)}</span><span class="pl-act">${p.guest?`<button type="button" class="btn ghost sm" data-act="guest-edit" data-id="${h(p.key)}" aria-label="게스트 수정">수정</button>`:''}</span></label>`;
+  const row=p=>`<label><input type="checkbox" data-pick="${h(p.key)}"${picked.has(p.key)?' checked':''}><span class="grow">${h(p.name)}${p.nick?` <span class="muted small">(${h(nk(p.nick))})</span>`:''}${p.guest&&p.inviter?` <span class="muted small">· ${h(memberById(p.inviter)?.name||'')} 초대</span>`:''}</span><span class="g-${p.gender} small pl-g">${p.gender==='M'?'남':'여'}</span><span class="pl-lv">${p.lvUnknown?stars(null):stars(p.level)}</span><span class="pl-act">${picked.has(p.key)?(()=>{const a=avOf(cfg,R)[p.key];return `<button type="button" class="pl-time${a?' on':''}" data-act="avail" data-k="${h(p.key)}" aria-label="참석 시간">${a?h(avTxt(a,R)):'시간'}</button>`})():''}${p.guest?`<button type="button" class="btn ghost sm" data-act="guest-edit" data-id="${h(p.key)}" aria-label="게스트 수정">수정</button>`:''}</span></label>`;
   const mem=plf==='G'?[]:byName(all.filter(p=>!p.guest&&match(p))),gst=plf==='M'?[]:byName(all.filter(p=>p.guest&&match(p)));
   const plist=all.length?`<div class="plist" data-ks="plist">${mem.length?`<div class="grp">회원 ${mem.length}</div>${mem.map(row).join('')}`:''}${gst.length?`<div class="grp">게스트 ${gst.length}</div>${gst.map(row).join('')}`:''}</div>`:`<div class="empty" style="margin-top:8px">회원 등록 또는 게스트 추가 필요</div>`;
   let needBox;
