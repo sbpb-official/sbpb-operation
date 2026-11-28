@@ -116,7 +116,7 @@ document.addEventListener('mouseup',e=>{const t=e.target;if(t.dataset&&(t.datase
    기기마다 마지막으로 본 id를 기억해, 다음 접속 때 그 이후 항목만 '업데이트' 창으로 보여 줌. 설정 탭에는 버전별 전체 기록 */
 const NEWS=[
   {id:'2026-11-28',v:'1.15',date:'2026-11-28',items:[
-    {k:'posterimg',t:'대진표 이미지 저장 방식 개선 (아이폰 글자 겹침 · 띄어쓰기 누락 · 칸 넘침 오류 수정)'},
+    {k:'posterimg',t:'대진표 이미지 저장 방식 개선 (아이폰 글자 겹침 · 띄어쓰기 누락 · 칸 넘침 · 글자 비율 오류 수정)'},
     {k:'availtag',t:'대진표 늦참 · 조퇴 태그 컬러 조정 (라이트 · 다크 모드 동일 · 글자 대비 개선)'},
     {k:'avail',t:'대진표 참석 시간 설정 추가 (참석자 선택 · 늦참 · 조퇴 · 시간 밖 타임 미배정 · 경기 수 참석 타임 비례 · 휴식 칸 표시)'},
   ]},
@@ -2097,13 +2097,15 @@ async function domToCanvas(root,scale){
       if(px(cs.borderTopLeftRadius)>2&&cs.borderTopWidth===cs.borderLeftWidth)return;
       ctx.strokeStyle=cs['border'+sd+'Color'];ctx.lineWidth=w;ctx.beginPath();const o=sd==='Top'||sd==='Left'?w/2:-w/2;if(sd==='Top'||sd==='Bottom'){ctx.moveTo(x1,y1+o);ctx.lineTo(x2,y2+o)}else{ctx.moveTo(x1+o,y1);ctx.lineTo(x2+o,y2)}ctx.stroke()});
     if(el.tagName==='IMG'){const im=await loadImg(el.src);if(im)ctx.drawImage(im,x,y,b.width,b.height);return}
-    ctx.font=`${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;ctx.fillStyle=cs.color;ctx.textBaseline='middle';
+    const fstr=`${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;const txtAll=[...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim();
+    if(txtAll&&document.fonts&&document.fonts.load){try{await document.fonts.load(fstr,txtAll)}catch(e){}}/* 그 글자에 필요한 웹 폰트 조각을 먼저 불러와 canvas도 같은 폰트 사용 */
+    ctx.font=fstr;ctx.fillStyle=cs.color;ctx.textBaseline='middle';
     const kids=[...el.childNodes];const L=x+px(cs.paddingLeft)+px(cs.borderLeftWidth),Rr=x+b.width-px(cs.paddingRight)-px(cs.borderRightWidth);
     const elKids=kids.filter(n=>n.nodeType===1);
     const Tp=y+px(cs.paddingTop)+px(cs.borderTopWidth),Bt=y+b.height-px(cs.paddingBottom)-px(cs.borderBottomWidth);const lh=cs.lineHeight==='normal'?px(cs.fontSize)*1.3:px(cs.lineHeight);
     /* 글자를 브라우저가 잡은 자리(slot) 안에 맞춰 그림: 넓으면 가로로 줄이고, 브라우저가 줄바꿈했으면 같은 줄 수로 나눔 (아이폰 canvas 폰트 차이 흡수) */
-    const fit=(txt,x0,x1,yc,align)=>{const w=ctx.measureText(txt).width,sw=Math.max(1,x1-x0);const sx=w>sw?sw/w:1;const dx=align==='left'||sx<1?x0:align==='right'?x1-w:(x0+x1-w)/2;
-      ctx.save();ctx.translate(dx,yc);ctx.scale(sx,1);ctx.fillText(txt,0,0);ctx.restore()};
+    const fit=(txt,x0,x1,yc,align)=>{const w=ctx.measureText(txt).width,sw=Math.max(1,x1-x0);const k=w>sw?sw/w:1;/* 넓으면 가로 · 세로 같은 비율로 축소 (글자 모양 유지) */const ww=w*k;const dx=align==='left'?x0:align==='right'?x1-ww:(x0+x1-ww)/2;
+      ctx.save();ctx.translate(dx,yc);ctx.scale(k,k);ctx.fillText(txt,0,0);ctx.restore()};
     kids.forEach((n,i)=>{if(n.nodeType!==3)return;const raw=n.textContent.replace(/\s+/g,' ');const t=raw.trim();if(!t)return;
       const prev=kids.slice(0,i).reverse().find(k=>k.nodeType===1&&k.getBoundingClientRect().width);const next=kids.slice(i+1).find(k=>k.nodeType===1&&k.getBoundingClientRect().width);
       const sp=ctx.measureText(' ').width;
